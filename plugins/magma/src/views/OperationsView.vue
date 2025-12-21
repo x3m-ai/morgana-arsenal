@@ -812,4 +812,13 @@ a.icon {
 .highlight-link {
   border: 2px solid #8b00ff;
 }
+
+/* Ensure modals are always on top */
+.modal {
+  z-index: 9999 !important;
+}
+
+.modal-card, .modal-content {
+  z-index: 10000 !important;
+}
 </style>
