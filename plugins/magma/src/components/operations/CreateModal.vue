@@ -29,6 +29,7 @@ const props = defineProps({
 });
 
 let operationName = ref("");
+let operationDescription = ref("");
 let selectedAdversary = ref("");
 let selectedSource = ref("")
 let selectedGroup = ref("");
@@ -86,6 +87,7 @@ async function createOperation() {
     }
     const newOperation = {
         name: operationName.value,
+        description: operationDescription.value || "No description provided",
         autonomous: Number(isAuto.value),
         use_learning_parsers: isDefParser.value,
         auto_close: isAutoClose.value,
@@ -138,6 +140,11 @@ async function createOperation() {
                 .field-body 
                     input.input(placeholder="Operation Name" v-model="operationName")
                     label.label.ml-3.mt-1.has-text-danger {{ `${validation.name}` }}
+            .field.is-horizontal
+                .field-label.is-normal 
+                    label.label Description
+                .field-body 
+                    textarea.textarea(placeholder="Describe the purpose and scope of this operation. It's a best practice to document your operations." v-model="operationDescription" rows="3")
             .field.is-horizontal
                 .field-label.is-normal 
                     label.label Adversary
@@ -223,6 +230,10 @@ async function createOperation() {
 </template>
 
 <style scoped>
+.modal {
+    z-index: 1000;
+}
+
 .modal-card {
     width: 800px;
 }

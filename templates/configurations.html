@@ -18,6 +18,12 @@
                         <span>Plugins</span>
                     </a>
                 </li>
+                <li x-bind:class="{ 'is-active': activeTab === 'hackers' }" @click="activeTab = 'hackers'"> 
+                    <a>
+                        <span class="icon is-small"><i class="fas fa-users" aria-hidden="true"></i></span>
+                        <span>Red Team Members</span>
+                    </a>
+                </li>
             </ul>
         </div>
 
@@ -74,6 +80,62 @@
             </table>
         </div>
 
+        <div x-show="activeTab === 'hackers'">
+            <div class="content mb-4">
+                <p><strong>Red Team Members:</strong> Manage your offensive security team roster. Track who's working on which operations.</p>
+            </div>
+            <table class="table is-fullwidth is-striped">
+                <thead>
+                    <tr>
+                        <th style="width: 15%">Name</th>
+                        <th style="width: 15%">Alias (AKA)</th>
+                        <th style="width: 20%">Email</th>
+                        <th style="width: 15%">Role</th>
+                        <th style="width: 15%">Specialization</th>
+                        <th style="width: 10%">Status</th>
+                        <th style="width: 10%"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="(hacker, idx) in hackers" :key="idx">
+                        <tr>
+                            <td><input class="input is-small" x-model="hacker.name"></td>
+                            <td><input class="input is-small" x-model="hacker.aka"></td>
+                            <td><input class="input is-small" type="email" x-model="hacker.email"></td>
+                            <td>
+                                <div class="select is-small is-fullwidth">
+                                    <select x-model="hacker.role">
+                                        <option value="Red Team Lead">Red Team Lead</option>
+                                        <option value="Penetration Tester">Penetration Tester</option>
+                                        <option value="Exploitation Expert">Exploitation Expert</option>
+                                        <option value="Social Engineer">Social Engineer</option>
+                                        <option value="Network Specialist">Network Specialist</option>
+                                        <option value="Malware Developer">Malware Developer</option>
+                                        <option value="OSINT Analyst">OSINT Analyst</option>
+                                        <option value="Wireless Specialist">Wireless Specialist</option>
+                                        <option value="Physical Security">Physical Security</option>
+                                        <option value="C2 Operator">C2 Operator</option>
+                                    </select>
+                                </div>
+                            </td>
+                            <td><input class="input is-small" x-model="hacker.specialization"></td>
+                            <td>
+                                <div class="select is-small is-fullwidth">
+                                    <select x-model="hacker.status">
+                                        <option value="Active">Active</option>
+                                        <option value="On Assignment">On Assignment</option>
+                                        <option value="Stand-by">Stand-by</option>
+                                        <option value="Inactive">Inactive</option>
+                                    </select>
+                                </div>
+                            </td>
+                            <td><button class="button is-small is-primary" @click="updateHacker(idx)">Update</button></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
     </div>
 </div>
 
@@ -83,10 +145,33 @@
             settings: {},
             plugins: [],
             pendingPlugins: [],
+            hackers: [
+                { name: "Alice Morgan", aka: "Phantom", email: "alice.morgan@redteam.local", role: "Red Team Lead", specialization: "C2 Infrastructure", status: "Active" },
+                { name: "Marcus Chen", aka: "Shadow", email: "marcus.chen@redteam.local", role: "Penetration Tester", specialization: "Web Applications", status: "Active" },
+                { name: "Sarah Williams", aka: "Viper", email: "sarah.williams@redteam.local", role: "Exploitation Expert", specialization: "Zero-Day Research", status: "On Assignment" },
+                { name: "David Rodriguez", aka: "Ghost", email: "david.rodriguez@redteam.local", role: "Social Engineer", specialization: "Phishing Campaigns", status: "Active" },
+                { name: "Emma Johnson", aka: "Cipher", email: "emma.johnson@redteam.local", role: "Malware Developer", specialization: "Evasion Techniques", status: "Active" },
+                { name: "Ryan Taylor", aka: "Reaper", email: "ryan.taylor@redteam.local", role: "Network Specialist", specialization: "Lateral Movement", status: "Stand-by" },
+                { name: "Jessica Brown", aka: "Raven", email: "jessica.brown@redteam.local", role: "OSINT Analyst", specialization: "Target Profiling", status: "Active" },
+                { name: "Michael Davis", aka: "Wraith", email: "michael.davis@redteam.local", role: "C2 Operator", specialization: "Implant Management", status: "On Assignment" },
+                { name: "Laura Martinez", aka: "Nightshade", email: "laura.martinez@redteam.local", role: "Wireless Specialist", specialization: "RF Attacks", status: "Active" },
+                { name: "Kevin Anderson", aka: "Specter", email: "kevin.anderson@redteam.local", role: "Physical Security", specialization: "Lock Picking", status: "Stand-by" },
+                { name: "Nicole White", aka: "Eclipse", email: "nicole.white@redteam.local", role: "Penetration Tester", specialization: "Active Directory", status: "Active" },
+                { name: "Daniel Thomas", aka: "Blade", email: "daniel.thomas@redteam.local", role: "Exploitation Expert", specialization: "Privilege Escalation", status: "On Assignment" },
+                { name: "Amanda Garcia", aka: "Venom", email: "amanda.garcia@redteam.local", role: "Social Engineer", specialization: "Pretexting", status: "Active" },
+                { name: "Christopher Lee", aka: "Stealth", email: "christopher.lee@redteam.local", role: "Malware Developer", specialization: "Rootkits", status: "Stand-by" },
+                { name: "Sophia Martinez", aka: "Nova", email: "sophia.martinez@redteam.local", role: "Network Specialist", specialization: "Packet Analysis", status: "Active" },
+                { name: "James Wilson", aka: "Havoc", email: "james.wilson@redteam.local", role: "C2 Operator", specialization: "Cobalt Strike", status: "On Assignment" },
+                { name: "Olivia Moore", aka: "Siren", email: "olivia.moore@redteam.local", role: "OSINT Analyst", specialization: "Social Media Intel", status: "Active" },
+                { name: "Robert Jackson", aka: "Kryptos", email: "robert.jackson@redteam.local", role: "Penetration Tester", specialization: "Cloud Security", status: "Active" },
+                { name: "Isabella Clark", aka: "Mirage", email: "isabella.clark@redteam.local", role: "Wireless Specialist", specialization: "WiFi Hacking", status: "Stand-by" },
+                { name: "William Harris", aka: "Onyx", email: "william.harris@redteam.local", role: "Physical Security", specialization: "Social Engineering", status: "Inactive" }
+            ],
 
             activeTab: 'settings',
 
             initPage() {
+                this.loadHackers();
                 apiV2('GET', '/api/v2/config/main').then((config) => {
                     delete config.plugins;
                     this.settings = config;
@@ -127,6 +212,24 @@
                     toast(`Error enabling ${pluginName}`, false);
                     console.error(error);
                 });
+            },
+
+            updateHacker(index) {
+                const hacker = this.hackers[index];
+                // Store in localStorage for persistence
+                localStorage.setItem('redteam_hackers', JSON.stringify(this.hackers));
+                toast(`Updated ${hacker.name} (${hacker.aka})`, true);
+            },
+
+            loadHackers() {
+                const stored = localStorage.getItem('redteam_hackers');
+                if (stored) {
+                    try {
+                        this.hackers = JSON.parse(stored);
+                    } catch (e) {
+                        console.error('Error loading hackers from storage', e);
+                    }
+                }
             },
 
         };

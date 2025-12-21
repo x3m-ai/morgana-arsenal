@@ -282,7 +282,29 @@ const getAgentTooltipContent = (agent) => {
             td {{ nodes[selectedNodeId].platform }}
           tr
             th IP Addresses
-            td {{nodes[selectedNodeId].ips.join(", ")}}
+            td(v-if="nodes[selectedNodeId].ips && nodes[selectedNodeId].ips.length > 0") {{nodes[selectedNodeId].ips.join(", ")}}
+            td(v-else) N/A
+          tr(v-if="nodes[selectedNodeId].agents.length > 0")
+            th Architecture
+            td {{ nodes[selectedNodeId].agents[0].architecture || 'N/A' }}
+          tr(v-if="nodes[selectedNodeId].agents.length > 0")
+            th Username
+            td {{ nodes[selectedNodeId].agents[0].username || 'N/A' }}
+          tr(v-if="nodes[selectedNodeId].agents.length > 0")
+            th Privilege
+            td(:style="{ color: nodes[selectedNodeId].agents[0].privilege === 'Elevated' ? '#00d1b2' : '#f7db89' }") {{ nodes[selectedNodeId].agents[0].privilege || 'User' }}
+          tr(v-if="nodes[selectedNodeId].agents.length > 0")
+            th Group
+            td {{ nodes[selectedNodeId].agents[0].group || 'N/A' }}
+          tr(v-if="nodes[selectedNodeId].agents.length > 0")
+            th PID
+            td {{ nodes[selectedNodeId].agents[0].pid || 'N/A' }}
+          tr(v-if="nodes[selectedNodeId].agents.length > 0")
+            th Executable
+            td {{ nodes[selectedNodeId].agents[0].exe_name || 'N/A' }}
+          tr(v-if="nodes[selectedNodeId].agents.length > 0")
+            th Location
+            td.is-size-7(style="word-break: break-all;") {{ nodes[selectedNodeId].agents[0].location || 'N/A' }}
           tr
             th Agents ({{nodes[selectedNodeId].agents.length}})
             td
@@ -356,6 +378,9 @@ const getAgentTooltipContent = (agent) => {
   border-top: 0px;
   /* min-height: 30rem; */
   transition: height 0.5s;
+  position: relative;
+  z-index: 100;
+  background-color: #242424;
 }
 
 .graph {
@@ -391,6 +416,9 @@ const getAgentTooltipContent = (agent) => {
   transition: width 0.5s;
   display: flex;
   flex-direction: column;
+  background-color: #242424;
+  overflow-y: auto;
+  max-height: 34rem;
 }
 
 .sidebar-table {

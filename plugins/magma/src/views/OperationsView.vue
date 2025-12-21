@@ -25,6 +25,7 @@ import OutputPopup from "@/components/operations/OutputPopup.vue";
 import AddPotentialLinkModal from "@/components/operations/AddPotentialLinkModal.vue";
 import ManualCommand from "@/components/operations/ManualCommand.vue";
 import FiltersModal from "@/components/operations/FiltersModal.vue";
+import AssignMembersModal from "@/components/operations/AssignMembersModal.vue";
 import { useOperationStore } from "@/stores/operationStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useCoreDisplayStore } from "@/stores/coreDisplayStore";
@@ -49,10 +50,31 @@ let operationsListUpdateInterval = ref();
 let showPotentialLinkModal = ref(false);
 let selectedOutputLink = ref(null);
 let operationSearchQuery = ref("");
+const redTeamMembers = ref([]);
+const showAssignModal = ref(false);
+const selectedOperationForAssign = ref(null);
+const showUnassigned = ref(false);
+const showEmptyLinks = ref(false);
+
+const operationAssignments = computed(() => {
+  return JSON.parse(localStorage.getItem('operation_assignments') || '{}');
+});
 
 // Compute TCodes (all technique IDs) for each operation from its links
 const operationsWithTCodes = computed(() => {
-  const ops = Object.values(operationStore.operations);
+  let ops = Object.values(operationStore.operations);
+  
+  // Apply filters
+  if (showUnassigned.value) {
+    ops = ops.filter(op => {
+      const assigned = operationAssignments.value[op.id];
+      return !assigned || (Array.isArray(assigned) && assigned.length === 0);
+    });
+  }
+  if (showEmptyLinks.value) {
+    ops = ops.filter(op => !op.chain || op.chain.length === 0);
+  }
+  
   return ops.map(operation => {
     const tcodes = [];
     if (operation.chain && Array.isArray(operation.chain)) {
@@ -195,14 +217,35 @@ const getSortIconColor = (property, direction) => {
 
 onMounted(async () => {
   await operationStore.getOperations($api);
-  await coreStore.getObfuscators($api);
-  await agentStore.getAgents($api);
+  await operationStore.getAdversaries($api);
+  await agentStore.updateAgents($api);
   agentStore.updateAgentGroups();
   selectOperation();
   
-  // Auto-refresh operations list every 3 seconds
+  // Load red team members from localStorage
+  const stored = localStorage.getItem('redteam_hackers');
+  if (stored) {
+    try {
+      redTeamMembers.value = JSON.parse(stored);
+      console.log('Loaded red team members:', redTeamMembers.value);
+    } catch (e) {
+      console.error('Error loading team members', e);
+    }
+  } else {
+    console.warn('No red team members found in localStorage');
+  }
+  
   operationsListUpdateInterval.value = setInterval(async () => {
     await operationStore.getOperations($api);
+    // Reload team members periodically to catch updates
+    const freshStored = localStorage.getItem('redteam_hackers');
+    if (freshStored) {
+      try {
+        redTeamMembers.value = JSON.parse(freshStored);
+      } catch (e) {
+        // Silent fail on periodic refresh
+      }
+    }
   }, 3000);
 });
 
@@ -254,6 +297,90 @@ function isRerun() {
     operationStore.operations[operationStore.selectedOperationID].state ===
       "finished"
   );
+}
+
+function assignTeamMember(operationId, memberAka) {
+  tempAssignments.value[operationId] = memberAka;
+}
+
+function saveAssignment(operationId) {
+  const memberAka = tempAssignments.value[operationId];
+  const assignments = JSON.parse(localStorage.getItem('operation_assignments') || '{}');
+  
+  // Remove this operation from any previous assignments
+  Object.keys(assignments).forEach(opId => {
+    if (opId === operationId) delete assignments[opId];
+  });
+  
+  if (memberAka && memberAka !== '') {
+    assignments[operationId] = memberAka;
+    const hackers = JSON.parse(localStorage.getItem('redteam_hackers') || '[]');
+    const hacker = hackers.find(h => h.aka === memberAka);
+    if (hacker) {
+      hacker.status = 'On Assignment';
+      hacker.operationId = operationId;
+      localStorage.setItem('redteam_hackers', JSON.stringify(hackers));
+    }
+  } else {
+    // Unassign - reset hacker status
+    const hackers = JSON.parse(localStorage.getItem('redteam_hackers') || '[]');
+    const hacker = hackers.find(h => h.operationId === operationId);
+    if (hacker) {
+      hacker.status = 'Active';
+      hacker.operationId = '';
+      localStorage.setItem('redteam_hackers', JSON.stringify(hackers));
+    }
+  }
+  
+  localStorage.setItem('operation_assignments', JSON.stringify(assignments));
+  delete tempAssignments.value[operationId];
+}
+
+function openAssignModal(operation) {
+  selectedOperationForAssign.value = operation.id;
+  
+  // Reload team members from localStorage before opening modal
+  const stored = localStorage.getItem('redteam_hackers');
+  if (stored) {
+    try {
+      redTeamMembers.value = JSON.parse(stored);
+      console.log('Reloaded members for assignment:', redTeamMembers.value);
+    } catch (e) {
+      console.error('Error reloading team members', e);
+      redTeamMembers.value = [];
+    }
+  } else {
+    console.warn('No members found in localStorage');
+    redTeamMembers.value = [];
+  }
+  
+  showAssignModal.value = true;
+}
+
+function updateOperationAssignments(selectedAkas) {
+  const assignments = JSON.parse(localStorage.getItem('operation_assignments') || '{}');
+  
+  if (selectedAkas.length > 0) {
+    assignments[selectedOperationForAssign.value] = selectedAkas;
+  } else {
+    delete assignments[selectedOperationForAssign.value];
+  }
+  
+  // Update member statuses
+  const hackers = JSON.parse(localStorage.getItem('redteam_hackers') || '[]');
+  hackers.forEach(hacker => {
+    const isAssignedToAnyOp = Object.values(assignments).some(akas => 
+      Array.isArray(akas) && akas.includes(hacker.aka)
+    );
+    if (isAssignedToAnyOp && hacker.status === 'Active') {
+      hacker.status = 'On Assignment';
+    } else if (!isAssignedToAnyOp && hacker.status === 'On Assignment') {
+      hacker.status = 'Active';
+    }
+  });
+  
+  localStorage.setItem('operation_assignments', JSON.stringify(assignments));
+  localStorage.setItem('redteam_hackers', JSON.stringify(hackers));
 }
 
 function displayManualCommand() {
@@ -360,6 +487,15 @@ hr.mt-2
                 input.input.is-small(type="text" placeholder="Search operations..." v-model="operationSearchQuery")
                 span.icon.is-small.is-left
                     font-awesome-icon(icon="fas fa-search")
+        .field.is-grouped
+            .control
+                label.checkbox.mr-3
+                    input(type="checkbox" v-model="showUnassigned")
+                    span.ml-1 Unassigned
+            .control
+                label.checkbox.mr-3
+                    input(type="checkbox" v-model="showEmptyLinks")
+                    span.ml-1 No Links
         button.button.is-primary.is-small(@click="modals.operations.showCreate = true" type="button")
             span.icon
                 font-awesome-icon(icon="fas fa-plus")
@@ -369,17 +505,18 @@ hr.mt-2
         table.table.is-fullwidth.is-hoverable.is-striped(style="margin-bottom: 0;")
         thead
             tr(style="background-color: #363636; color: white;")
-                th(style="color: white; min-width: 180px;") Operation Name
-                th(style="color: white; min-width: 120px;") State
-                th(style="color: white; min-width: 200px;") Adversary
-                th(style="color: white; min-width: 100px; text-align: center;") Agents
-                th(style="color: white; min-width: 100px; text-align: center;") Links
-                th(style="color: white; min-width: 250px;") TCodes
-                th(style="color: white; min-width: 150px;") Started
-                th(style="color: white; min-width: 180px;" class="has-text-centered") Actions
+                th(style="color: white; min-width: 140px;") Operation Name
+                th(style="color: white; min-width: 90px;") State
+                th(style="color: white; min-width: 160px;") Adversary
+                th(style="color: white; min-width: 70px; text-align: center;") Agents
+                th(style="color: white; min-width: 70px; text-align: center;") Links
+                th(style="color: white; min-width: 200px;") TCodes
+                th(style="color: white; min-width: 200px;") Assigned Team
+                th(style="color: white; min-width: 120px;") Started
+                th(style="color: white; min-width: 160px;" class="has-text-centered") Actions
         tbody
             tr(v-if="Object.keys(operationStore.operations).length === 0")
-                td(colspan="8" class="has-text-centered has-text-grey-light is-italic") No operations yet. Create one to get started.
+                td(colspan="9" class="has-text-centered has-text-grey-light is-italic") No operations yet. Create one to get started.
             tr(
                 v-for="op in operationsWithTCodes.filter(o => !operationSearchQuery || o.name.toLowerCase().includes(operationSearchQuery.toLowerCase()))" 
                 :key="op.id"
@@ -397,6 +534,14 @@ hr.mt-2
                 td
                     span.tag.is-link.is-light {{ op.chain?.length || 0 }}
                 td.is-size-7(style="font-family: monospace; color: #00d1b2;") {{ op.tcodes || 'No TTPs' }}
+                td(@click.stop)
+                    .is-flex.is-align-items-center.is-justify-content-space-between
+                        div(v-if="operationAssignments[op.id] && operationAssignments[op.id].length > 0" style="flex: 1;")
+                            span.tag.is-info.is-light.mr-1(v-for="aka in operationAssignments[op.id]" :key="aka" style="margin-bottom: 2px;") {{ aka }}
+                        span(v-else style="color: #999; font-style: italic;") No members
+                        button.button.is-small.is-primary.ml-2(@click="openAssignModal(op)" title="Assign members")
+                            span.icon
+                                font-awesome-icon(icon="fas fa-users")
                 td.is-size-7 {{ getHumanFriendlyTimeISO8601(op.start) }}
                 td.has-text-centered
                     .buttons.is-centered
@@ -508,6 +653,9 @@ table.table.is-fullwidth.is-narrow.is-striped.mb-8#link-table(v-if="operationSto
                 span.icon(:style="{ color: getSortIconColor('tactic', 'down') }")
                   font-awesome-icon(icon="fas fa-angle-down")
           th
+            div.is-flex.is-flex-direction-column.is-justify-content-center
+              span.mt-2 Technique
+          th
             div.is-flex.is-flex-direction-row.is-align-items-center.gap-5(@click="handleTableSort('agent')" :style="{ cursor: 'pointer', width: 'fit-content' }")
               span Agent
               div.is-flex.is-flex-direction-column.is-justify-content-center
@@ -547,6 +695,7 @@ table.table.is-fullwidth.is-narrow.is-striped.mb-8#link-table(v-if="operationSto
                     span(:style="{ color: getLinkStatus(link).color}") {{ getLinkStatus(link).text }}
             td {{ link.ability.name }}
             td {{ link.ability.tactic }}
+            td.is-size-7(style="font-family: monospace; color: #00d1b2;") {{ link.ability.technique_id || 'N/A' }}
             td {{ link.paw }}
             td {{ link.host }}
             td {{ link.pid ? link.pid : "N/A" }}
@@ -588,6 +737,12 @@ AddPotentialLinkModal(
     @close="showPotentialLinkModal = false")
 FiltersModal(:filters="tableFilter.filters" :possibleFilters="possibleFilters")
 OutputModal(v-if="selectedOutputLink" :link="selectedOutputLink")
+AssignMembersModal(
+    :show="showAssignModal"
+    :operationId="selectedOperationForAssign"
+    :members="redTeamMembers"
+    @close="showAssignModal = false"
+    @update="updateOperationAssignments")
 </template>
 
 <style>

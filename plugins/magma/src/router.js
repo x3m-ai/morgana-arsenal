@@ -17,6 +17,7 @@ import ContactsView from "./views/ContactsView.vue";
 import ObfuscatorsView from "./views/ObfuscatorsView.vue";
 import SettingsView from "./views/SettingsView.vue";
 import ExfilledFilesView from "./views/ExfilledFilesView.vue";
+import RedTeamView from "./views/RedTeamView.vue";
 import PluginView from "./views/PluginView.vue";
 import NotFoundView from "./views/NotFoundView.vue";
 
@@ -103,6 +104,11 @@ const router = createRouter({
       path: "/exfilledfiles",
       name: "exfilled files",
       component: ExfilledFilesView,
+    },
+    {
+      path: "/redteam",
+      name: "red team",
+      component: RedTeamView,
     },
     {
       path: "/plugins/:pluginName",

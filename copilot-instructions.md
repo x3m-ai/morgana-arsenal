@@ -402,12 +402,17 @@ python3 server.py --insecure --log DEBUG
 - `--log DEBUG`: Verbose logging
 - `--fresh`: Reset database (clears agents, operations)
 
+**IMPORTANT**: Do NOT use `start-caldera.sh` for starting the server. That script is for initial installation/setup only. Always start the server using `python3 server.py` directly.
+
 ### Stopping the Server
 ```bash
-# Graceful
-pkill -f "python3.*server.py"
+# Graceful shutdown (recommended - allows save_state)
+./stop-caldera.sh
 
-# Force kill
+# Manual graceful stop
+pkill -INT -f "python3.*server.py"
+
+# Force kill (use only if graceful fails)
 pkill -9 -f "python3.*server.py"
 
 # Verify stopped

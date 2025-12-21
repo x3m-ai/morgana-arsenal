@@ -1212,3 +1212,1169 @@ nohup: ignoring input
                     DEBUG    [BEACON] Sending response to     contact_http.py:41
                              puqadh: paw=puqadh, sleep=33,                      
                              instructions=NO                                    
+2025-12-21 18:08:12 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=41,                      
+                             instructions=NO                                    
+2025-12-21 18:08:53 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=32,                      
+                             instructions=NO                                    
+2025-12-21 18:09:25 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=54,                      
+                             instructions=NO                                    
+2025-12-21 18:10:19 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=58,                      
+                             instructions=NO                                    
+2025-12-21 18:11:17 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=60,                      
+                             instructions=NO                                    
+2025-12-21 18:12:17 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=50,                      
+                             instructions=NO                                    
+2025-12-21 18:13:07 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=36,                      
+                             instructions=NO                                    
+2025-12-21 18:13:43 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=59,                      
+                             instructions=NO                                    
+2025-12-21 18:14:43 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=37,                      
+                             instructions=NO                                    
+2025-12-21 18:15:20 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=31,                      
+                             instructions=NO                                    
+2025-12-21 18:15:51 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=50,                      
+                             instructions=NO                                    
+2025-12-21 18:16:41 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=54,                      
+                             instructions=NO                                    
+2025-12-21 18:17:35 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=49,                      
+                             instructions=NO                                    
+2025-12-21 18:18:24 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=40,                      
+                             instructions=NO                                    
+2025-12-21 18:19:04 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=60,                      
+                             instructions=NO                                    
+2025-12-21 18:20:04 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=43,                      
+                             instructions=NO                                    
+2025-12-21 18:20:47 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=33,                      
+                             instructions=NO                                    
+2025-12-21 18:21:20 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=50,                      
+                             instructions=NO                                    
+2025-12-21 18:22:10 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=35,                      
+                             instructions=NO                                    
+2025-12-21 18:22:45 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=60,                      
+                             instructions=NO                                    
+2025-12-21 18:23:45 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=49,                      
+                             instructions=NO                                    
+2025-12-21 18:24:34 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=60,                      
+                             instructions=NO                                    
+2025-12-21 18:25:34 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=38,                      
+                             instructions=NO                                    
+2025-12-21 18:26:12 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=60,                      
+                             instructions=NO                                    
+2025-12-21 18:27:12 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=37,                      
+                             instructions=NO                                    
+2025-12-21 18:27:49 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=32,                      
+                             instructions=NO                                    
+2025-12-21 18:28:21 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=39,                      
+                             instructions=NO                                    
+2025-12-21 18:29:00 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=56,                      
+                             instructions=NO                                    
+2025-12-21 18:29:56 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=30,                      
+                             instructions=NO                                    
+2025-12-21 18:30:26 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=56,                      
+                             instructions=NO                                    
+2025-12-21 18:31:22 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=50,                      
+                             instructions=NO                                    
+2025-12-21 18:32:12 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=51,                      
+                             instructions=NO                                    
+2025-12-21 18:33:03 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=34,                      
+                             instructions=NO                                    
+2025-12-21 18:33:37 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=30,                      
+                             instructions=NO                                    
+2025-12-21 18:34:07 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=46,                      
+                             instructions=NO                                    
+2025-12-21 18:34:53 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=38,                      
+                             instructions=NO                                    
+2025-12-21 18:35:31 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=44,                      
+                             instructions=NO                                    
+2025-12-21 18:36:15 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=52,                      
+                             instructions=NO                                    
+2025-12-21 18:37:07 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=42,                      
+                             instructions=NO                                    
+2025-12-21 18:37:49 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=47,                      
+                             instructions=NO                                    
+2025-12-21 18:38:36 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=38,                      
+                             instructions=NO                                    
+2025-12-21 18:39:14 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=57,                      
+                             instructions=NO                                    
+2025-12-21 18:40:11 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=38,                      
+                             instructions=NO                                    
+2025-12-21 18:40:49 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=48,                      
+                             instructions=NO                                    
+2025-12-21 18:41:37 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=54,                      
+                             instructions=NO                                    
+2025-12-21 18:42:31 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=40,                      
+                             instructions=NO                                    
+2025-12-21 18:43:11 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=39,                      
+                             instructions=NO                                    
+2025-12-21 18:43:50 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=35,                      
+                             instructions=NO                                    
+2025-12-21 18:44:10 DEBUG    Using login handler "Default Login  auth_svc.py:101
+                             Handler" for login                                 
+                    DEBUG    admin logging in                    auth_svc.py:155
+2025-12-21 18:44:25 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=42,                      
+                             instructions=NO                                    
+2025-12-21 18:45:07 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=56,                      
+                             instructions=NO                                    
+2025-12-21 18:46:03 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=44,                      
+                             instructions=NO                                    
+2025-12-21 18:46:47 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=30,                      
+                             instructions=NO                                    
+2025-12-21 18:47:17 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=49,                      
+                             instructions=NO                                    
+2025-12-21 18:48:06 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=39,                      
+                             instructions=NO                                    
+2025-12-21 18:48:45 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=51,                      
+                             instructions=NO                                    
+2025-12-21 18:49:36 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=40,                      
+                             instructions=NO                                    
+2025-12-21 18:50:16 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=33,                      
+                             instructions=NO                                    
+2025-12-21 18:50:49 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+2025-12-21 18:50:50 DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=35,                      
+                             instructions=NO                                    
+2025-12-21 18:51:25 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=49,                      
+                             instructions=NO                                    
+2025-12-21 18:52:14 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=60,                      
+                             instructions=NO                                    
+2025-12-21 18:53:14 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=49,                      
+                             instructions=NO                                    
+2025-12-21 18:54:03 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=58,                      
+                             instructions=NO                                    
+2025-12-21 18:55:01 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=38,                      
+                             instructions=NO                                    
+2025-12-21 18:55:39 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=34,                      
+                             instructions=NO                                    
+2025-12-21 18:56:13 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=39,                      
+                             instructions=NO                                    
+2025-12-21 18:56:52 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=56,                      
+                             instructions=NO                                    
+2025-12-21 18:57:48 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=49,                      
+                             instructions=NO                                    
+2025-12-21 18:58:37 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=39,                      
+                             instructions=NO                                    
+2025-12-21 18:59:16 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=43,                      
+                             instructions=NO                                    
+2025-12-21 18:59:59 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=32,                      
+                             instructions=NO                                    
+2025-12-21 19:00:31 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=41,                      
+                             instructions=NO                                    
+2025-12-21 19:01:12 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=43,                      
+                             instructions=NO                                    
+2025-12-21 19:01:37 DEBUG    Deregistered contact: gist        contact_svc.py:46
+                    DEBUG    Deregistered contact: html        contact_svc.py:46
+                    DEBUG    Deregistered contact: ftp         contact_svc.py:46
+                    DEBUG    Deregistered contact: slack       contact_svc.py:46
+                    DEBUG    Deregistered contact: tcp         contact_svc.py:46
+                    DEBUG    Deregistered contact: websocket   contact_svc.py:46
+                    DEBUG    Deregistered contact: http        contact_svc.py:46
+                    DEBUG    Deregistered contact: dns         contact_svc.py:46
+                    DEBUG    Deregistered contact: udp         contact_svc.py:46
+                    DEBUG    [!] shutting down server...good-bye  app_svc.py:157
+                    DEBUG    waiting for 1 tasks                   server.py:790

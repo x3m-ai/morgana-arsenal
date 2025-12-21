@@ -92,6 +92,8 @@ function promptToEnablePlugin(pluginName) {
                 router-link.menu-item(to="/exfilledfiles") exfilled files
             li
                 router-link.menu-item(to="/payloads") payloads
+            li
+                router-link.menu-item(to="/redteam") red team members
         p.menu-label
             font-awesome-icon(icon="fas fa-book").pr-2
             | Resources
