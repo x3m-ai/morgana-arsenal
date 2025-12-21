@@ -1,0 +1,116 @@
+nohup: ignoring input
+2025-12-20 15:18:54 WARNING  --insecure flag set. Caldera will use server.py:232
+                             the default user accounts in                       
+                             default.yml config file.                           
+                    INFO     Using main config from                server.py:241
+                             conf/default.yml                                   
+2025-12-20 15:18:55 INFO     Invalid Github Gist personal API contact_gist.py:70
+                             token provided. Gist C2 contact                    
+                             will not be started.                               
+                    INFO     Generating temporary SSH private   tunnel_ssh.py:26
+                             key. Was unable to use provided                    
+                             SSH private key                                    
+                    INFO     Enabled plugin: access               app_svc.py:131
+                    INFO     Enabled plugin: merlino              app_svc.py:131
+                    INFO     Enabled plugin: compass              app_svc.py:131
+                    ERROR    Error importing plugin=builder, No   c_plugin.py:91
+                             module named 'docker'                              
+                    ERROR    Error loading plugin=builder,        c_plugin.py:59
+                             'NoneType' object has no attribute                 
+                             'description'                                      
+                    INFO     Enabled plugin: training             app_svc.py:131
+                    INFO     Enabled plugin: debrief              app_svc.py:131
+                    INFO     Enabled plugin: manx                 app_svc.py:131
+                    INFO     Enabled plugin: stockpile            app_svc.py:131
+                    INFO     Enabled plugin: atomic               app_svc.py:131
+                    INFO     Enabled plugin: fieldmanual          app_svc.py:131
+                    INFO     Enabled plugin: magma                app_svc.py:131
+                    INFO     Enabled plugin: response             app_svc.py:131
+                    INFO     Enabled plugin: sandcat              app_svc.py:131
+                    INFO     Creating SSH listener on 0.0.0.0,    logging.py:102
+                             port 8022                                          
+                    INFO     serving on 0.0.0.0:2222               server.py:741
+                    WARNING  Unable to properly load .donut for  data_svc.py:459
+                             payload                                            
+                             plugins.stockpile.app.donut.donut_h                
+                             andler due to failed import                        
+2025-12-20 15:18:59 WARNING  Ability referenced in adversary   c_adversary.py:90
+                             ef4d997c-a0d1-4067-9efa-87c58682d                  
+                             b71 but not found:                                 
+                             854e480af3b5e2946bb3ae44916e951a                   
+                    WARNING  Ability referenced in adversary   c_adversary.py:90
+                             ef4d997c-a0d1-4067-9efa-87c58682d                  
+                             b71 but not found:                                 
+                             23dafb943f2f1a3e21e8204826c7b271                   
+                    WARNING  Unable to build docs:                    hook.py:62
+                                                                                
+                             Configuration error:                               
+                             There is a programmable error in your              
+                             configuration file:                                
+                                                                                
+                             Traceback (most recent call last):                 
+                               File                                             
+                             "/home/morgana/.local/lib/python3.12/sit           
+                             e-packages/sphinx/config.py", line 356,            
+                             in eval_config_file                                
+                                 exec(code, namespace)  # NoQA: S102            
+                                 ^^^^^^^^^^^^^^^^^^^^^                          
+                               File                                             
+                             "/home/morgana/caldera/plugins/fieldmanu           
+                             al/sphinx-docs/conf.py", line 40, in               
+                             <module>                                           
+                                 generate_ability_csv(caldera_root_di           
+                             r, sphinx_root_dir / '_generated' /                
+                             'abilities.csv')                                   
+                               File                                             
+                             "/home/morgana/caldera/plugins/fieldmanu           
+                             al/utils/ability_csv.py", line 63, in              
+                             generate_ability_csv                               
+                                 ability =                                      
+                             yaml.safe_load(ability_file.read_text())           
+                             [0]                                                
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^           
+                             ^^^^^^^^^^^^^^                                     
+                               File                                             
+                             "/usr/lib/python3/dist-packages/yaml/__i           
+                             nit__.py", line 125, in safe_load                  
+                                 return load(stream, SafeLoader)                
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^                
+                               File                                             
+                             "/usr/lib/python3/dist-packages/yaml/__i           
+                             nit__.py", line 81, in load                        
+                                 return loader.get_single_data()                
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^                
+                               File                                             
+                             "/usr/lib/python3/dist-packages/yaml/con           
+                             structor.py", line 49, in                          
+                             get_single_data                                    
+                                 node = self.get_single_node()                  
+                                        ^^^^^^^^^^^^^^^^^^^^^^                  
+                               File                                             
+                             "/usr/lib/python3/dist-packages/yaml/com           
+                             poser.py", line 41, in get_single_node             
+                                 raise ComposerError("expected a                
+                             single document in the stream",                    
+                             yaml.composer.ComposerError: expected a            
+                             single document in the stream                      
+                               in "<unicode string>", line 3, column            
+                             1:                                                 
+                                 - id: 2f34977d-9558-4c12-abad-34 ...           
+                                 ^                                              
+                             but found another document                         
+                               in "<unicode string>", line 182,                 
+                             column 1:                                          
+                                 ---                                            
+                                 ^                                              
+                                                                                
+                                                                                
+                    INFO     All systems ready.                    server.py:117
+
+ ██████╗ █████╗ ██╗     ██████╗ ███████╗██████╗  █████╗
+██╔════╝██╔══██╗██║     ██╔══██╗██╔════╝██╔══██╗██╔══██╗
+██║     ███████║██║     ██║  ██║█████╗  ██████╔╝███████║
+██║     ██╔══██║██║     ██║  ██║██╔══╝  ██╔══██╗██╔══██║
+╚██████╗██║  ██║███████╗██████╔╝███████╗██║  ██║██║  ██║
+ ╚═════╝╚═╝  ╚═╝╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
+

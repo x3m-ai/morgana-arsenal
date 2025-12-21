@@ -1,0 +1,17 @@
+---
+
+- id: a1b2c3d4-test-merlino-0001
+  name: Merlino - Test Agent
+  description: Test ability to collect system information and verify Merlino agent command execution
+  tactic: discovery
+  technique:
+    attack_id: T1082
+    name: System Information Discovery
+  platforms:
+    windows:
+      cmd:
+        command: |
+          systeminfo
+      psh:
+        command: |
+          Get-ComputerInfo | Select-Object CsName, OsName, OsArchitecture, WindowsVersion, CsDomain | Format-List

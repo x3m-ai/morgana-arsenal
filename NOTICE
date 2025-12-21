@@ -1,0 +1,23 @@
+Morgana Arsenal - Advanced C2 Framework
+Copyright 2025 Morgana
+
+Based on MITRE Caldera (https://github.com/mitre/caldera)
+Licensed under Apache License 2.0
+
+This product includes software developed by MITRE Corporation.
+Significant modifications and enhancements by Morgana for operational security.
+
+Key modifications:
+- Merlino C# Agent with AMSI/ETW bypass and Windows Defender evasion
+- Enhanced UI with professional tables, auto-refresh, and smart state tracking
+- Advanced search functionality across abilities, adversaries, and operations
+- TCodes field showing all TTPs for adversary profiles
+- Custom deployment workflows optimized for HTTPS/443
+- Improved operations tracking and visualization
+- Streamlined agent deployment with one-line commands
+
+For more information about the original Caldera project:
+https://github.com/mitre/caldera
+
+Morgana Arsenal modifications are proprietary and not to be redistributed
+without explicit permission from the author.

