@@ -41,6 +41,8 @@ class OperationApiManager(BaseApiManager):
         operation.set_start_details()
         operation.store(self._data_svc.ram)
         asyncio.get_event_loop().create_task(operation.run(self.services))
+        # Save state in background without blocking
+        asyncio.get_event_loop().create_task(self._data_svc.save_state())
         return operation
 
     async def find_and_update_object(self, ram_key: str, data: dict, search: dict = None):

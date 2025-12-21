@@ -2,5 +2,6 @@ name: 0 - Merlino - Test
 description: '---'
 atomic_ordering:
 - a1b2c3d4-test-merlino-0001
+- 6fe8f0c1c175fd3a5fb1d384114f5ecf
 adversary_id: d39c9b2e-44c3-4d4c-a9a4-33e6b9802499
 objective: 495a9828-cab1-44dd-a0ca-66e58177d8cc

@@ -27,12 +27,111 @@ let showFilters = ref(false);
 let showCreateAbilityModal = ref(false);
 
 const filteredAbilities = computed(() => {
-    return abilities.value.filter((ability) => (
-        ability.name.toLowerCase().includes(filters.searchQuery.toLowerCase()) &&
-        ability.tactic.toLowerCase().includes(filters.tactic.toLowerCase()) &&
-        ability.technique_id.toLowerCase().includes(filters.techniqueId.toLowerCase()) &&
-        ability.technique_name.toLowerCase().includes(filters.techniqueName.toLowerCase())
-    ));
+    return abilities.value.filter((ability) => {
+        try {
+            // Smart search: searches in all fields of the ability
+            const query = filters.searchQuery.toLowerCase().trim();
+            
+            if (query && query.length > 0) {
+                // Search in basic fields
+                const nameMatch = ability.name && ability.name.toLowerCase().includes(query);
+                const descMatch = ability.description && ability.description.toLowerCase().includes(query);
+                const idMatch = ability.ability_id && ability.ability_id.toLowerCase().includes(query);
+                const tacticMatch = ability.tactic && ability.tactic.toLowerCase().includes(query);
+                const techniqueNameMatch = ability.technique_name && ability.technique_name.toLowerCase().includes(query);
+                
+                // Technique ID search with smart matching (T1110 matches T1110.001, T1110.002, etc.)
+                const techniqueIdMatch = ability.technique_id && ability.technique_id.toLowerCase().startsWith(query.replace(/\./g, ''));
+                
+                // Search in executors (commands, parsers, etc.)
+                let executorMatch = false;
+                if (ability.executors && Array.isArray(ability.executors)) {
+                    for (const executor of ability.executors) {
+                        if (!executor) continue;
+                        
+                        // Search in command
+                        if (executor.command && typeof executor.command === 'string' && executor.command.toLowerCase().includes(query)) {
+                            executorMatch = true;
+                            break;
+                        }
+                        // Search in parser names
+                        if (executor.parsers && Array.isArray(executor.parsers)) {
+                            for (const parser of executor.parsers) {
+                                if (!parser) continue;
+                                if ((parser.module && parser.module.toLowerCase().includes(query)) || 
+                                    (parser.parserconfigs && Array.isArray(parser.parserconfigs) && 
+                                     parser.parserconfigs.some(pc => {
+                                         try {
+                                             return JSON.stringify(pc).toLowerCase().includes(query);
+                                         } catch {
+                                             return false;
+                                         }
+                                     }))) {
+                                    executorMatch = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (executorMatch) break;
+                        
+                        // Search in cleanup command
+                        if (executor.cleanup && typeof executor.cleanup === 'string' && executor.cleanup.toLowerCase().includes(query)) {
+                            executorMatch = true;
+                            break;
+                        }
+                        // Search in platform and executor name
+                        if ((executor.platform && executor.platform.toLowerCase().includes(query)) || 
+                            (executor.name && executor.name.toLowerCase().includes(query))) {
+                            executorMatch = true;
+                            break;
+                        }
+                    }
+                }
+                
+                // Search in requirements
+                let requirementMatch = false;
+                if (ability.requirements && Array.isArray(ability.requirements)) {
+                    for (const req of ability.requirements) {
+                        if (!req) continue;
+                        try {
+                            if (JSON.stringify(req).toLowerCase().includes(query)) {
+                                requirementMatch = true;
+                                break;
+                            }
+                        } catch {
+                            // Skip if JSON.stringify fails
+                        }
+                    }
+                }
+                
+                // Search in singleton and repeatable
+                const singletonMatch = ability.singleton !== undefined && ability.singleton.toString().toLowerCase().includes(query);
+                const repeatableMatch = ability.repeatable !== undefined && ability.repeatable.toString().toLowerCase().includes(query);
+                
+                // Search in privilege
+                const privilegeMatch = ability.privilege && ability.privilege.toLowerCase().includes(query);
+                
+                // Search in plugin
+                const pluginMatch = ability.plugin && ability.plugin.toLowerCase().includes(query);
+                
+                // If none of the fields match, filter it out
+                if (!nameMatch && !descMatch && !idMatch && !tacticMatch && 
+                    !techniqueNameMatch && !techniqueIdMatch && !executorMatch && 
+                    !requirementMatch && !singletonMatch && !repeatableMatch && 
+                    !privilegeMatch && !pluginMatch) {
+                    return false;
+                }
+            }
+            
+            // Apply other filters
+            return (!filters.tactic || ability.tactic.toLowerCase().includes(filters.tactic.toLowerCase()))
+                && (!filters.techniqueId || ability.technique_id.toLowerCase().includes(filters.techniqueId.toLowerCase()))
+                && (!filters.techniqueName || ability.technique_name.toLowerCase().includes(filters.techniqueName.toLowerCase()));
+        } catch (error) {
+            console.error('Error filtering ability:', error);
+            return true; // In case of error, don't filter out the ability
+        }
+    });
 });
 
 const hasFiltersApplied = computed(() => {

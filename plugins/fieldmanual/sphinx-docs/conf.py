@@ -62,7 +62,7 @@ lexers['caldera'] = CalderaCommandLexer()
 # -- Options for HTML output -------------------------------------------------
 
 html_theme = 'sphinx_rtd_theme'
-html_logo = 'img/caldera-logo.png'
+html_logo = 'img/morgana-arsenal-logo.png'
 html_theme_options = {
     'logo_only': True,
 }

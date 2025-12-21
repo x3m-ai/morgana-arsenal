@@ -50,6 +50,26 @@ let showPotentialLinkModal = ref(false);
 let selectedOutputLink = ref(null);
 let operationSearchQuery = ref("");
 
+// Compute TCodes (all technique IDs) for each operation from its links
+const operationsWithTCodes = computed(() => {
+  const ops = Object.values(operationStore.operations);
+  return ops.map(operation => {
+    const tcodes = [];
+    if (operation.chain && Array.isArray(operation.chain)) {
+      for (const link of operation.chain) {
+        if (link.ability && link.ability.technique_id) {
+          tcodes.push(link.ability.technique_id);
+        }
+      }
+    }
+    return {
+      ...operation,
+      tcodes: tcodes.join(', '),
+      tcodesArray: tcodes
+    };
+  });
+});
+
 // START SORTING AND FILTERING
 const tableFilter = reactive({
   sortBy: "",
@@ -354,13 +374,14 @@ hr.mt-2
                 th(style="color: white; min-width: 200px;") Adversary
                 th(style="color: white; min-width: 100px; text-align: center;") Agents
                 th(style="color: white; min-width: 100px; text-align: center;") Links
+                th(style="color: white; min-width: 250px;") TCodes
                 th(style="color: white; min-width: 150px;") Started
                 th(style="color: white; min-width: 180px;" class="has-text-centered") Actions
         tbody
             tr(v-if="Object.keys(operationStore.operations).length === 0")
-                td(colspan="7" class="has-text-centered has-text-grey-light is-italic") No operations yet. Create one to get started.
+                td(colspan="8" class="has-text-centered has-text-grey-light is-italic") No operations yet. Create one to get started.
             tr(
-                v-for="op in Object.values(operationStore.operations).filter(o => !operationSearchQuery || o.name.toLowerCase().includes(operationSearchQuery.toLowerCase()))" 
+                v-for="op in operationsWithTCodes.filter(o => !operationSearchQuery || o.name.toLowerCase().includes(operationSearchQuery.toLowerCase()))" 
                 :key="op.id"
                 :class="{ 'is-selected': operationStore.selectedOperationID === op.id }"
                 style="cursor: pointer;"
@@ -375,16 +396,17 @@ hr.mt-2
                     span.tag.is-info.is-light {{ op.host_group?.length || 0 }}
                 td
                     span.tag.is-link.is-light {{ op.chain?.length || 0 }}
+                td.is-size-7(style="font-family: monospace; color: #00d1b2;") {{ op.tcodes || 'No TTPs' }}
                 td.is-size-7 {{ getHumanFriendlyTimeISO8601(op.start) }}
                 td.has-text-centered
                     .buttons.is-centered
                         button.button.is-small.is-info(@click.stop="operationStore.selectedOperationID = op.id; selectOperation();" title="View Details")
                             span.icon.is-small
-                                font-awesome-icon(icon="fas fa-eye" style="color: white;")
-                        button.button.is-small.is-success(@click.stop="operationStore.selectedOperationID = op.id; modals.operations.showDownload = true" type="button" v-if="operationStore.selectedOperationID === op.id" title="Download Report")
+                                font-awesome-icon(icon="fas fa-search" style="color: white;")
+                        button.button.is-small.is-success(@click.stop="operationStore.selectedOperationID = op.id; modals.operations.showDownload = true" type="button" title="Download Report")
                             span.icon.is-small
                                 font-awesome-icon(icon="fas fa-download" style="color: white;")
-                        button.button.is-small.is-danger(@click.stop="operationStore.selectedOperationID = op.id; modals.operations.showDelete = true" type="button" v-if="operationStore.selectedOperationID === op.id" title="Delete Operation")
+                        button.button.is-small.is-danger(@click.stop="operationStore.selectedOperationID = op.id; modals.operations.showDelete = true" type="button" title="Delete Operation")
                             span.icon.is-small
                                 font-awesome-icon(icon="fas fa-trash" style="color: white;")
 hr.mt-2

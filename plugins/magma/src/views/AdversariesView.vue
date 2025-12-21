@@ -186,7 +186,7 @@ hr
                 td.has-text-centered
                     button.button.is-small.is-info(@click.stop="selectAdversary(adversary)" title="View details")
                         span.icon.is-small
-                            font-awesome-icon(icon="fas fa-eye" style="color: white;")
+                            font-awesome-icon(icon="fas fa-search" style="color: white;")
 hr
 
 //- Adversary details table

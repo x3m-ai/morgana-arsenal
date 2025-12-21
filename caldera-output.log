@@ -1,0 +1,1214 @@
+nohup: ignoring input
+2025-12-21 18:04:14 WARNING  --insecure flag set. Caldera will use server.py:243
+                             the default user accounts in                       
+                             default.yml config file.                           
+                    INFO     Using main config from                server.py:252
+                             conf/default.yml                                   
+                    DEBUG    Loaded 2 parsers                 learning_svc.py:20
+                    DEBUG    Nginx proxy already configured nginx_manager.py:345
+                             and running                                        
+                    DEBUG    Collision in ability name detected c_ability.py:103
+                             for                                                
+                             10a9d979-e342-418a-a9b0-002c483e0f                 
+                             a6 and                                             
+                             b1d41972-3ad9-4aa1-8f7f-05f049a298                 
+                             0e (Start 54ndc47). Modifying name                 
+                             of the second ability to Start                     
+                             54ndc47 (2)...                                     
+                    DEBUG    Collision in ability name detected c_ability.py:103
+                             for                                                
+                             1d3cb1429f530cb89f41c65e57f03db4                   
+                             and                                                
+                             2488245e-bcbd-405d-920e-2de27db882                 
+                             b3 (Query Registry). Modifying                     
+                             name of the second ability to                      
+                             Query Registry (2)...                              
+                    DEBUG    Collision in ability name detected c_ability.py:103
+                             for                                                
+                             68a0a328719faa26fff5b92e18108b3f                   
+                             and                                                
+                             26d3702887944abcc64b406baf8f8e43                   
+                             (Enumerate users and groups).                      
+                             Modifying name of the second                       
+                             ability to Enumerate users and                     
+                             groups (2)...                                      
+                    DEBUG    Collision in ability name detected c_ability.py:103
+                             for                                                
+                             b73d58b20bcb138a26175f240cca9de2                   
+                             and                                                
+                             dca8b042fcdffcc1f5cddcff4122c434                   
+                             (System Information Discovery).                    
+                             Modifying name of the second                       
+                             ability to System Information                      
+                             Discovery (2)...                                   
+                    DEBUG    Collision in ability name detected c_ability.py:103
+                             for                                                
+                             44705da4b28c8fa57fc2a2940b34565a                   
+                             and                                                
+                             dca8b042fcdffcc1f5cddcff4122c434                   
+                             (System Information Discovery).                    
+                             Modifying name of the second                       
+                             ability to System Information                      
+                             Discovery (2)...                                   
+                    DEBUG    Collision in ability name detected c_ability.py:103
+                             for                                                
+                             4370001012f5f0df001269627b4737e9                   
+                             and                                                
+                             942316dc6a362e44b248a872e5f42c92                   
+                             (System Owner/User Discovery).                     
+                             Modifying name of the second                       
+                             ability to System Owner/User                       
+                             Discovery (2)...                                   
+                    DEBUG    Collision in ability name detected c_ability.py:103
+                             for                                                
+                             5ac7f6ec1898d8d408f9cdc687262cc7                   
+                             and                                                
+                             7db784562afbea0265fcafc4243b66de                   
+                             (Exfiltration Over Alternative                     
+                             Protocol - SSH). Modifying name of                 
+                             the second ability to Exfiltration                 
+                             Over Alternative Protocol - SSH                    
+                             (2)...                                             
+                    DEBUG    Collision in ability name detected c_ability.py:103
+                             for                                                
+                             3838447b079b302fe75b700a70163815                   
+                             and                                                
+                             fcf71ee3-d1a9-4136-b919-9e5f6da436                 
+                             08 (Clear Logs). Modifying name of                 
+                             the second ability to Clear Logs                   
+                             (2)...                                             
+                    DEBUG    Collision in ability name detected c_ability.py:103
+                             for                                                
+                             f674301b84ea3344f119270bf7bb97cd                   
+                             and                                                
+                             4d4b29abb6b1e580e33c0035c1fc37ad                   
+                             (rm -rf). Modifying name of the                    
+                             second ability to rm -rf (2)...                    
+                    DEBUG    Collision in ability name detected c_ability.py:103
+                             for                                                
+                             9bd1997d793d0ac5b1aea4888c75c932                   
+                             and                                                
+                             3bfd3a51f3c7352d7c6c6c785d01e5f7                   
+                             (Loadable Kernel Module based                      
+                             Rootkit). Modifying name of the                    
+                             second ability to Loadable Kernel                  
+                             Module based Rootkit (2)...                        
+2025-12-21 18:04:15 DEBUG    Collision in ability name detected c_ability.py:103
+                             for                                                
+                             9bd17863cd45f82002a6f011de139363                   
+                             and                                                
+                             ab44803d5a9c299258efff185b0f70b5                   
+                             (rc.common). Modifying name of the                 
+                             second ability to rc.common (2)...                 
+                    DEBUG    Collision in ability name detected c_ability.py:103
+                             for                                                
+                             e0c75b4cc32124ef4c61508694fd0808                   
+                             and                                                
+                             c84a57391dbc724dc51436deb3e0ca00                   
+                             (Get-DomainUser with PowerView).                   
+                             Modifying name of the second                       
+                             ability to Get-DomainUser with                     
+                             PowerView (2)...                                   
+                    DEBUG    Collision in ability name detected c_ability.py:103
+                             for                                                
+                             52928f462ea8f5fa617aa8c815f5598b                   
+                             and                                                
+                             5e3512c73a461c17ddcb1cc0bbdbeef9                   
+                             (WinPwn - PowerSharpPack -                         
+                             Kerberoasting Using Rubeus).                       
+                             Modifying name of the second                       
+                             ability to WinPwn - PowerSharpPack                 
+                             - Kerberoasting Using Rubeus                       
+                             (2)...                                             
+                    DEBUG    Restored data from persistent       data_svc.py:116
+                             storage                                            
+                    DEBUG    There are 0 jobs in the scheduler   data_svc.py:117
+                    DEBUG    Restored data from        base_knowledge_svc.py:308
+                             persistent storage                                 
+                    DEBUG    Registered contact: gist          contact_svc.py:38
+                    DEBUG    Registered contact: html          contact_svc.py:38
+                    DEBUG    Registered contact: ftp           contact_svc.py:38
+                    DEBUG    Registered contact: slack         contact_svc.py:38
+                    DEBUG    Registered contact: tcp           contact_svc.py:38
+                    DEBUG    Registered contact: websocket     contact_svc.py:38
+                    DEBUG    Registered contact: http          contact_svc.py:38
+                    DEBUG    Registered contact: dns           contact_svc.py:38
+                    DEBUG    Registered contact: udp           contact_svc.py:38
+                    DEBUG    Registered contact tunnel:        contact_svc.py:53
+                             ssh_tunneling                                      
+                    INFO     Invalid Github Gist personal API contact_gist.py:70
+                             token provided. Gist C2 contact                    
+                             will not be started.                               
+                    INFO     Generating temporary SSH private   tunnel_ssh.py:26
+                             key. Was unable to use provided                    
+                             SSH private key                                    
+                    INFO     Enabled plugin: access               app_svc.py:131
+                    DEBUG    Loaded gocat extension module: slack sand_svc.py:94
+                    DEBUG    Loaded gocat extension module:       sand_svc.py:94
+                             dns_tunneling                                      
+                    DEBUG    Loaded gocat extension module:       sand_svc.py:94
+                             proxy_http                                         
+                    DEBUG    Loaded gocat extension module:       sand_svc.py:94
+                             shells                                             
+                    DEBUG    Loaded gocat extension module:       sand_svc.py:94
+                             native                                             
+                    DEBUG    Loaded gocat extension module:       sand_svc.py:94
+                             shellcode                                          
+                    DEBUG    Loaded gocat extension module: donut sand_svc.py:94
+                    DEBUG    Loaded gocat extension module:       sand_svc.py:94
+                             shared                                             
+                    INFO     Enabled plugin: merlino              app_svc.py:131
+                    INFO     Enabled plugin: compass              app_svc.py:131
+                    ERROR    Error importing plugin=builder, No   c_plugin.py:91
+                             module named 'docker'                              
+                    ERROR    Error loading plugin=builder,        c_plugin.py:59
+                             'NoneType' object has no attribute                 
+                             'description'                                      
+                    INFO     Enabled plugin: training             app_svc.py:131
+                    INFO     Enabled plugin: debrief              app_svc.py:131
+                    INFO     Enabled plugin: manx                 app_svc.py:131
+                    INFO     Enabled plugin: stockpile            app_svc.py:131
+                    INFO     Enabled plugin: atomic               app_svc.py:131
+                    INFO     Enabled plugin: fieldmanual          app_svc.py:131
+                    INFO     Enabled plugin: magma                app_svc.py:131
+                    DEBUG    Configuration (agents) update,     base_world.py:46
+                             setting                                            
+                             deployments=['356d1722-7784-40c4-8                 
+                             22b-0cf864b0b36d',                                 
+                             '1837b43e-4fff-46b2-a604-a602f7540                 
+                             469',                                              
+                             '2f34977d-9558-4c12-abad-349716777                 
+                             c6b',                                              
+                             'merlino-1234-5678-90ab-cdef-merli                 
+                             no1',                                              
+                             '0ab383be-b819-41bf-91b9-1bd4404d8                 
+                             3bf']                                              
+                    INFO     Enabled plugin: response             app_svc.py:131
+                    DEBUG    Loaded gocat extension module: slack sand_svc.py:94
+                    DEBUG    Loaded gocat extension module:       sand_svc.py:94
+                             dns_tunneling                                      
+                    DEBUG    Loaded gocat extension module:       sand_svc.py:94
+                             proxy_http                                         
+                    DEBUG    Loaded gocat extension module:       sand_svc.py:94
+                             shells                                             
+                    DEBUG    Loaded gocat extension module:       sand_svc.py:94
+                             native                                             
+                    DEBUG    Loaded gocat extension module:       sand_svc.py:94
+                             shellcode                                          
+                    DEBUG    Loaded gocat extension module: donut sand_svc.py:94
+                    DEBUG    Loaded gocat extension module:       sand_svc.py:94
+                             shared                                             
+                    INFO     Enabled plugin: sandcat              app_svc.py:131
+                    INFO     Creating SSH listener on 0.0.0.0,    logging.py:102
+                             port 8022                                          
+                    INFO     serving on 0.0.0.0:2222               server.py:741
+                    WARNING  Unable to properly load .donut for  data_svc.py:459
+                             payload                                            
+                             plugins.stockpile.app.donut.donut_h                
+                             andler due to failed import                        
+2025-12-21 18:04:19 WARNING  Ability referenced in adversary   c_adversary.py:90
+                             ef4d997c-a0d1-4067-9efa-87c58682d                  
+                             b71 but not found:                                 
+                             854e480af3b5e2946bb3ae44916e951a                   
+                    WARNING  Ability referenced in adversary   c_adversary.py:90
+                             ef4d997c-a0d1-4067-9efa-87c58682d                  
+                             b71 but not found:                                 
+                             23dafb943f2f1a3e21e8204826c7b271                   
+                    INFO     Docs built successfully.                 hook.py:60
+                    DEBUG    Using default login handler.        auth_svc.py:209
+                    DEBUG    Created authentication group: blue   auth_svc.py:72
+                    DEBUG    Created authentication group: red    auth_svc.py:72
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    > GET /system/ready HTTP/1.1          client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             AKquScLY4t1KeMyd+zFO4Q==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:19 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             wrm8aN5C/KUeX3SnQIzlZVaCeW0=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    INFO     All systems ready.                    server.py:128
+
+ ██████╗ █████╗ ██╗     ██████╗ ███████╗██████╗  █████╗
+██╔════╝██╔══██╗██║     ██╔══██╗██╔════╝██╔══██╗██╔══██╗
+██║     ███████║██║     ██║  ██║█████╗  ██████╔╝███████║
+██║     ██╔══██║██║     ██║  ██║██╔══╝  ██╔══██╗██╔══██║
+╚██████╗██║  ██║███████╗██████╔╝███████╗██║  ██║██║  ██║
+ ╚═════╝╚═╝  ╚═╝╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
+
+2025-12-21 18:04:21 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=40,                      
+                             instructions=NO                                    
+2025-12-21 18:04:29 DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    > GET /fact/added HTTP/1.1            client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             q1yJ8Dc8v8kXtTpzPLKsLQ==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    > GET /fact/added HTTP/1.1            client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             O3KjsiALWMnFiaQZLFdy+w==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    > GET /fact/added HTTP/1.1            client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             AAAAf8f9LldMw2wqDc7yLQ==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:29 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             4i4g5dfvWelFC0FDaMlh0b/mxGs=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:29 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             rwMFkPoyVtNKojBieii+LgbIG6k=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:29 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             HczqFLPQyCkbtwcaZD0RwxPaPlY=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    > GET /fact/added HTTP/1.1            client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             zkAUVU9ZD80UVKd36tzWDg==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    > GET /fact/added HTTP/1.1            client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             JyOThctze0dB96nBfd4b6A==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    > GET /fact/added HTTP/1.1            client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             EomFgiRYESz6iusesOXSOw==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:29 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             qxAwf9aVOMhcFzM7QvD1dFHk0Fg=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:29 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             CeBaQnThcKMD4ygAStxZ/uMynJs=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:29 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             MC5GHXgP3INvBT/qgNUjmPUXYYc=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    > GET /fact/added HTTP/1.1            client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             M6T+0cKNTLFPvmHRKX2N5g==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    > GET /fact/added HTTP/1.1            client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             Qu/wLzLm5/M6x7n3En7ctw==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    > GET /fact/added HTTP/1.1            client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             xKxLEBB4BKlbJbaIGAoOLA==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:29 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             f9i3cGQO3Db2G8pSzLANt+lB2vQ=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:29 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             7JO2PSmbEUTSBxSNavimk3/dTBk=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:29 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             xHUBBkzG0LpCtvlD6nB7+1uQ8+Y=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    > GET /fact/added HTTP/1.1            client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             UyDIj6VMNuPPSoHu2S7tCg==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    > GET /fact/added HTTP/1.1            client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             zminwLJsLu5A2jeyv419dQ==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    > GET /fact/added HTTP/1.1            client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             k5DFwCya3WSSYd31oUl37w==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:29 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             MeTf8CDuJ08IuVdS2/7SB1KL/fQ=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:29 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             QBhdA/MXOb2QXlx/MAhFiWOeuJw=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:29 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             eRXmJxnRIPzMgCJZgd8zOHZAy6s=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    > GET /planner/bucket_transition      client.py:292
+                             HTTP/1.1                                           
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             cLn1UYeRaR28Ks2W/XSAuQ==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    > GET /planner/bucket_transition      client.py:292
+                             HTTP/1.1                                           
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             YmS3YziA9AFzsx5LdpQUwg==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    > GET /planner/bucket_transition      client.py:292
+                             HTTP/1.1                                           
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             rL1kUGkjBtdiDe4/afjDmw==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:29 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             2qMAizq9YcoTjQJrguto0qaMlCI=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:29 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             PHAFRxwi2NvZrRPMFpzPB++x6VU=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:29 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             6OSdZYwSoBuuIgiJpqEkfYSmX+s=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    Generated 0 usable links        planning_svc.py:179
+                    DEBUG    Generated 0 usable links        planning_svc.py:179
+                    DEBUG    Generated 2 usable links        planning_svc.py:179
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    > GET /planner/bucket_transition      client.py:292
+                             HTTP/1.1                                           
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             0ioqBH5woKAm7z4JC471hw==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    > GET /planner/bucket_transition      client.py:292
+                             HTTP/1.1                                           
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             QHogGHmuQTl+LQMlJMHqLQ==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:29 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             Wb/I7ENiGwoBMvuqt7SzfSYrxu4=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:04:29 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             7YWIvz6qx9ZX9ErotsJ+0skaZ4k=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+2025-12-21 18:04:50 DEBUG    Using login handler "Default Login  auth_svc.py:101
+                             Handler" for login                                 
+                    DEBUG    admin logging in                    auth_svc.py:155
+2025-12-21 18:05:01 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 1                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             1 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=55,                      
+                             instructions=YES                                   
+2025-12-21 18:05:07 DEBUG    [BEACON] Received 492 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=?, host=?                     
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming http beacon  contact_svc.py:66
+                             from puqadh - 1 results attached                   
+                    DEBUG    [RESULT] Received result for link contact_svc.py:68
+                             543c316c-54db-4592-86af-cbd6d6eac                  
+                             4b8 from agent puqadh via contact                  
+                             http (status=0, pid=0)                             
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    > GET /link/completed HTTP/1.1        client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             NkDqv5QmNyrvyhse8vZlDQ==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    > GET /link/status_changed HTTP/1.1   client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             vNvxiNeszKGsCbgs82yWqw==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:05:07 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             4d7cwoMKcF2W9l6l7Hj/lh9GPhI=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:05:07 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             wwuzB5NjxjrX5a6tzwrdWOZlozM=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    [HEARTBEAT] Agent puqadh sent     contact_svc.py:76
+                             results, returning empty                           
+                             instructions                                       
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    Sending agent instructions to    contact_http.py:36
+                             switch from C2 channel http to                     
+                             HTTP                                               
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=53,                      
+                             instructions=NO                                    
+2025-12-21 18:05:09 DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    > GET /planner/bucket_transition      client.py:292
+                             HTTP/1.1                                           
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             +RnbZks03wGemvE3QD4Q9g==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:05:09 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             r4mVcazKmkWuWIJzbAnGoFf/iAg=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    Generated 1 usable links        planning_svc.py:179
+2025-12-21 18:06:02 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 1                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             1 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=46,                      
+                             instructions=YES                                   
+                    DEBUG    [BEACON] Received 1520 bytes     contact_http.py:23
+                             from 127.0.0.1                                     
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=?, host=?                     
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming http beacon  contact_svc.py:66
+                             from puqadh - 1 results attached                   
+                    DEBUG    [RESULT] Received result for link contact_svc.py:68
+                             1b4c0aa2-eb05-42ac-af70-068b949bb                  
+                             4a2 from agent puqadh via contact                  
+                             http (status=0, pid=0)                             
+                    WARNING  This ability failed for     atomic_powershell.py:12
+                             some reason. Manually                              
+                             updating the link to report                        
+                             a failed state.                                    
+                    DEBUG    link                                  c_link.py:205
+                             1b4c0aa2-eb05-42ac-af70-068b949bb4a2               
+                             (ability                                           
+                             id=6fe8f0c1c175fd3a5fb1d384114f5ecf)               
+                             encountered an error during                        
+                             execution, which was caught during                 
+                             parsing.                                           
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    > GET /link/completed HTTP/1.1        client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             2rLCJjRZKzk3gjWabQ04pQ==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    > GET /link/status_changed HTTP/1.1   client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             70A7MK7q20P3pyJh7EMdDA==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    > GET /link/status_changed HTTP/1.1   client.py:292
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             6wv2QQkHa3Ia2reKIktdtQ==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:06:02 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             S4fuNB+igfNqDdEAI/RRU7xrplk=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:06:02 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             5PU9JOZeNuicz97x0tY56jgOuh8=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:06:02 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             5SwALJdQDLuqrE8KLzf3NZ/dPRo=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    [HEARTBEAT] Agent puqadh sent     contact_svc.py:76
+                             results, returning empty                           
+                             instructions                                       
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    Sending agent instructions to    contact_http.py:36
+                             switch from C2 channel http to                     
+                             HTTP                                               
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=32,                      
+                             instructions=NO                                    
+2025-12-21 18:06:04 DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    > GET /planner/bucket_transition      client.py:292
+                             HTTP/1.1                                           
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             LpgwkaiHX42NJCQSMC7vLA==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:06:04 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             Xloh0/pkvIApJYVDY9wYns0jWeo=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+                    DEBUG    Generated 0 usable links        planning_svc.py:179
+                    DEBUG    = connection is CONNECTING          protocol.py:175
+                    DEBUG    > GET /planner/bucket_transition      client.py:292
+                             HTTP/1.1                                           
+                    DEBUG    > Host: 0.0.0.0:7012                  client.py:294
+                    DEBUG    > Upgrade: websocket                  client.py:294
+                    DEBUG    > Connection: Upgrade                 client.py:294
+                    DEBUG    > Sec-WebSocket-Key:                  client.py:294
+                             EfWCwb8A+O2VvRl0QvFpPQ==                           
+                    DEBUG    > Sec-WebSocket-Version: 13           client.py:294
+                    DEBUG    > Sec-WebSocket-Extensions:           client.py:294
+                             permessage-deflate;                                
+                             client_max_window_bits                             
+                    DEBUG    > User-Agent: Python/3.12             client.py:294
+                             websockets/15.0                                    
+                    DEBUG    < HTTP/1.1 101 Switching Protocols    client.py:318
+                    DEBUG    < Date: Sun, 21 Dec 2025 18:06:04 GMT client.py:320
+                    DEBUG    < Upgrade: websocket                  client.py:320
+                    DEBUG    < Connection: Upgrade                 client.py:320
+                    DEBUG    < Sec-WebSocket-Accept:               client.py:320
+                             d8HqXGt5j7Bvk9npL9piGwEe7Q4=                       
+                    DEBUG    < Sec-WebSocket-Extensions:           client.py:320
+                             permessage-deflate;                                
+                             server_max_window_bits=12;                         
+                             client_max_window_bits=12                          
+                    DEBUG    < Server: Python/3.12 websockets/15.0 client.py:320
+                    DEBUG    = connection is OPEN                protocol.py:175
+                    DEBUG    < CLOSE 1000 (OK) [2 bytes]         protocol.py:599
+                    DEBUG    > CLOSE 1000 (OK) [2 bytes]         protocol.py:745
+                    DEBUG    = connection is CLOSING             protocol.py:175
+                    DEBUG    < EOF                               protocol.py:649
+                    DEBUG    > EOF                               protocol.py:757
+                    DEBUG    = connection is CLOSED              protocol.py:175
+                    DEBUG    x half-closing TCP connection     connection.py:974
+2025-12-21 18:06:48 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=51,                      
+                             instructions=NO                                    
+2025-12-21 18:07:39 DEBUG    [BEACON] Received 428 bytes from contact_http.py:23
+                             127.0.0.1                                          
+                    DEBUG    [BEACON] Decoded profile:        contact_http.py:25
+                             paw=puqadh, platform=windows,                      
+                             host=WINDOWSPC01                                   
+                    DEBUG    [HEARTBEAT] Found existing agent  contact_svc.py:64
+                             puqadh                                             
+                    DEBUG    [HEARTBEAT] Incoming HTTP beacon  contact_svc.py:66
+                             from puqadh - 0 results attached                   
+                    DEBUG    [HEARTBEAT] Agent puqadh ready    contact_svc.py:79
+                             for instructions, returning 0                      
+                    DEBUG    [BEACON] Agent puqadh: returning contact_http.py:29
+                             0 instructions                                     
+                    DEBUG    [BEACON] Sending response to     contact_http.py:41
+                             puqadh: paw=puqadh, sleep=33,                      
+                             instructions=NO                                    

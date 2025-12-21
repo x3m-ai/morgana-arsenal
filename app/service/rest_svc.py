@@ -114,6 +114,8 @@ class RestService(RestServiceInterface, BaseService):
         for f in glob.glob('data/facts/*.yml'):
             if '%s' % data.get('id') in f:
                 os.remove(f)
+        # Save state after deleting operation
+        await self.get_service('data_svc').save_state()
         return 'Delete action completed'
 
     async def display_objects(self, object_name, data):
@@ -169,6 +171,8 @@ class RestService(RestServiceInterface, BaseService):
         operation.set_start_details()
         await self.get_service('data_svc').store(operation)
         self.loop.create_task(operation.run(self.get_services()))
+        # Save state in background without blocking
+        self.loop.create_task(self.get_service('data_svc').save_state())
         return [operation.display]
 
     async def create_schedule(self, access, data):
@@ -303,6 +307,8 @@ class RestService(RestServiceInterface, BaseService):
         if obfuscator:
             operation[0].obfuscator = obfuscator
             self.log.debug('Updated operation=%s obfuscator to %s' % (op_id, operation[0].obfuscator))
+        # Save state in background without blocking
+        self.loop.create_task(self.get_service('data_svc').save_state())
 
     async def get_agent_configuration(self, data):
         abilities = await self.get_service('data_svc').locate('abilities', data)
