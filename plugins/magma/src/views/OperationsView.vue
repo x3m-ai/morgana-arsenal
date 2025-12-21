@@ -511,8 +511,8 @@ hr.mt-2
                 th(style="color: white; min-width: 70px; text-align: center;") Agents
                 th(style="color: white; min-width: 70px; text-align: center;") Links
                 th(style="color: white; min-width: 200px;") TCodes
-                th(style="color: white; min-width: 200px;") Assigned Team
-                th(style="color: white; min-width: 120px;") Started
+                th(style="color: white; min-width: 280px;") Assigned Team
+                th(style="color: white; min-width: 120px; padding-left: 20px;") Started
                 th(style="color: white; min-width: 160px;" class="has-text-centered") Actions
         tbody
             tr(v-if="Object.keys(operationStore.operations).length === 0")
@@ -539,10 +539,8 @@ hr.mt-2
                         div(v-if="operationAssignments[op.id] && operationAssignments[op.id].length > 0" style="flex: 1;")
                             span.tag.is-info.is-light.mr-1(v-for="aka in operationAssignments[op.id]" :key="aka" style="margin-bottom: 2px;") {{ aka }}
                         span(v-else style="color: #999; font-style: italic;") No members
-                        button.button.is-small.is-primary.ml-2(@click="openAssignModal(op)" title="Assign members")
-                            span.icon
-                                font-awesome-icon(icon="fas fa-users")
-                td.is-size-7 {{ getHumanFriendlyTimeISO8601(op.start) }}
+                        button.button.is-small.is-primary(@click="openAssignModal(op)" title="Assign members") Assign
+                td.is-size-7(style="padding-left: 20px;") {{ getHumanFriendlyTimeISO8601(op.start) }}
                 td.has-text-centered
                     .buttons.is-centered
                         button.button.is-small.is-info(@click.stop="operationStore.selectedOperationID = op.id; selectOperation();" title="View Details")

@@ -37,8 +37,37 @@ onMounted(async () => {
 });
 
 function updateHacker(index) {
-    localStorage.setItem('redteam_hackers', JSON.stringify(hackers.value));
     const hacker = hackers.value[index];
+    
+    // If status is not "On Assignment", remove from all operations
+    if (hacker.status !== "On Assignment") {
+        const assignments = JSON.parse(localStorage.getItem('operation_assignments') || '{}');
+        let updated = false;
+        
+        // Remove this member from all operations
+        for (const opId in assignments) {
+            if (Array.isArray(assignments[opId])) {
+                const originalLength = assignments[opId].length;
+                assignments[opId] = assignments[opId].filter(aka => aka !== hacker.aka);
+                
+                // If array is now empty, delete the key
+                if (assignments[opId].length === 0) {
+                    delete assignments[opId];
+                    updated = true;
+                } else if (assignments[opId].length !== originalLength) {
+                    updated = true;
+                }
+            }
+        }
+        
+        // Save updated assignments if changed
+        if (updated) {
+            localStorage.setItem('operation_assignments', JSON.stringify(assignments));
+            console.log(`Removed ${hacker.aka} from all operations due to status change to ${hacker.status}`);
+        }
+    }
+    
+    localStorage.setItem('redteam_hackers', JSON.stringify(hackers.value));
     console.log(`Updated ${hacker.name} (${hacker.aka})`);
 }
 
@@ -181,8 +210,8 @@ hr
                 td
                     .buttons.is-small
                         button.button.is-small.is-info(@click="viewDetails(hacker)" v-tooltip="'View details'")
-                            span.icon
-                                font-awesome-icon(icon="fas fa-eye")
+                            span.icon.is-small
+                                font-awesome-icon(icon="fas fa-search")
                         button.button.is-small.is-primary(@click="updateHacker(idx)" v-tooltip="'Save changes'")
                             span.icon
                                 font-awesome-icon(icon="fas fa-save")
