@@ -35,6 +35,8 @@ class OperationApi(BaseObjectApi):
         router.add_post('/operations/{id}/potential-links', self.create_potential_link)
         router.add_get('/operations/{id}/potential-links', self.get_potential_links)
         router.add_get('/operations/{id}/potential-links/{paw}', self.get_potential_links_by_paw)
+        router.add_get('/merlino/operations', self.merlino_get_operations)
+        router.add_post('/merlino/synchronize', self.merlino_synchronize)
 
     @aiohttp_apispec.docs(tags=['operations'],
                           summary='Retrieve operations',
@@ -380,3 +382,241 @@ class OperationApi(BaseObjectApi):
         if raw_body:
             output = json.loads(raw_body).get('enable_agent_output', False)
         return output
+
+    @aiohttp_apispec.docs(tags=['merlino'],
+                          summary='Retrieve all operations with detailed information',
+                          description='Custom Merlino API to retrieve all operations with full details including links, abilities, and execution information.')
+    @aiohttp_apispec.response_schema(OperationSchema(many=True, partial=True),
+                                     description='The response is a list of all operations with detailed information.')
+    async def merlino_get_operations(self, request: web.Request):
+        """Custom Merlino API to get all operations with detailed information in flat format."""
+        try:
+            operations = list(self._api_manager.find_objects(self.ram_key))
+            
+            result = []
+            for op in operations:
+                # Base operation data
+                base_data = {
+                    'name': op.name,
+                    'state': op.state,
+                    'adversary': op.adversary.name if op.adversary else 'N/A',
+                    'agents': len(op.agents) if hasattr(op, 'agents') and op.agents else 0,
+                    'tcodes': ', '.join([link.ability.technique_id for link in op.chain if link.ability and hasattr(link.ability, 'technique_id') and link.ability.technique_id]) if hasattr(op, 'chain') and op.chain else '',
+                    'description': getattr(op, 'description', ''),
+                    'assigned': '',  # Will be populated from localStorage on frontend
+                    'started': op.start.strftime('%Y-%m-%d %H:%M:%S') if hasattr(op, 'start') and op.start else ''
+                }
+                
+                # IDs to be added at the end
+                operation_id = op.id
+                adversary_id = op.adversary.adversary_id if op.adversary and hasattr(op.adversary, 'adversary_id') else 'N/A'
+                
+                # If operation has links, create a flat row for each link
+                if hasattr(op, 'chain') and op.chain:
+                    for link in op.chain:
+                        try:
+                            row = base_data.copy()
+                            row.update({
+                                'status': str(getattr(link, 'status', 'N/A')),
+                                'ability': link.ability.name if hasattr(link, 'ability') and link.ability else 'N/A',
+                                'tactic': link.ability.tactic if hasattr(link, 'ability') and link.ability and hasattr(link.ability, 'tactic') else 'N/A',
+                                'technique': link.ability.technique_id if hasattr(link, 'ability') and link.ability and hasattr(link.ability, 'technique_id') else 'N/A',
+                                'agent': str(getattr(link, 'paw', 'N/A')),
+                                'host': str(getattr(link, 'host', 'N/A')),
+                                'pid': str(getattr(link, 'pid', 'N/A')),
+                                'operation_id': operation_id,
+                                'adversary_id': adversary_id
+                            })
+                            result.append(row)
+                        except Exception as link_error:
+                            # Skip problematic links
+                            continue
+                else:
+                    # If no links, add operation with empty link fields
+                    row = base_data.copy()
+                    row.update({
+                        'status': 'N/A',
+                        'ability': 'N/A',
+                        'tactic': 'N/A',
+                        'technique': 'N/A',
+                        'agent': 'N/A',
+                        'host': 'N/A',
+                        'pid': 'N/A',
+                        'operation_id': operation_id,
+                        'adversary_id': adversary_id
+                    })
+                    result.append(row)
+            
+            return web.json_response(result)
+        except Exception as e:
+            import traceback
+            error_msg = f"Error in merlino_get_operations: {str(e)}\n{traceback.format_exc()}"
+            print(error_msg)
+            return web.json_response({'error': str(e)}, status=500)
+
+    async def merlino_synchronize(self, request: web.Request):
+        """
+        Merlino CTI Synchronization API
+        POST endpoint that receives operations data from Merlino Excel Add-in
+        Creates new adversaries and operations if operation_id/adversary_id are missing
+        Returns synchronized operations list in the same format as merlino_get_operations
+        """
+        try:
+            # Get incoming data from Merlino
+            data = await request.json()
+            
+            if not isinstance(data, list):
+                return web.json_response({'error': 'Expected list of operations'}, status=400)
+            
+            # Access services
+            data_svc = self._api_manager._data_svc
+            
+            # Process each operation from Merlino
+            for op_data in data:
+                operation_id = op_data.get('operation_id', '').strip()
+                adversary_id = op_data.get('adversary_id', '').strip()
+                
+                # If both IDs are missing/empty, create new adversary and operation
+                if not operation_id and not adversary_id:
+                    # Extract data from incoming operation
+                    adversary_name = op_data.get('adversary', 'New Adversary')
+                    description = op_data.get('description', '')
+                    tcodes = op_data.get('tcodes', '')
+                    operation_name = op_data.get('name', 'New Operation')
+                    
+                    # Parse technique codes (e.g., "T1082, T1027.013")
+                    technique_ids = [t.strip() for t in tcodes.split(',') if t.strip()]
+                    
+                    # Find abilities matching the technique IDs
+                    ability_ids = []
+                    for tech_id in technique_ids:
+                        matching_abilities = await data_svc.locate('abilities', match=dict(technique_id=tech_id))
+                        print(f"[SYNC DEBUG] Searching for technique_id={tech_id}, found {len(matching_abilities)} abilities")
+                        for ability in matching_abilities:
+                            if ability.ability_id not in ability_ids:
+                                ability_ids.append(ability.ability_id)
+                                print(f"[SYNC DEBUG] Added ability: {ability.name} ({ability.ability_id})")
+                    
+                    print(f"[SYNC DEBUG] Total abilities collected: {len(ability_ids)}")
+                    
+                    # Create Adversary
+                    from app.objects.c_adversary import Adversary
+                    new_adversary = Adversary(
+                        name=adversary_name,
+                        description=description,
+                        atomic_ordering=ability_ids,
+                        objective='495a9828-cab1-44dd-a0ca-66e58177d8cc'  # Default objective
+                    )
+                    
+                    # Store adversary
+                    stored_adversary = await data_svc.store(new_adversary)
+                    
+                    # Get default planner and source
+                    planners = await data_svc.locate('planners')
+                    default_planner = planners[0] if planners else None
+                    
+                    sources = await data_svc.locate('sources')
+                    default_source = sources[0] if sources else None
+                    
+                    if not default_planner or not default_source:
+                        print(f"Warning: Missing planner or source for operation {operation_name}")
+                        continue
+                    
+                    # Create Operation
+                    from app.objects.c_operation import Operation
+                    new_operation = Operation(
+                        name=operation_name,
+                        adversary=stored_adversary,
+                        planner=default_planner,
+                        source=default_source,
+                        state='paused',  # Pause on start
+                        autonomous=0,  # Require manual approval (0 = manual)
+                        group='',  # Empty string means "All groups"
+                        obfuscator='plain-text',
+                        jitter='2/8',
+                        visibility=50
+                    )
+                    
+                    # Add description to operation
+                    if description:
+                        new_operation.description = description
+                    
+                    # Store operation
+                    stored_operation = await data_svc.store(new_operation)
+                    
+                    print(f"Created new adversary '{adversary_name}' (ID: {stored_adversary.adversary_id}) and operation '{operation_name}' (ID: {stored_operation.id})")
+            
+            # Return all synchronized operations using the same format as merlino_get_operations
+            operations = list(self._api_manager.find_objects(self.ram_key))
+            result = []
+            
+            for op in operations:
+                operation_id = str(op.id) if hasattr(op, 'id') else 'N/A'
+                adversary_id = str(op.adversary.adversary_id) if hasattr(op, 'adversary') and op.adversary else 'N/A'
+                
+                # Extract TTP codes from adversary abilities
+                tcodes_list = []
+                if hasattr(op, 'adversary') and op.adversary and hasattr(op.adversary, 'atomic_ordering'):
+                    for ability_id in op.adversary.atomic_ordering:
+                        abilities = await data_svc.locate('abilities', match=dict(ability_id=ability_id))
+                        for ability in abilities:
+                            if hasattr(ability, 'technique_id') and ability.technique_id:
+                                if ability.technique_id not in tcodes_list:
+                                    tcodes_list.append(ability.technique_id)
+                
+                tcodes = ', '.join(tcodes_list) if tcodes_list else ''
+                
+                # Get team assignment from localStorage (not stored in Caldera)
+                assigned = ''
+                
+                base_data = {
+                    'name': str(getattr(op, 'name', 'N/A')),
+                    'state': str(getattr(op, 'state', 'N/A')),
+                    'adversary': op.adversary.name if hasattr(op, 'adversary') and op.adversary else 'N/A',
+                    'agents': len(op.agents) if hasattr(op, 'agents') else 0,
+                    'tcodes': tcodes,
+                    'description': str(getattr(op, 'description', '')),
+                    'assigned': assigned,
+                    'started': str(op.start.strftime('%Y-%m-%d %H:%M:%S')) if hasattr(op, 'start') and op.start else 'N/A'
+                }
+                
+                if hasattr(op, 'chain') and len(op.chain) > 0:
+                    for link in op.chain:
+                        try:
+                            row = base_data.copy()
+                            row.update({
+                                'status': str(getattr(link, 'status', 'N/A')),
+                                'ability': link.ability.name if hasattr(link, 'ability') and link.ability else 'N/A',
+                                'tactic': link.ability.tactic if hasattr(link, 'ability') and link.ability and hasattr(link.ability, 'tactic') else 'N/A',
+                                'technique': link.ability.technique_id if hasattr(link, 'ability') and link.ability and hasattr(link.ability, 'technique_id') else 'N/A',
+                                'agent': str(getattr(link, 'paw', 'N/A')),
+                                'host': str(getattr(link, 'host', 'N/A')),
+                                'pid': str(getattr(link, 'pid', 'N/A')),
+                                'operation_id': operation_id,
+                                'adversary_id': adversary_id
+                            })
+                            result.append(row)
+                        except Exception:
+                            continue
+                else:
+                    row = base_data.copy()
+                    row.update({
+                        'status': 'N/A',
+                        'ability': 'N/A',
+                        'tactic': 'N/A',
+                        'technique': 'N/A',
+                        'agent': 'N/A',
+                        'host': 'N/A',
+                        'pid': 'N/A',
+                        'operation_id': operation_id,
+                        'adversary_id': adversary_id
+                    })
+                    result.append(row)
+            
+            return web.json_response(result)
+            
+        except Exception as e:
+            import traceback
+            error_msg = f"Error in merlino_synchronize: {str(e)}\n{traceback.format_exc()}"
+            print(error_msg)
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)

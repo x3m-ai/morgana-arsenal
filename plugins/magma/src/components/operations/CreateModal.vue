@@ -1,5 +1,5 @@
 <script setup>
-import { ref, inject, onMounted } from "vue";
+import { ref, inject, onMounted, computed, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { toast } from 'bulma-toast';
 import { sanitizeInput, validateInput } from "@/utils/sanitize";
@@ -46,6 +46,24 @@ let validation = ref({
     name: "",
 });
 
+// Check for duplicate operation name
+const isDuplicateName = computed(() => {
+    if (!operationName.value) return false;
+    const currentName = operationName.value.trim().toLowerCase();
+    return Object.values(operationStore.operations).some(op => 
+        op.name.trim().toLowerCase() === currentName
+    );
+});
+
+// Watch for name changes to show validation
+watch(operationName, (newName) => {
+    if (newName && isDuplicateName.value) {
+        validation.value.name = "An operation with this name already exists";
+    } else if (!validation.value.name.includes("empty") && !validation.value.name.includes("invalid")) {
+        validation.value.name = "";
+    }
+});
+
 onMounted(async () => {
     await agentStore.getAgents($api);
     agentStore.updateAgentGroups();
@@ -79,6 +97,10 @@ async function createOperation() {
 
     if (!validateInput(operationName.value, "string")) {
         validation.value.name = "Name cannot be empty or invalid";
+        return;
+    }
+    if (isDuplicateName.value) {
+        validation.value.name = "An operation with this name already exists";
         return;
     }
     validation.value.name = "";
@@ -226,7 +248,7 @@ async function createOperation() {
                     input.input.is-small(v-model="maxJitter")
         footer.modal-card-foot.is-justify-content-right
             button.button(@click="modals.operations.showCreate = false") Cancel
-            button.button.is-primary(@click="createOperation()") Start 
+            button.button.is-primary(@click="createOperation()" :disabled="isDuplicateName") Start 
 </template>
 
 <style scoped>

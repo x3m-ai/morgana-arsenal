@@ -1,5 +1,5 @@
 <script setup>
-import { inject, ref, reactive, watch, onMounted } from "vue";
+import { inject, ref, reactive, watch, onMounted, computed } from "vue";
 import { storeToRefs } from "pinia";
 
 import { useAbilityStore } from "@/stores/abilityStore";
@@ -26,6 +26,25 @@ let validation = reactive({
   techniqueId: "",
   techniqueName: "",
   executors: "",
+});
+
+// Check for duplicate ability name
+const isDuplicateName = computed(() => {
+  if (!abilityToEdit.value?.name) return false;
+  const currentName = abilityToEdit.value.name.trim().toLowerCase();
+  return abilityStore.abilities.some(ability => 
+    ability.ability_id !== abilityToEdit.value.ability_id && 
+    ability.name.trim().toLowerCase() === currentName
+  );
+});
+
+// Watch for name changes to show validation
+watch(() => abilityToEdit.value?.name, (newName) => {
+  if (newName && isDuplicateName.value) {
+    validation.name = "An ability with this name already exists";
+  } else if (!validation.name.includes("empty")) {
+    validation.name = "";
+  }
 });
 
 onMounted(async () => {
@@ -65,6 +84,9 @@ function addExecutor() {
 
 function validateAndSave() {
   validation.name = abilityToEdit.value.name ? "" : "Name cannot be empty";
+  if (isDuplicateName.value) {
+    validation.name = "An ability with this name already exists";
+  }
   validation.tactic = abilityToEdit.value.tactic
     ? ""
     : "Tactic cannot be empty";
@@ -284,7 +306,7 @@ async function deleteAbility() {
                     span Delete
             .is-flex
                 button.button(@click="emit('close')") Cancel 
-                button.button.is-primary(@click="validateAndSave()")
+                button.button.is-primary(@click="validateAndSave()" :disabled="isDuplicateName")
                     span.icon
                         font-awesome-icon(icon="fas fa-save") 
                     span {{ props.creating ? "Create" : "Save" }} 

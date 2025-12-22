@@ -1,6 +1,6 @@
 <script setup>
 import { storeToRefs } from "pinia";
-import { ref, reactive, watch, inject } from "vue";
+import { ref, reactive, watch, inject, computed } from "vue";
 
 import { useAdversaryStore } from "@/stores/adversaryStore";
 import { useObjectiveStore } from "@/stores/objectiveStore";
@@ -23,6 +23,25 @@ const { modals } = storeToRefs(coreDisplayStore);
 let isEditingName = ref(false);
 let validation = reactive({
     name: ""
+});
+
+// Check for duplicate adversary name
+const isDuplicateName = computed(() => {
+    if (!selectedAdversary.value?.name) return false;
+    const currentName = selectedAdversary.value.name.trim().toLowerCase();
+    return adversaryStore.adversaries.some(adv => 
+        adv.adversary_id !== selectedAdversary.value.adversary_id && 
+        adv.name.trim().toLowerCase() === currentName
+    );
+});
+
+// Watch for name changes to show validation
+watch(() => selectedAdversary.value?.name, (newName) => {
+    if (newName && isDuplicateName.value) {
+        validation.name = "An adversary with this name already exists";
+    } else if (!validation.name.includes("blank")) {
+        validation.name = "";
+    }
 });
 
 // Ability dependencies
@@ -267,6 +286,11 @@ function validateAndSaveAdversary() {
         validation.name = "Name and description can't be blank";
         return;
     }
+    if (isDuplicateName.value) {
+        isEditingName.value = true;
+        validation.name = "An adversary with this name already exists";
+        return;
+    }
     adversaryStore.saveSelectedAdversary($api);
     validation.name = "";
     isEditingName.value = false;
@@ -357,7 +381,7 @@ form.mb-4(v-else)
         span.icon 
             font-awesome-icon(icon="fas fa-file-export") 
         span Export 
-    button.button.is-success.mr-2(@click="validateAndSaveAdversary()") 
+    button.button.is-success.mr-2(@click="validateAndSaveAdversary()" :disabled="isDuplicateName") 
         span.icon
             font-awesome-icon(icon="fas fa-save")
         span Save 
