@@ -26,6 +26,7 @@ import AddPotentialLinkModal from "@/components/operations/AddPotentialLinkModal
 import ManualCommand from "@/components/operations/ManualCommand.vue";
 import FiltersModal from "@/components/operations/FiltersModal.vue";
 import AssignMembersModal from "@/components/operations/AssignMembersModal.vue";
+import AdversaryDetailsModal from "@/components/operations/AdversaryDetailsModal.vue";
 import { useOperationStore } from "@/stores/operationStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useCoreDisplayStore } from "@/stores/coreDisplayStore";
@@ -55,6 +56,8 @@ const showAssignModal = ref(false);
 const selectedOperationForAssign = ref(null);
 const showUnassigned = ref(false);
 const showEmptyLinks = ref(false);
+const showAdversaryModal = ref(false);
+const selectedOperationForAdversary = ref(null);
 
 const operationAssignments = computed(() => {
   return JSON.parse(localStorage.getItem('operation_assignments') || '{}');
@@ -357,6 +360,11 @@ function openAssignModal(operation) {
   showAssignModal.value = true;
 }
 
+function openAdversaryModal(operation) {
+  selectedOperationForAdversary.value = operation;
+  showAdversaryModal.value = true;
+}
+
 function updateOperationAssignments(selectedAkas) {
   const assignments = JSON.parse(localStorage.getItem('operation_assignments') || '{}');
   
@@ -513,7 +521,7 @@ hr.mt-2
                 th(style="color: white; min-width: 200px;") TCodes
                 th(style="color: white; min-width: 280px;") Assigned Team
                 th(style="color: white; min-width: 120px; padding-left: 20px;") Started
-                th(style="color: white; min-width: 160px;" class="has-text-centered") Actions
+                th(style="color: white; min-width: 200px;" class="has-text-centered") Actions
         tbody
             tr(v-if="Object.keys(operationStore.operations).length === 0")
                 td(colspan="9" class="has-text-centered has-text-grey-light is-italic") No operations yet. Create one to get started.
@@ -543,6 +551,8 @@ hr.mt-2
                 td.is-size-7(style="padding-left: 20px;") {{ getHumanFriendlyTimeISO8601(op.start) }}
                 td.has-text-centered
                     .buttons.is-centered
+                        button.button.is-small.is-link(@click.stop="openAdversaryModal(op)" title="Show Adversary")
+                            span Adversary
                         button.button.is-small.is-info(@click.stop="operationStore.selectedOperationID = op.id; selectOperation();" title="View Details")
                             span.icon.is-small
                                 font-awesome-icon(icon="fas fa-search" style="color: white;")
@@ -741,6 +751,11 @@ AssignMembersModal(
     :members="redTeamMembers"
     @close="showAssignModal = false"
     @update="updateOperationAssignments")
+
+AdversaryDetailsModal(
+    v-if="showAdversaryModal && selectedOperationForAdversary"
+    :operation="selectedOperationForAdversary"
+    @close="showAdversaryModal = false; selectedOperationForAdversary = null")
 </template>
 
 <style>

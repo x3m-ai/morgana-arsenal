@@ -465,6 +465,11 @@ class OperationApi(BaseObjectApi):
             # Get incoming data from Merlino
             data = await request.json()
             
+            # Debug: log incoming payload
+            import json
+            print(f"[MERLINO SYNC] Received payload with {len(data) if isinstance(data, list) else 'N/A'} items")
+            print(f"[MERLINO SYNC] Payload content: {json.dumps(data, indent=2)}")
+            
             if not isinstance(data, list):
                 return web.json_response({'error': 'Expected list of operations'}, status=400)
             
@@ -478,11 +483,17 @@ class OperationApi(BaseObjectApi):
                 
                 # If both IDs are missing/empty, create new adversary and operation
                 if not operation_id and not adversary_id:
+                    # Validate required fields for new operation
+                    operation_name = op_data.get('name', '').strip()
+                    adversary_name = op_data.get('adversary', '').strip()
+                    tcodes = op_data.get('tcodes', '').strip()
+                    
+                    if not operation_name or not adversary_name or not tcodes:
+                        print(f"[MERLINO SYNC] Skipping operation creation - missing required fields: name='{operation_name}', adversary='{adversary_name}', tcodes='{tcodes}'")
+                        continue
+                    
                     # Extract data from incoming operation
-                    adversary_name = op_data.get('adversary', 'New Adversary')
                     description = op_data.get('description', '')
-                    tcodes = op_data.get('tcodes', '')
-                    operation_name = op_data.get('name', 'New Operation')
                     
                     # Parse technique codes (e.g., "T1082, T1027.013")
                     technique_ids = [t.strip() for t in tcodes.split(',') if t.strip()]
@@ -529,8 +540,8 @@ class OperationApi(BaseObjectApi):
                         adversary=stored_adversary,
                         planner=default_planner,
                         source=default_source,
-                        state='paused',  # Pause on start
-                        autonomous=0,  # Require manual approval (0 = manual)
+                        state='running',  # Start running immediately
+                        autonomous=1,  # Run automatically
                         group='',  # Empty string means "All groups"
                         obfuscator='plain-text',
                         jitter='2/8',
