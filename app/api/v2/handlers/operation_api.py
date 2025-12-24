@@ -12,6 +12,24 @@ from app.objects.c_operation import Operation, OperationSchema, OperationSchemaA
 from app.objects.secondclass.c_link import LinkSchema
 
 
+def decode_link_status(status_value):
+    """Decode numeric link status to text representation."""
+    status_map = {
+        -5: 'HIGH_VIZ',
+        -4: 'UNTRUSTED',
+        -3: 'EXECUTE',
+        -2: 'DISCARD',
+        -1: 'PAUSE',
+        0: 'SUCCESS',
+        1: 'ERROR',
+        124: 'TIMEOUT'
+    }
+    try:
+        return status_map.get(int(status_value), f'UNKNOWN({status_value})')
+    except (ValueError, TypeError):
+        return 'N/A'
+
+
 class OperationApi(BaseObjectApi):
     def __init__(self, services):
         super().__init__(description='operation', obj_class=Operation, schema=OperationSchema, ram_key='operations',
@@ -37,6 +55,12 @@ class OperationApi(BaseObjectApi):
         router.add_get('/operations/{id}/potential-links/{paw}', self.get_potential_links_by_paw)
         router.add_get('/merlino/operations', self.merlino_get_operations)
         router.add_post('/merlino/synchronize', self.merlino_synchronize)
+        router.add_get('/merlino/dashboard/metrics', self.merlino_dashboard_metrics)
+        router.add_get('/merlino/dashboard/abilities', self.merlino_dashboard_abilities)
+        router.add_get('/merlino/dashboard/operations-health', self.merlino_dashboard_operations_health)
+        router.add_get('/merlino/dashboard/errors', self.merlino_dashboard_errors)
+        router.add_get('/merlino/dashboard/realtime', self.merlino_dashboard_realtime)
+        router.add_get('/merlino/dashboard/force-graph', self.merlino_dashboard_force_graph)
 
     @aiohttp_apispec.docs(tags=['operations'],
                           summary='Retrieve operations',
@@ -397,12 +421,13 @@ class OperationApi(BaseObjectApi):
             for op in operations:
                 # Base operation data
                 base_data = {
-                    'name': op.name,
+                    'operation': op.name,
                     'state': op.state,
                     'adversary': op.adversary.name if op.adversary else 'N/A',
                     'agents': len(op.agents) if hasattr(op, 'agents') and op.agents else 0,
                     'tcodes': ', '.join([link.ability.technique_id for link in op.chain if link.ability and hasattr(link.ability, 'technique_id') and link.ability.technique_id]) if hasattr(op, 'chain') and op.chain else '',
                     'description': getattr(op, 'description', ''),
+                    'comments': getattr(op, 'comments', ''),
                     'assigned': '',  # Will be populated from localStorage on frontend
                     'started': op.start.strftime('%Y-%m-%d %H:%M:%S') if hasattr(op, 'start') and op.start else ''
                 }
@@ -417,7 +442,7 @@ class OperationApi(BaseObjectApi):
                         try:
                             row = base_data.copy()
                             row.update({
-                                'status': str(getattr(link, 'status', 'N/A')),
+                                'status': decode_link_status(getattr(link, 'status', 'N/A')),
                                 'ability': link.ability.name if hasattr(link, 'ability') and link.ability else 'N/A',
                                 'tactic': link.ability.tactic if hasattr(link, 'ability') and link.ability and hasattr(link.ability, 'tactic') else 'N/A',
                                 'technique': link.ability.technique_id if hasattr(link, 'ability') and link.ability and hasattr(link.ability, 'technique_id') else 'N/A',
@@ -480,88 +505,136 @@ class OperationApi(BaseObjectApi):
             for op_data in data:
                 operation_id = op_data.get('operation_id', '').strip()
                 adversary_id = op_data.get('adversary_id', '').strip()
+                operation_name = op_data.get('operation', '').strip()
+                adversary_name = op_data.get('adversary', '').strip()
+                tcodes = op_data.get('tcodes', '').strip()
                 
-                # If both IDs are missing/empty, create new adversary and operation
-                if not operation_id and not adversary_id:
-                    # Validate required fields for new operation
-                    operation_name = op_data.get('name', '').strip()
-                    adversary_name = op_data.get('adversary', '').strip()
-                    tcodes = op_data.get('tcodes', '').strip()
+                # Check if this is truly an existing operation by verifying the NAME matches
+                is_existing = False
+                if operation_id and operation_name:
+                    # Look up the operation by ID and check if the name matches
+                    existing_by_id = await data_svc.locate('operations', match=dict(id=operation_id))
+                    if existing_by_id and len(existing_by_id) > 0:
+                        existing_op = existing_by_id[0]
+                        if hasattr(existing_op, 'name') and existing_op.name == operation_name:
+                            is_existing = True
+                            print(f"[MERLINO SYNC] Skipping existing operation '{operation_name}' (ID: {operation_id})")
+                        else:
+                            print(f"[MERLINO SYNC] Name mismatch! ID {operation_id} has name '{existing_op.name}' but payload says '{operation_name}' - treating as NEW")
+                
+                if is_existing:
+                    continue
+                
+                # If no name, skip
+                if not operation_name or not adversary_name or not tcodes:
+                    print(f"[MERLINO SYNC] Skipping - missing required fields: operation='{operation_name}', adversary='{adversary_name}', tcodes='{tcodes}'")
+                    continue
+                
+                # Check if operation with this NAME already exists (by name, not ID)
+                existing_by_name = await data_svc.locate('operations', match=dict(name=operation_name))
+                
+                if existing_by_name and len(existing_by_name) > 0:
+                    print(f"[MERLINO SYNC] Operation '{operation_name}' already exists - skipping creation")
+                    continue
+                
+                # NEW OPERATION - Create it with adversary and abilities from tcodes
+                print(f"[MERLINO SYNC] Creating NEW operation '{operation_name}' with adversary '{adversary_name}'")
+                
+                # Extract data from incoming operation
+                description = op_data.get('description', '')
+                comments = op_data.get('comments', '')
+                
+                # Parse technique codes (e.g., "T1082, T1027.013") and maintain order
+                technique_ids = [t.strip() for t in tcodes.split(',') if t.strip()]
+                print(f"[MERLINO SYNC] TCodes to process (in order): {technique_ids}")
+                
+                # Find ALL abilities for each technique ID, maintaining order
+                ability_ids = []
+                for tech_id in technique_ids:
+                    matching_abilities = await data_svc.locate('abilities', match=dict(technique_id=tech_id))
+                    print(f"[MERLINO SYNC] TTP {tech_id}: found {len(matching_abilities)} abilities")
                     
-                    if not operation_name or not adversary_name or not tcodes:
-                        print(f"[MERLINO SYNC] Skipping operation creation - missing required fields: name='{operation_name}', adversary='{adversary_name}', tcodes='{tcodes}'")
-                        continue
-                    
-                    # Extract data from incoming operation
-                    description = op_data.get('description', '')
-                    
-                    # Parse technique codes (e.g., "T1082, T1027.013")
-                    technique_ids = [t.strip() for t in tcodes.split(',') if t.strip()]
-                    
-                    # Find abilities matching the technique IDs
-                    ability_ids = []
-                    for tech_id in technique_ids:
-                        matching_abilities = await data_svc.locate('abilities', match=dict(technique_id=tech_id))
-                        print(f"[SYNC DEBUG] Searching for technique_id={tech_id}, found {len(matching_abilities)} abilities")
-                        for ability in matching_abilities:
-                            if ability.ability_id not in ability_ids:
-                                ability_ids.append(ability.ability_id)
-                                print(f"[SYNC DEBUG] Added ability: {ability.name} ({ability.ability_id})")
-                    
-                    print(f"[SYNC DEBUG] Total abilities collected: {len(ability_ids)}")
-                    
-                    # Create Adversary
-                    from app.objects.c_adversary import Adversary
-                    new_adversary = Adversary(
-                        name=adversary_name,
-                        description=description,
-                        atomic_ordering=ability_ids,
-                        objective='495a9828-cab1-44dd-a0ca-66e58177d8cc'  # Default objective
-                    )
-                    
-                    # Store adversary
-                    stored_adversary = await data_svc.store(new_adversary)
-                    
-                    # Get default planner and source
-                    planners = await data_svc.locate('planners')
-                    default_planner = planners[0] if planners else None
-                    
-                    sources = await data_svc.locate('sources')
-                    default_source = sources[0] if sources else None
-                    
-                    if not default_planner or not default_source:
-                        print(f"Warning: Missing planner or source for operation {operation_name}")
-                        continue
-                    
-                    # Create Operation
-                    from app.objects.c_operation import Operation
-                    new_operation = Operation(
-                        name=operation_name,
-                        adversary=stored_adversary,
-                        planner=default_planner,
-                        source=default_source,
-                        state='running',  # Start running immediately
-                        autonomous=1,  # Run automatically
-                        group='',  # Empty string means "All groups"
-                        obfuscator='plain-text',
-                        jitter='2/8',
-                        visibility=50
-                    )
-                    
-                    # Add description to operation
-                    if description:
-                        new_operation.description = description
-                    
-                    # Store operation
-                    stored_operation = await data_svc.store(new_operation)
-                    
-                    print(f"Created new adversary '{adversary_name}' (ID: {stored_adversary.adversary_id}) and operation '{operation_name}' (ID: {stored_operation.id})")
+                    for ability in matching_abilities:
+                        if ability.ability_id not in ability_ids:
+                            ability_ids.append(ability.ability_id)
+                            print(f"[MERLINO SYNC]   - Added ability: {ability.name} ({ability.ability_id})")
+                
+                print(f"[MERLINO SYNC] Total abilities for adversary: {len(ability_ids)}")
+                
+                if not ability_ids:
+                    print(f"[MERLINO SYNC] ERROR: No abilities found for tcodes '{tcodes}' - cannot create operation")
+                    continue
+                
+                # Create Adversary
+                from app.objects.c_adversary import Adversary
+                new_adversary = Adversary(
+                    name=adversary_name,
+                    description=description,
+                    atomic_ordering=ability_ids,
+                    objective='495a9828-cab1-44dd-a0ca-66e58177d8cc'  # Default objective
+                )
+                
+                # Store adversary
+                stored_adversary = await data_svc.store(new_adversary)
+                print(f"[MERLINO SYNC] Created adversary '{adversary_name}' (ID: {stored_adversary.adversary_id})")
+                
+                # Get default planner and source
+                planners = await data_svc.locate('planners')
+                default_planner = planners[0] if planners else None
+                
+                sources = await data_svc.locate('sources')
+                default_source = sources[0] if sources else None
+                
+                if not default_planner or not default_source:
+                    print(f"[MERLINO SYNC] ERROR: Missing planner or source for operation {operation_name}")
+                    continue
+                
+                # Create Operation (PAUSED - must be started manually)
+                from app.objects.c_operation import Operation
+                new_operation = Operation(
+                    name=operation_name,
+                    adversary=stored_adversary,
+                    planner=default_planner,
+                    source=default_source,
+                    state='paused',  # Start PAUSED - must be started manually
+                    autonomous=1,  # Run automatically when started
+                    group='',  # Empty string means "All groups"
+                    obfuscator='plain-text',
+                    jitter='2/8',
+                    visibility=50,
+                    comments=comments
+                )
+                
+                # Add description to operation
+                if description:
+                    new_operation.description = description
+                
+                # Store operation
+                stored_operation = await data_svc.store(new_operation)
+                
+                print(f"[MERLINO SYNC] Created operation '{operation_name}' (ID: {stored_operation.id})")
             
             # Return all synchronized operations using the same format as merlino_get_operations
             operations = list(self._api_manager.find_objects(self.ram_key))
+            print(f"[MERLINO SYNC] Found {len(operations)} operations in database")
             result = []
             
             for op in operations:
+                print(f"[MERLINO SYNC] Processing operation: {op.name if hasattr(op, 'name') else 'NO NAME'}")
+                
+                # Force reload operation to get ALL links (op.chain may be filtered)
+                if hasattr(op, 'id'):
+                    full_op_list = await data_svc.locate('operations', match=dict(id=op.id))
+                    if full_op_list and len(full_op_list) > 0:
+                        full_op = full_op_list[0]
+                        full_chain = full_op.chain if hasattr(full_op, 'chain') else []
+                        print(f"[MERLINO SYNC] Reloaded operation from data_svc - full chain has {len(full_chain)} links")
+                    else:
+                        full_chain = op.chain if hasattr(op, 'chain') else []
+                        print(f"[MERLINO SYNC] Could not reload, using op.chain directly - {len(full_chain)} links")
+                else:
+                    full_chain = op.chain if hasattr(op, 'chain') else []
+                    print(f"[MERLINO SYNC] No operation ID, using op.chain directly - {len(full_chain)} links")
                 operation_id = str(op.id) if hasattr(op, 'id') else 'N/A'
                 adversary_id = str(op.adversary.adversary_id) if hasattr(op, 'adversary') and op.adversary else 'N/A'
                 
@@ -581,35 +654,66 @@ class OperationApi(BaseObjectApi):
                 assigned = ''
                 
                 base_data = {
-                    'name': str(getattr(op, 'name', 'N/A')),
+                    'operation': str(getattr(op, 'name', 'N/A')),
                     'state': str(getattr(op, 'state', 'N/A')),
                     'adversary': op.adversary.name if hasattr(op, 'adversary') and op.adversary else 'N/A',
                     'agents': len(op.agents) if hasattr(op, 'agents') else 0,
                     'tcodes': tcodes,
                     'description': str(getattr(op, 'description', '')),
+                    'comments': str(getattr(op, 'comments', '')),
                     'assigned': assigned,
                     'started': str(op.start.strftime('%Y-%m-%d %H:%M:%S')) if hasattr(op, 'start') and op.start else 'N/A'
                 }
                 
-                if hasattr(op, 'chain') and len(op.chain) > 0:
-                    for link in op.chain:
+                # Use full_chain instead of op.chain
+                print(f"[MERLINO SYNC] Operation has {len(full_chain)} links")
+                
+                if len(full_chain) > 0:
+                    print(f"[MERLINO SYNC] Processing {len(full_chain)} links...")
+                    for idx, link_data in enumerate(full_chain):
+                        print(f"[MERLINO SYNC] Processing link {idx+1}/{len(full_chain)}")
                         try:
+                            # Handle both dict (from API) and object (from chain)
+                            if isinstance(link_data, dict):
+                                ability_name = link_data.get('ability', {}).get('name', 'N/A') if isinstance(link_data.get('ability'), dict) else str(link_data.get('ability', 'N/A'))
+                                ability_tactic = link_data.get('ability', {}).get('tactic', 'N/A') if isinstance(link_data.get('ability'), dict) else 'N/A'
+                                ability_technique = link_data.get('ability', {}).get('technique_id', 'N/A') if isinstance(link_data.get('ability'), dict) else 'N/A'
+                                link_status = link_data.get('status', 'N/A')
+                                paw = link_data.get('paw', 'N/A')
+                                host = link_data.get('host', 'N/A')
+                                pid = str(link_data.get('pid', 'N/A'))
+                            else:
+                                ability_name = link_data.ability.name if hasattr(link_data, 'ability') and link_data.ability else 'N/A'
+                                ability_tactic = link_data.ability.tactic if hasattr(link_data, 'ability') and link_data.ability and hasattr(link_data.ability, 'tactic') else 'N/A'
+                                ability_technique = link_data.ability.technique_id if hasattr(link_data, 'ability') and link_data.ability and hasattr(link_data.ability, 'technique_id') else 'N/A'
+                                link_status = getattr(link_data, 'status', 'N/A')
+                                paw = getattr(link_data, 'paw', 'N/A')
+                                host = getattr(link_data, 'host', 'N/A')
+                                pid = str(getattr(link_data, 'pid', 'N/A'))
+                            
+                            print(f"[MERLINO SYNC] Link {idx+1} ability: {ability_name}")
+                            
                             row = base_data.copy()
                             row.update({
-                                'status': str(getattr(link, 'status', 'N/A')),
-                                'ability': link.ability.name if hasattr(link, 'ability') and link.ability else 'N/A',
-                                'tactic': link.ability.tactic if hasattr(link, 'ability') and link.ability and hasattr(link.ability, 'tactic') else 'N/A',
-                                'technique': link.ability.technique_id if hasattr(link, 'ability') and link.ability and hasattr(link.ability, 'technique_id') else 'N/A',
-                                'agent': str(getattr(link, 'paw', 'N/A')),
-                                'host': str(getattr(link, 'host', 'N/A')),
-                                'pid': str(getattr(link, 'pid', 'N/A')),
+                                'status': decode_link_status(link_status),
+                                'ability': ability_name,
+                                'tactic': ability_tactic,
+                                'technique': ability_technique,
+                                'agent': str(paw),
+                                'host': str(host),
+                                'pid': str(pid),
                                 'operation_id': operation_id,
                                 'adversary_id': adversary_id
                             })
                             result.append(row)
-                        except Exception:
+                            print(f"[MERLINO SYNC] Link {idx+1} added successfully")
+                        except Exception as e:
+                            print(f"[MERLINO SYNC] Error processing link {idx+1}: {e}")
+                            import traceback
+                            print(f"[MERLINO SYNC] Traceback: {traceback.format_exc()}")
                             continue
                 else:
+                    print(f"[MERLINO SYNC] No links, adding operation with N/A fields")
                     row = base_data.copy()
                     row.update({
                         'status': 'N/A',
@@ -624,7 +728,536 @@ class OperationApi(BaseObjectApi):
                     })
                     result.append(row)
             
+            print(f"[MERLINO SYNC] Returning {len(result)} rows")
+            if len(result) > 0:
+                print(f"[MERLINO SYNC] Response preview (first item): {result[0]}")
+            else:
+                print(f"[MERLINO SYNC] Response is EMPTY - no operations found")
             return web.json_response(result)
+        except Exception as e:
+            import traceback
+            error_msg = f"Error in merlino_synchronize: {str(e)}\n{traceback.format_exc()}"
+            print(error_msg)
+            return web.json_response({'error': str(e)}, status=500)
+
+    async def merlino_dashboard_metrics(self, request: web.Request):
+        """Merlino Dashboard - General Metrics"""
+        try:
+            operations = list(self._api_manager.find_objects('operations'))
+            agents = list(self._api_manager.find_objects('agents'))
+            
+            # Count operation states
+            running = sum(1 for op in operations if op.state == 'running')
+            done = sum(1 for op in operations if op.state == 'finished')
+            stopped = sum(1 for op in operations if op.state == 'paused')
+            
+            # Count total abilities and their status across all operations
+            total_abilities = 0
+            success_count = 0
+            error_count = 0
+            
+            for op in operations:
+                if hasattr(op, 'chain') and op.chain:
+                    for link in op.chain:
+                        total_abilities += 1
+                        status = getattr(link, 'status', -1)
+                        if status == 0:
+                            success_count += 1
+                        elif status in [1, 124]:
+                            error_count += 1
+            
+            # Calculate success rate
+            success_rate = (success_count / total_abilities * 100) if total_abilities > 0 else 0.0
+            
+            # Count agent platforms
+            platforms = {}
+            for agent in agents:
+                platform = getattr(agent, 'platform', 'unknown')
+                platforms[platform] = platforms.get(platform, 0) + 1
+            
+            result = {
+                'total_operations': len(operations),
+                'operations_running': running,
+                'operations_done': done,
+                'operations_stopped': stopped,
+                'total_abilities': total_abilities if total_abilities > 0 else None,
+                'abilities_success': success_count,
+                'abilities_errors': error_count,
+                'success_rate': round(success_rate, 2),
+                'success_rate_status': 'Excellent' if success_rate >= 80 else 'Good' if success_rate >= 60 else 'Needs Attention',
+                'active_agents': len(agents),
+                'agent_platforms': platforms
+            }
+            
+            return web.json_response(result)
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+
+    async def merlino_dashboard_abilities(self, request: web.Request):
+        """Merlino Dashboard - Ability Success Rate Analysis"""
+        try:
+            operations = list(self._api_manager.find_objects('operations'))
+            data_svc = self._api_manager._data_svc
+            
+            # Collect ability statistics
+            ability_stats = {}
+            
+            for op in operations:
+                if hasattr(op, 'chain') and op.chain:
+                    for link in op.chain:
+                        if not hasattr(link, 'ability') or not link.ability:
+                            continue
+                        
+                        ability_id = link.ability.ability_id
+                        status = getattr(link, 'status', -1)
+                        
+                        if ability_id not in ability_stats:
+                            ability_stats[ability_id] = {
+                                'ability_id': ability_id,
+                                'name': link.ability.name if hasattr(link.ability, 'name') else 'Unknown',
+                                'tactic': link.ability.tactic if hasattr(link.ability, 'tactic') else 'N/A',
+                                'technique_id': link.ability.technique_id if hasattr(link.ability, 'technique_id') else 'N/A',
+                                'executions': 0,
+                                'success': 0,
+                                'failed': 0,
+                                'timeout': 0,
+                                'pending': 0,
+                                'total_time': 0.0,
+                                'operations': set()
+                            }
+                        
+                        ability_stats[ability_id]['executions'] += 1
+                        ability_stats[ability_id]['operations'].add(op.id)
+                        
+                        if status == 0:
+                            ability_stats[ability_id]['success'] += 1
+                        elif status == 1:
+                            ability_stats[ability_id]['failed'] += 1
+                        elif status == 124:
+                            ability_stats[ability_id]['timeout'] += 1
+                        else:
+                            ability_stats[ability_id]['pending'] += 1
+            
+            # Calculate success rates and categorize
+            top_performers = []
+            needs_attention = []
+            needs_improvement = []
+            
+            for ability_id, stats in ability_stats.items():
+                executions = stats['executions']
+                success_rate = (stats['success'] / executions * 100) if executions > 0 else 0.0
+                avg_time = stats['total_time'] / executions if executions > 0 else 0.0
+                
+                ability_data = {
+                    'ability_id': ability_id,
+                    'name': stats['name'],
+                    'tactic': stats['tactic'],
+                    'technique_id': stats['technique_id'],
+                    'executions': executions,
+                    'success_rate': round(success_rate, 2),
+                    'avg_time': round(avg_time, 2),
+                    'success': stats['success'],
+                    'failed': stats['failed'],
+                    'timeout': stats['timeout'],
+                    'pending': stats['pending'],
+                    'used_in_operations': len(stats['operations'])
+                }
+                
+                if success_rate >= 80:
+                    top_performers.append(ability_data)
+                elif success_rate >= 50:
+                    needs_attention.append(ability_data)
+                else:
+                    needs_improvement.append(ability_data)
+            
+            # Sort by success rate
+            top_performers.sort(key=lambda x: x['success_rate'], reverse=True)
+            needs_attention.sort(key=lambda x: x['success_rate'], reverse=True)
+            needs_improvement.sort(key=lambda x: x['success_rate'])
+            
+            result = {
+                'top_performers': top_performers,
+                'needs_attention': needs_attention,
+                'needs_improvement': needs_improvement,
+                'total_abilities_analyzed': len(ability_stats)
+            }
+            
+            return web.json_response(result)
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+
+    async def merlino_dashboard_operations_health(self, request: web.Request):
+        """Merlino Dashboard - Operations Health Matrix"""
+        try:
+            operations = list(self._api_manager.find_objects('operations'))
+            
+            health_matrix = []
+            
+            for op in operations:
+                total_abilities = 0
+                success = 0
+                errors = 0
+                agents_set = set()
+                
+                if hasattr(op, 'chain') and op.chain:
+                    for link in op.chain:
+                        total_abilities += 1
+                        status = getattr(link, 'status', -1)
+                        paw = getattr(link, 'paw', None)
+                        
+                        if paw:
+                            agents_set.add(paw)
+                        
+                        if status == 0:
+                            success += 1
+                        elif status in [1, 124]:
+                            errors += 1
+                
+                success_rate = (success / total_abilities * 100) if total_abilities > 0 else 0.0
+                
+                # Calculate health score (0-100)
+                if total_abilities == 0:
+                    health_score = 0
+                else:
+                    health_score = success_rate
+                
+                # Determine health status
+                if health_score >= 80:
+                    health_status = 'healthy'
+                elif health_score >= 50:
+                    health_status = 'warning'
+                else:
+                    health_status = 'critical'
+                
+                # Map Caldera states to display states
+                state_map = {
+                    'running': 'RUNNING',
+                    'paused': 'STOPPED',
+                    'finished': 'FINISHED'
+                }
+                
+                health_matrix.append({
+                    'operation_id': op.id,
+                    'operation_name': op.name,
+                    'status': state_map.get(op.state, op.state.upper()),
+                    'abilities': total_abilities,
+                    'success': success,
+                    'errors': errors,
+                    'success_rate': round(success_rate, 2),
+                    'agents': len(agents_set),
+                    'health': health_status,
+                    'health_score': round(health_score, 2),
+                    'adversary': op.adversary.name if hasattr(op, 'adversary') and op.adversary else 'N/A',
+                    'started': op.start.strftime('%Y-%m-%d %H:%M:%S') if hasattr(op, 'start') and op.start else None
+                })
+            
+            # Sort by health score (worst first)
+            health_matrix.sort(key=lambda x: x['health_score'])
+            
+            return web.json_response(health_matrix)
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+
+    async def merlino_dashboard_errors(self, request: web.Request):
+        """Merlino Dashboard - Error Analytics & Troubleshooting"""
+        try:
+            operations = list(self._api_manager.find_objects('operations'))
+            
+            total_errors = 0
+            operations_with_errors = 0
+            error_messages = {}
+            operation_errors = []
+            
+            for op in operations:
+                op_error_count = 0
+                op_error_types = set()
+                
+                if hasattr(op, 'chain') and op.chain:
+                    for link in op.chain:
+                        status = getattr(link, 'status', -1)
+                        
+                        if status in [1, 124]:
+                            total_errors += 1
+                            op_error_count += 1
+                            
+                            # Get error output
+                            output = getattr(link, 'output', '')
+                            if output:
+                                try:
+                                    import base64
+                                    decoded = base64.b64decode(output).decode('utf-8', errors='ignore')
+                                    # Extract first line as error message
+                                    error_msg = decoded.split('\n')[0][:100]
+                                    error_messages[error_msg] = error_messages.get(error_msg, 0) + 1
+                                    op_error_types.add(error_msg)
+                                except:
+                                    pass
+                
+                if op_error_count > 0:
+                    operations_with_errors += 1
+                    
+                    # Determine criticality
+                    if hasattr(op, 'chain') and op.chain:
+                        error_rate = (op_error_count / len(op.chain) * 100)
+                        if error_rate >= 50:
+                            criticality = 'critical'
+                        elif error_rate >= 25:
+                            criticality = 'high'
+                        else:
+                            criticality = 'medium'
+                    else:
+                        criticality = 'low'
+                    
+                    operation_errors.append({
+                        'operation_id': op.id,
+                        'operation_name': op.name,
+                        'error_count': op_error_count,
+                        'error_types': len(op_error_types),
+                        'criticality': criticality
+                    })
+            
+            # Get top 5 most common error messages
+            top_errors = sorted(error_messages.items(), key=lambda x: x[1], reverse=True)[:5]
+            
+            # Sort operations by error count
+            operation_errors.sort(key=lambda x: x['error_count'], reverse=True)
+            
+            # Count critical operations
+            critical_ops = sum(1 for op in operation_errors if op['criticality'] == 'critical')
+            
+            # Calculate failure rate
+            total_links = sum(len(op.chain) if hasattr(op, 'chain') and op.chain else 0 for op in operations)
+            failure_rate = (total_errors / total_links * 100) if total_links > 0 else 0.0
+            
+            result = {
+                'total_errors': total_errors,
+                'operations_with_errors': operations_with_errors,
+                'critical_operations': critical_ops,
+                'unique_error_types': len(error_messages),
+                'failure_rate': round(failure_rate, 2),
+                'most_common_errors': [{'message': msg, 'count': count} for msg, count in top_errors],
+                'operations_ranked': operation_errors[:20]  # Top 20
+            }
+            
+            return web.json_response(result)
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+
+    async def merlino_dashboard_realtime(self, request: web.Request):
+        """Merlino Dashboard - Real-Time Operations Metrics"""
+        try:
+            from datetime import datetime, timedelta
+            operations = list(self._api_manager.find_objects('operations'))
+            
+            # Calculate execution velocity (abilities per minute in last 10 mins)
+            now = datetime.now()
+            ten_mins_ago = now - timedelta(minutes=10)
+            
+            recent_executions = 0
+            total_success = 0
+            total_executions = 0
+            
+            for op in operations:
+                if hasattr(op, 'chain') and op.chain:
+                    for link in op.chain:
+                        total_executions += 1
+                        status = getattr(link, 'status', -1)
+                        
+                        if status == 0:
+                            total_success += 1
+                        
+                        # Check if executed in last 10 mins
+                        if hasattr(link, 'finish') and link.finish:
+                            try:
+                                finish_time = datetime.fromisoformat(link.finish.replace('Z', '+00:00'))
+                                if finish_time >= ten_mins_ago:
+                                    recent_executions += 1
+                            except:
+                                pass
+            
+            execution_velocity = recent_executions / 10.0  # per minute
+            success_rate = (total_success / total_executions * 100) if total_executions > 0 else 0.0
+            
+            # Count active operations
+            running_ops = sum(1 for op in operations if op.state == 'running')
+            stopped_ops = sum(1 for op in operations if op.state == 'paused')
+            
+            # Recent activity (last 10 operations sorted by ID, not start time to avoid datetime issues)
+            recent_activity = []
+            for op in list(operations)[-10:]:
+                activity_msg = 'Operation started with undefined abilities'
+                
+                if hasattr(op, 'chain') and op.chain:
+                    activity_msg = f'Operation has {len(op.chain)} abilities'
+                
+                recent_activity.append({
+                    'operation_name': op.name,
+                    'message': activity_msg,
+                    'timestamp': op.start.strftime('%H:%M:%S') if hasattr(op, 'start') and op.start else 'N/A'
+                })
+            
+            # Overall health gauge (based on success rate)
+            health_percentage = success_rate
+            
+            result = {
+                'execution_velocity': round(execution_velocity, 2),
+                'success_rate': round(success_rate, 2),
+                'success_rate_trend': 'STABLE',  # Can be improved with historical data
+                'active_operations': {
+                    'running': running_ops,
+                    'stopped': stopped_ops
+                },
+                'total_abilities': total_executions if total_executions > 0 else None,
+                'abilities_ok': total_success,
+                'abilities_error': total_executions - total_success,
+                'health_percentage': round(health_percentage, 2),
+                'recent_activity': recent_activity
+            }
+            
+            return web.json_response(result)
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+
+    async def merlino_dashboard_force_graph(self, request: web.Request):
+        """Merlino Dashboard - Force Graph Data (Operations, Agents, TTPs)"""
+        try:
+            operations = list(self._api_manager.find_objects('operations'))
+            agents = list(self._api_manager.find_objects('agents'))
+            data_svc = self._api_manager._data_svc
+            
+            nodes = []
+            links = []
+            
+            # Add operation nodes
+            operation_ttps = {}
+            for op in operations:
+                # Get TTPs from adversary
+                ttps = []
+                if hasattr(op, 'adversary') and op.adversary and hasattr(op.adversary, 'atomic_ordering'):
+                    for ability_id in op.adversary.atomic_ordering:
+                        abilities = await data_svc.locate('abilities', match=dict(ability_id=ability_id))
+                        for ability in abilities:
+                            if hasattr(ability, 'technique_id') and ability.technique_id:
+                                ttps.append(ability.technique_id)
+                
+                operation_ttps[op.id] = ttps
+                
+                # Determine node size based on number of abilities
+                size = len(op.chain) if hasattr(op, 'chain') and op.chain else 5
+                
+                # Color based on state
+                color_map = {
+                    'running': '#3273dc',   # blue
+                    'paused': '#ffdd57',    # yellow
+                    'finished': '#48c774'   # green
+                }
+                
+                nodes.append({
+                    'id': f'op_{op.id}',
+                    'label': op.name[:30],
+                    'type': 'operation',
+                    'size': max(size, 5),
+                    'color': color_map.get(op.state, '#7957d5'),
+                    'state': op.state,
+                    'ttps': ttps,
+                    'metadata': {
+                        'full_name': op.name,
+                        'adversary': op.adversary.name if hasattr(op, 'adversary') and op.adversary else 'N/A',
+                        'abilities': len(op.chain) if hasattr(op, 'chain') and op.chain else 0
+                    }
+                })
+            
+            # Add agent nodes
+            agent_operations = {}
+            for agent in agents:
+                # Find operations this agent participated in
+                ops_involved = set()
+                
+                for op in operations:
+                    if hasattr(op, 'chain') and op.chain:
+                        for link in op.chain:
+                            if hasattr(link, 'paw') and link.paw == agent.paw:
+                                ops_involved.add(op.id)
+                
+                agent_operations[agent.paw] = ops_involved
+                
+                # Color based on platform
+                platform_colors = {
+                    'windows': '#f14668',   # red
+                    'linux': '#48c774',     # green
+                    'darwin': '#3273dc'     # blue
+                }
+                
+                nodes.append({
+                    'id': f'agent_{agent.paw}',
+                    'label': getattr(agent, 'host', agent.paw)[:20],
+                    'type': 'agent',
+                    'size': 8,
+                    'color': platform_colors.get(getattr(agent, 'platform', 'unknown'), '#7957d5'),
+                    'platform': getattr(agent, 'platform', 'unknown'),
+                    'metadata': {
+                        'paw': agent.paw,
+                        'host': getattr(agent, 'host', 'unknown'),
+                        'group': getattr(agent, 'group', 'unknown'),
+                        'operations': len(ops_involved)
+                    }
+                })
+            
+            # Create links between operations based on shared TTPs
+            op_ids = list(operation_ttps.keys())
+            for i, op_id1 in enumerate(op_ids):
+                for op_id2 in op_ids[i+1:]:
+                    ttps1 = set(operation_ttps[op_id1])
+                    ttps2 = set(operation_ttps[op_id2])
+                    
+                    shared_ttps = ttps1.intersection(ttps2)
+                    
+                    if len(shared_ttps) > 0:
+                        # Strength based on number of shared TTPs
+                        strength = len(shared_ttps)
+                        
+                        links.append({
+                            'source': f'op_{op_id1}',
+                            'target': f'op_{op_id2}',
+                            'value': strength,
+                            'type': 'shared_ttp',
+                            'label': f'{len(shared_ttps)} TTPs',
+                            'metadata': {
+                                'shared_ttps': list(shared_ttps)
+                            }
+                        })
+            
+            # Create links between agents and operations
+            for agent_paw, ops_involved in agent_operations.items():
+                for op_id in ops_involved:
+                    links.append({
+                        'source': f'agent_{agent_paw}',
+                        'target': f'op_{op_id}',
+                        'value': 1,
+                        'type': 'agent_operation',
+                        'label': 'executes'
+                    })
+            
+            result = {
+                'nodes': nodes,
+                'links': links,
+                'stats': {
+                    'total_nodes': len(nodes),
+                    'total_links': len(links),
+                    'operations': len([n for n in nodes if n['type'] == 'operation']),
+                    'agents': len([n for n in nodes if n['type'] == 'agent'])
+                }
+            }
+            
+            return web.json_response(result)
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
             
         except Exception as e:
             import traceback

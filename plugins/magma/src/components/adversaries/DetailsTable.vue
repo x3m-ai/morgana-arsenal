@@ -402,6 +402,7 @@ table.table.is-striped.is-fullwidth.is-narrow
             th Ordering 
             th Name 
             th Tactic
+            th Technique ID
             th Technique
             th Executors
             th Requires 
@@ -429,6 +430,9 @@ table.table.is-striped.is-fullwidth.is-narrow
             td {{ ability.ability_id ? ability.name : "Undefined Ability" }}
             td 
                 span(:style="`border-bottom: 2px ridge ${hashStringToColor(ability.tactic)}`") {{ ability.tactic }}
+            td
+                span.tag.is-link.is-light(v-if="ability.technique_id" style="font-family: monospace;") {{ ability.technique_id }}
+                span(v-else style="color: #999;") N/A
             td {{ ability.technique_name }}
             td 
                 span(v-for="platform in getExecutorDetail('platforms', ability)" v-tooltip="platform")

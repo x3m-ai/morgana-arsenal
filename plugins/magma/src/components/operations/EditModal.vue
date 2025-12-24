@@ -23,10 +23,16 @@ const sourceStore = useSourceStore();
 const { sources } = storeToRefs(sourceStore);
 
 const props = defineProps({
+    operation: {
+        type: Object,
+        required: true
+    },
     selectInterval: {
         type: Function,
     },
 });
+
+const emit = defineEmits(['close']);
 
 let operationName = ref("");
 let operationDescription = ref("");
@@ -39,7 +45,6 @@ let selectedPlanner = ref();
 let isAuto = ref(true);
 let isDefParser = ref(true);
 let isAutoClose = ref(false);
-let isPause = ref(false);
 let minJitter = ref(2);
 let maxJitter = ref(8);
 let visibility = ref(51);
@@ -47,12 +52,12 @@ let validation = ref({
     name: "",
 });
 
-// Check for duplicate operation name
+// Check for duplicate operation name (excluding current operation)
 const isDuplicateName = computed(() => {
     if (!operationName.value) return false;
     const currentName = operationName.value.trim().toLowerCase();
     return Object.values(operationStore.operations).some(op => 
-        op.name.trim().toLowerCase() === currentName
+        op.id !== props.operation.id && op.name.trim().toLowerCase() === currentName
     );
 });
 
@@ -65,6 +70,13 @@ watch(operationName, (newName) => {
     }
 });
 
+// Load operation data when modal opens
+watch(() => props.operation, (newOp) => {
+    if (newOp) {
+        loadOperationData();
+    }
+}, { immediate: true });
+
 onMounted(async () => {
     await agentStore.getAgents($api);
     agentStore.updateAgentGroups();
@@ -72,12 +84,58 @@ onMounted(async () => {
     await getSources();
     await coreStore.getObfuscators($api);
     await getPlanners();
+    loadOperationData();
 });
+
+function loadOperationData() {
+    if (!props.operation) return;
+    
+    operationName.value = props.operation.name || "";
+    operationDescription.value = props.operation.description || "";
+    operationComments.value = props.operation.comments || "";
+    selectedGroup.value = props.operation.group || "";
+    isAuto.value = props.operation.autonomous === 1 || props.operation.autonomous === true;
+    isDefParser.value = props.operation.use_learning_parsers !== false;
+    isAutoClose.value = props.operation.auto_close === true;
+    visibility.value = props.operation.visibility || 51;
+    
+    // Parse jitter
+    if (props.operation.jitter) {
+        const jitterParts = props.operation.jitter.split('/');
+        minJitter.value = parseInt(jitterParts[0]) || 2;
+        maxJitter.value = parseInt(jitterParts[1]) || 8;
+    }
+    
+    // Find adversary
+    if (props.operation.adversary) {
+        const adv = adversaryStore.adversaries.find(a => 
+            a.adversary_id === props.operation.adversary.adversary_id
+        );
+        selectedAdversary.value = adv || props.operation.adversary;
+    }
+    
+    // Find source
+    if (props.operation.source) {
+        const src = sources.value.find(s => s.id === props.operation.source.id);
+        selectedSource.value = src || props.operation.source;
+    }
+    
+    // Find planner
+    if (props.operation.planner) {
+        const plan = coreStore.planners.find(p => p.id === props.operation.planner.id);
+        selectedPlanner.value = plan || props.operation.planner;
+    }
+    
+    // Find obfuscator
+    if (props.operation.obfuscator) {
+        const obf = coreStore.obfuscators.find(o => o.name === props.operation.obfuscator);
+        selectedObfuscator.value = obf || { name: props.operation.obfuscator };
+    }
+}
 
 async function getSources() {
     try {
         await sourceStore.getSources($api);
-        selectedSource.value = sources.value.find(source => source.name === "basic");
     } catch(error) {
         console.error("Error getting sources", error);
     }
@@ -86,13 +144,12 @@ async function getSources() {
 async function getPlanners() {
     try {
         await coreStore.getPlanners($api);
-        selectedPlanner.value = coreStore.planners[0];
     } catch(error) {
         console.error("Error getting planners", error);
     }
 }
 
-async function createOperation() {
+async function updateOperation() {
     operationName.value = sanitizeInput(operationName.value);
     selectedGroup.value = sanitizeInput(selectedGroup.value);
 
@@ -105,18 +162,19 @@ async function createOperation() {
         return;
     }
     validation.value.name = "";
+    
     if(!selectedAdversary.value.adversary_id){
         selectedAdversary.value = {adversary_id: "ad-hoc"};
     }
-    const newOperation = {
+    
+    const updatedOperation = {
         name: operationName.value,
-        description: operationDescription.value || "No description provided",
+        description: operationDescription.value || "",
         comments: operationComments.value || "",
         autonomous: Number(isAuto.value),
         use_learning_parsers: isDefParser.value,
         auto_close: isAutoClose.value,
         jitter: `${minJitter.value}/${maxJitter.value}`,
-        state: isPause ? "running" : "paused",
         visibility: visibility.value,
         obfuscator: selectedObfuscator.value.name,
         source: { id: sanitizeInput(selectedSource.value.id) },
@@ -124,39 +182,54 @@ async function createOperation() {
         adversary: { adversary_id: sanitizeInput(selectedAdversary.value.adversary_id) },
         group: sanitizeInput(selectedGroup.value),
     };
+    
     try {
-        await operationStore.createOperation($api, newOperation);
-        props.selectInterval();
+        await $api.patch(`/api/v2/operations/${props.operation.id}`, updatedOperation);
+        
+        // Force refresh operations list
+        await operationStore.getOperations($api);
+        
         toast({
-            message: `Operation ${operationName.value} created`,
+            message: `Operation ${operationName.value} updated successfully`,
             type: 'is-success',
             dismissible: true,
             pauseOnHover: true,
             duration: 2000,
             position: "bottom-right",
         });
+        
+        // Close modal and refresh interval
+        closeModal();
     } catch(error) {
-        console.error("Error creating operation", error);
+        console.error("Error updating operation", error);
         toast({
-            message: `Error creating operation`,
+            message: `Error updating operation: ${error.message || 'Unknown error'}`,
             type: 'is-danger',
             dismissible: true,
             pauseOnHover: true,
-            duration: 2000,
+            duration: 3000,
             position: "bottom-right",
         });
     }
-    modals.value.operations.showCreate = false
+}
+
+async function closeModal() {
+    // Force refresh operations before closing
+    await operationStore.getOperations($api);
+    if (props.selectInterval) {
+        props.selectInterval();
+    }
+    emit('close');
 }
 
 </script>
 
 <template lang="pug">
-.modal(:class="{ 'is-active': modals.operations.showCreate }")
-    .modal-background(@click="modals.operations.showCreate = false")
+.modal.is-active
+    .modal-background(@click="closeModal()")
     .modal-card
         header.modal-card-head 
-            p.modal-card-title Start New Operation
+            p.modal-card-title Edit Operation: {{ operation.name }}
         .modal-card-body
             .field.is-horizontal
                 .field-label.is-normal 
@@ -168,12 +241,12 @@ async function createOperation() {
                 .field-label.is-normal 
                     label.label Description
                 .field-body 
-                    textarea.textarea(placeholder="Describe the purpose and scope of this operation. It's a best practice to document your operations." v-model="operationDescription" rows="3")
+                    textarea.textarea(placeholder="Describe the purpose and scope of this operation" v-model="operationDescription" rows="3")
             .field.is-horizontal
                 .field-label.is-normal 
                     label.label Comments
                 .field-body 
-                    textarea.textarea(placeholder="Add comments or notes about this operation" v-model="operationComments" rows="2")
+                    textarea.textarea(placeholder="Add comments or notes about this operation" v-model="operationComments" rows="3")
             .field.is-horizontal
                 .field-label.is-normal 
                     label.label Adversary
@@ -182,7 +255,7 @@ async function createOperation() {
                         .select
                             select(v-model="selectedAdversary")
                                 option(selected value="") No Adversary (manual)
-                                option(v-for="adversary in adversaryStore.adversaries" :key="adversary.id" :value="adversary") {{ `${adversary.name}` }}
+                                option(v-for="adversary in adversaryStore.adversaries" :key="adversary.adversary_id" :value="adversary") {{ `${adversary.name}` }}
             .field.is-horizontal
                 .field-label.is-normal 
                     label.label Fact Source
@@ -217,50 +290,42 @@ async function createOperation() {
                     label.label Autonomous
                 .field-body
                     .field.is-grouped
-                        input.is-checkradio(type="radio" id="auto" :checked="isAuto" @click="isAuto = true")
-                        label.label.ml-3.mt-1(for="auto") Run autonomously
-                        input.is-checkradio.ml-3(type="radio" id="manual" :checked="!isAuto" @click="isAuto = false")
-                        label.label.ml-3.mt-1(for="manual") Require manual approval
+                        input.is-checkradio(type="radio" id="auto-edit" :checked="isAuto" @click="isAuto = true")
+                        label.label.ml-3.mt-1(for="auto-edit") Run autonomously
+                        input.is-checkradio.ml-3(type="radio" id="manual-edit" :checked="!isAuto" @click="isAuto = false")
+                        label.label.ml-3.mt-1(for="manual-edit") Require manual approval
             .field.is-horizontal
                 .field-label
                     label.label Parser
                 .field-body
                     .field.is-grouped 
-                        input.is-checkradio(type="radio" id="defaultparser" :checked="isDefParser" @click="isDefParser = true")
-                        label.label.ml-3.mt-1(for="defaultparser") Use Default Parser
-                        input.is-checkradio.ml-3(type="radio" id="nondefaultparser" :checked="!isDefParser" @click="isDefParser = false")
-                        label.label.ml-3.mt-1(for="nondefaultparser") Don't use default learning parsers
+                        input.is-checkradio(type="radio" id="defaultparser-edit" :checked="isDefParser" @click="isDefParser = true")
+                        label.label.ml-3.mt-1(for="defaultparser-edit") Use Default Parser
+                        input.is-checkradio.ml-3(type="radio" id="nondefaultparser-edit" :checked="!isDefParser" @click="isDefParser = false")
+                        label.label.ml-3.mt-1(for="nondefaultparser-edit") Don't use default learning parsers
             .field.is-horizontal
                 .field-label 
                     label.label Auto Close
                 .field-body.is-grouped
-                    input.is-checkradio(type="radio" id="keepopen" :checked="!isAutoClose" @click="isAutoClose = false")
-                    label.label.ml-3.mt-1(for="keepopen") Keep open forever
-                    input.is-checkradio.ml-3(type="radio" id="autoclose" :checked="isAutoClose" @click="isAutoClose = true")
-                    label.label.ml-3.mt-1(for="autoclose") Auto close operation
+                    input.is-checkradio(type="radio" id="keepopen-edit" :checked="!isAutoClose" @click="isAutoClose = false")
+                    label.label.ml-3.mt-1(for="keepopen-edit") Keep open forever
+                    input.is-checkradio.ml-3(type="radio" id="autoclose-edit" :checked="isAutoClose" @click="isAutoClose = true")
+                    label.label.ml-3.mt-1(for="autoclose-edit") Auto close operation
             .field.is-horizontal 
-                .field-label 
-                    label.label Run State 
-                .field-body.is-grouped
-                    input.is-checkradio(type="radio" id="runimmediately" :checked="!isPause" @click="isPause = false")
-                    label.label.ml-3.mt-1(for="runimmediately") Run immediately
-                    input.is-checkradio.ml-3(type="radio" id="pausestart" :checked="isPause" @click="isPause = true")
-                    label.label.ml-3.mt-1(for="pausestart") Pause on start
-            .field.is-horizontal
                 .field-label 
                     label.label Jitter (sec/sec)
                 .field-body
-                    input.input.is-small(v-model="minJitter")
+                    input.input.is-small(v-model="minJitter" type="number")
                     span /
-                    input.input.is-small(v-model="maxJitter")
-        footer.modal-card-foot.is-justify-content-right
-            button.button(@click="modals.operations.showCreate = false") Cancel
-            button.button.is-primary(@click="createOperation()" :disabled="isDuplicateName") Start 
+                    input.input.is-small(v-model="maxJitter" type="number")
+        footer.modal-card-foot.is-justify-content-space-between
+            button.button(@click="closeModal()") Cancel
+            button.button.is-primary(@click="updateOperation()" :disabled="isDuplicateName") Update Operation
 </template>
 
 <style scoped>
 .modal {
-    z-index: 1000;
+    z-index: 1001;
 }
 
 .modal-card {

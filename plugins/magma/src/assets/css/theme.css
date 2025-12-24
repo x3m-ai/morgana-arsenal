@@ -1,0 +1,77 @@
+/**
+ * Morgana Arsenal Theme System
+ * 
+ * Defines CSS variables for consistent theming across the entire UI.
+ * These can be overridden dynamically via JavaScript for user customization.
+ */
+
+:root {
+  /* Primary Brand Colors */
+  --morgana-primary: #8B0000;        /* Dark Red - Main brand color */
+  --morgana-primary-light: #A52A2A;  /* Brown Red - Lighter variant */
+  --morgana-primary-dark: #660000;   /* Very Dark Red - Darker variant */
+  
+  /* Secondary Colors */
+  --morgana-secondary: #363636;      /* Dark Gray */
+  --morgana-secondary-light: #4a4a4a;
+  --morgana-secondary-dark: #1a1a1a;
+  
+  /* Accent Colors */
+  --morgana-accent-success: #48c774;  /* Green */
+  --morgana-accent-warning: #ffdd57;  /* Yellow */
+  --morgana-accent-danger: #f14668;   /* Red */
+  --morgana-accent-info: #3e8ed0;     /* Blue */
+  
+  /* Text Colors */
+  --morgana-text-primary: #f5f5f5;    /* Light text */
+  --morgana-text-secondary: #b5b5b5;  /* Gray text */
+  --morgana-text-dark: #363636;       /* Dark text */
+  
+  /* Background Colors */
+  --morgana-bg-dark: #2b2b2b;         /* Dark background */
+  --morgana-bg-darker: #1a1a1a;       /* Darker background */
+  --morgana-bg-light: #f5f5f5;        /* Light background */
+  
+  /* Border Colors */
+  --morgana-border: #4a4a4a;
+  --morgana-border-light: #666666;
+  
+  /* UI Element Colors */
+  --morgana-link: var(--morgana-primary);
+  --morgana-link-hover: var(--morgana-primary-light);
+  --morgana-button-primary: var(--morgana-primary);
+  --morgana-button-hover: var(--morgana-primary-light);
+  
+  /* Table Colors */
+  --morgana-table-header: var(--morgana-secondary-dark);
+  --morgana-table-row: var(--morgana-bg-dark);
+  --morgana-table-row-hover: #404040;
+  --morgana-table-border: var(--morgana-border);
+  
+  /* Modal Colors */
+  --morgana-modal-bg: var(--morgana-bg-dark);
+  --morgana-modal-header: var(--morgana-secondary);
+  
+  /* Sidebar Colors */
+  --morgana-sidebar-bg: var(--morgana-secondary);
+  --morgana-sidebar-item-hover: var(--morgana-secondary-light);
+  
+  /* Graph/Visualization Colors */
+  --morgana-graph-node: var(--morgana-primary);
+  --morgana-graph-edge: var(--morgana-border);
+  --morgana-graph-highlight: var(--morgana-primary-light);
+}
+
+/* Dark theme variant (can be toggled) */
+[data-theme="dark"] {
+  --morgana-primary: #8B0000;
+  --morgana-bg-dark: #1a1a1a;
+  --morgana-text-primary: #f5f5f5;
+}
+
+/* Light theme variant (future use) */
+[data-theme="light"] {
+  --morgana-primary: #8B0000;
+  --morgana-bg-dark: #ffffff;
+  --morgana-text-primary: #363636;
+}

@@ -29,9 +29,10 @@ JSON array of operation objects. Each operation object can have the following fi
   {
     "operation_id": "",           // String (UUID) - Leave empty to create new
     "adversary_id": "",           // String (UUID) - Leave empty to create new
-    "name": "Operation Name",     // String (required for new operations)
+    "operation": "Operation Name", // String (required for new operations)
     "adversary": "Adversary Name", // String (required for new adversaries)
     "description": "Description",  // String (optional)
+    "comments": "User comments",   // String (optional)
     "tcodes": "T1082, T1027.013", // String (comma-separated MITRE technique IDs)
     "assigned": "",               // String (team assignment - not used in creation)
     "state": "",                  // String (not used - server sets to 'running')
@@ -46,9 +47,10 @@ JSON array of operation objects. Each operation object can have the following fi
 |-------|------|----------|-------------|
 | `operation_id` | String | No | UUID of existing operation. Leave empty to create new |
 | `adversary_id` | String | No | UUID of existing adversary. Leave empty to create new |
-| `name` | String | Yes* | Operation name (*required if creating new) |
+| `operation` | String | Yes* | Operation name (*required if creating new) |
 | `adversary` | String | Yes* | Adversary name (*required if creating new) |
 | `description` | String | No | Operation/Adversary description |
+| `comments` | String | No | User comments for the operation |
 | `tcodes` | String | Yes* | Comma-separated MITRE ATT&CK technique IDs (*required for new adversary) |
 | `assigned` | String | No | Team assignment (stored in client, not server) |
 | `state` | String | No | Ignored - server always sets to 'running' |
@@ -79,7 +81,7 @@ JSON array of operation objects. Each operation object can have the following fi
   {
     "operation_id": "",
     "adversary_id": "",
-    "name": "Recon Mission Alpha",
+    "operation": "Recon Mission Alpha",
     "adversary": "APT-DEMO-01",
     "description": "Reconnaissance and discovery phase",
     "tcodes": "T1082, T1087.001, T1033"
@@ -104,14 +106,14 @@ JSON array of operation objects. Each operation object can have the following fi
   {
     "operation_id": "",
     "adversary_id": "",
-    "name": "Op Alpha",
+    "operation": "Op Alpha",
     "adversary": "Red Team A",
     "tcodes": "T1082, T1059.001"
   },
   {
     "operation_id": "",
     "adversary_id": "",
-    "name": "Op Beta",
+    "operation": "Op Beta",
     "adversary": "Red Team B",
     "tcodes": "T1027.013, T1218.011"
   }
@@ -133,12 +135,13 @@ Returns flat JSON array where **each row represents one link/ability execution**
 ```json
 [
   {
-    "name": "ops1",                                      // Operation name
+    "operation": "ops1",                                // Operation name
     "state": "running",                                  // Operation state
     "adversary": "0 - Merlino - Test",                  // Adversary name
     "agents": 1,                                        // Number of agents connected
     "tcodes": "T1082, T1027.013",                      // All technique IDs in adversary
     "description": "",                                   // Operation description
+    "comments": "",                                      // User comments
     "assigned": "",                                      // Team assignment (from localStorage)
     "started": "2025-12-22 14:50:46",                   // Operation start time
     "status": "0",                                      // Link status (0=success, 1=running, -1=failed)
@@ -152,7 +155,7 @@ Returns flat JSON array where **each row represents one link/ability execution**
     "adversary_id": "d39c9b2e-44c3-4d4c-a9a4-33e6b9802499"    // Adversary UUID
   },
   {
-    "name": "ops1",
+    "operation": "ops1",
     "state": "running",
     "adversary": "0 - Merlino - Test",
     "agents": 1,
@@ -177,12 +180,13 @@ Returns flat JSON array where **each row represents one link/ability execution**
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `name` | String | Operation name |
+| `operation` | String | Operation name |
 | `state` | String | Operation state: 'running', 'paused', 'finished' |
 | `adversary` | String | Adversary name |
 | `agents` | Number | Count of connected agents |
 | `tcodes` | String | Comma-separated list of all technique IDs in adversary |
 | `description` | String | Operation description |
+| `comments` | String | User comments for the operation |
 | `assigned` | String | Team assignment (client-side only) |
 | `started` | String | ISO timestamp of operation start |
 | `status` | String | Link execution status: '0' (success), '1' (running), '-1' (failed) |
@@ -269,9 +273,10 @@ curl -k -X POST "https://192.168.124.133/api/v2/merlino/synchronize" \
   -d '[{
     "operation_id": "",
     "adversary_id": "",
-    "name": "Test Operation",
+    "operation": "Test Operation",
     "adversary": "Test Adversary",
     "description": "Testing from Merlino",
+    "comments": "This is a test operation",
     "tcodes": "T1082, T1059.001"
   }]'
 ```

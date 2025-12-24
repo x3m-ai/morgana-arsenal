@@ -11,6 +11,7 @@ import router from "@/router.js";
 
 // Global styles
 import "floating-vue/dist/style.css";
+import "@/assets/css/theme.css";  // Morgana theme system
 
 const app = createApp(App);
 // Set default API url

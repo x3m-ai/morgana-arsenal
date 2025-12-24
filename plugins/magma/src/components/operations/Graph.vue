@@ -355,7 +355,7 @@ const getAgentTooltipContent = (agent) => {
   background-color: #383838;
   padding-top: 0.8rem;
   padding-bottom: 0.8rem;
-  border: 1px solid #8b00ff;
+  border: 1px solid var(--morgana-primary);
   border-bottom: 0px;
 }
 

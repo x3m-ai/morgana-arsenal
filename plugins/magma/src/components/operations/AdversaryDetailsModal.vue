@@ -61,9 +61,14 @@ async function loadAdversaryDetails() {
     // Load all abilities that are part of this adversary
     if (adversaryDetails.value.atomic_ordering && adversaryDetails.value.atomic_ordering.length > 0) {
       const abilitiesResponse = await $api.get('/api/v2/abilities');
-      abilities.value = abilitiesResponse.data.filter(ab => 
-        adversaryDetails.value.atomic_ordering.includes(ab.ability_id)
-      );
+      const allAbilities = abilitiesResponse.data;
+      
+      // Sort abilities according to atomic_ordering to preserve the original order
+      abilities.value = adversaryDetails.value.atomic_ordering
+        .map(abilityId => allAbilities.find(ab => ab.ability_id === abilityId))
+        .filter(ab => ab !== undefined);
+      
+      console.log('Abilities sorted by atomic_ordering:', abilities.value.map(a => a.name));
     }
     
   } catch (error) {
@@ -88,12 +93,16 @@ const groupedByTactic = computed(() => {
   return grouped;
 });
 
-const tacticOrder = ['reconnaissance', 'resource-development', 'initial-access', 'execution', 'persistence', 
-                     'privilege-escalation', 'defense-evasion', 'credential-access', 'discovery', 
-                     'lateral-movement', 'collection', 'command-and-control', 'exfiltration', 'impact', 'other'];
-
 const sortedTactics = computed(() => {
-  return tacticOrder.filter(tactic => groupedByTactic.value[tactic]);
+  // Preserve the order of tactics as they appear in the abilities array
+  const tacticsInOrder = [];
+  abilities.value.forEach(ability => {
+    const tactic = ability.tactic || 'other';
+    if (!tacticsInOrder.includes(tactic)) {
+      tacticsInOrder.push(tactic);
+    }
+  });
+  return tacticsInOrder;
 });
 
 function getTacticColor(tactic) {
@@ -213,34 +222,60 @@ function getTacticColor(tactic) {
 
 <style scoped>
 .modal-card-body {
-  background-color: #f5f5f5;
+  background-color: #2b2b2b;
+  color: #f5f5f5;
+}
+
+.modal-card-head {
+  background-color: #363636;
+  color: white;
+}
+
+.modal-card-foot {
+  background-color: #363636;
+  border-top: 1px solid #4a4a4a;
 }
 
 .table-container {
   border-radius: 6px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.table {
+  background-color: #363636;
 }
 
 .table thead th {
-  background-color: #363636;
+  background-color: #1a1a1a;
   color: white;
   border: none;
+  font-weight: 600;
 }
 
 .table tbody tr {
-  background-color: white;
+  background-color: #2b2b2b;
 }
 
 .table tbody tr:hover {
-  background-color: #e8f4f8;
+  background-color: #404040;
 }
 
 .table tbody td {
-  color: #363636;
+  color: #f5f5f5;
+  border-color: #4a4a4a;
 }
 
 .table tbody td strong {
-  color: #000;
+  color: #ffffff;
+}
+
+.table tbody td p {
+  color: #b5b5b5 !important;
+}
+
+.notification.is-info {
+  background-color: #2b5278;
+  color: #ffffff;
 }
 </style>

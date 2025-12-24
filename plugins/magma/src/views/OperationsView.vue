@@ -16,6 +16,7 @@ import Graph from "@/components/operations/Graph.vue";
 
 import OutputModal from "@/components/operations/OutputModal.vue";
 import CreateModal from "@/components/operations/CreateModal.vue";
+import EditModal from "@/components/operations/EditModal.vue";
 import DeleteModal from "@/components/operations/DeleteModal.vue";
 import DetailsModal from "@/components/operations/DetailsModal.vue";
 import DownloadModal from "@/components/operations/DownloadModal.vue";
@@ -58,6 +59,8 @@ const showUnassigned = ref(false);
 const showEmptyLinks = ref(false);
 const showAdversaryModal = ref(false);
 const selectedOperationForAdversary = ref(null);
+const showEditModal = ref(false);
+const selectedOperationForEdit = ref(null);
 
 const operationAssignments = computed(() => {
   return JSON.parse(localStorage.getItem('operation_assignments') || '{}');
@@ -365,6 +368,22 @@ function openAdversaryModal(operation) {
   showAdversaryModal.value = true;
 }
 
+function openEditModal(operation) {
+  selectedOperationForEdit.value = operation;
+  showEditModal.value = true;
+}
+
+async function updateOperationComments(operation) {
+  try {
+    await $api.patch(`/api/v2/operations/${operation.id}`, {
+      comments: operation.comments || ''
+    });
+    console.log('Updated comments for operation:', operation.name);
+  } catch (error) {
+    console.error('Error updating operation comments:', error);
+  }
+}
+
 function updateOperationAssignments(selectedAkas) {
   const assignments = JSON.parse(localStorage.getItem('operation_assignments') || '{}');
   
@@ -519,12 +538,13 @@ hr.mt-2
                 th(style="color: white; min-width: 70px; text-align: center;") Agents
                 th(style="color: white; min-width: 70px; text-align: center;") Links
                 th(style="color: white; min-width: 200px;") TCodes
+                th(style="color: white; min-width: 200px;") Comments
                 th(style="color: white; min-width: 280px;") Assigned Team
                 th(style="color: white; min-width: 120px; padding-left: 20px;") Started
                 th(style="color: white; min-width: 200px;" class="has-text-centered") Actions
         tbody
             tr(v-if="Object.keys(operationStore.operations).length === 0")
-                td(colspan="9" class="has-text-centered has-text-grey-light is-italic") No operations yet. Create one to get started.
+                td(colspan="10" class="has-text-centered has-text-grey-light is-italic") No operations yet. Create one to get started.
             tr(
                 v-for="op in operationsWithTCodes.filter(o => !operationSearchQuery || o.name.toLowerCase().includes(operationSearchQuery.toLowerCase()))" 
                 :key="op.id"
@@ -542,6 +562,7 @@ hr.mt-2
                 td
                     span.tag.is-link.is-light {{ op.chain?.length || 0 }}
                 td.is-size-7(style="font-family: monospace; color: #00d1b2;") {{ op.tcodes || 'No TTPs' }}
+                td.is-size-7(style="color: #555; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" :title="op.comments") {{ op.comments || '-' }}
                 td(@click.stop)
                     .is-flex.is-align-items-center.is-justify-content-space-between
                         div(v-if="operationAssignments[op.id] && operationAssignments[op.id].length > 0" style="flex: 1;")
@@ -551,6 +572,9 @@ hr.mt-2
                 td.is-size-7(style="padding-left: 20px;") {{ getHumanFriendlyTimeISO8601(op.start) }}
                 td.has-text-centered
                     .buttons.is-centered
+                        button.button.is-small.is-warning(@click.stop="openEditModal(op)" title="Edit Operation")
+                            span.icon.is-small
+                                font-awesome-icon(icon="pencil-alt" style="color: white;")
                         button.button.is-small.is-link(@click.stop="openAdversaryModal(op)" title="Show Adversary")
                             span Adversary
                         button.button.is-small.is-info(@click.stop="operationStore.selectedOperationID = op.id; selectOperation();" title="View Details")
@@ -734,6 +758,11 @@ table.table.is-fullwidth.is-narrow.is-striped.mb-8#link-table(v-if="operationSto
                 
 //- Modals
 CreateModal(:selectInterval="selectOperation")
+EditModal(
+    v-if="showEditModal && selectedOperationForEdit"
+    :operation="selectedOperationForEdit"
+    :selectInterval="selectOperation"
+    @close="showEditModal = false; selectedOperationForEdit = null")
 DeleteModal
 DetailsModal
 DownloadModal
@@ -825,7 +854,7 @@ a.icon {
 }
 
 .highlight-link {
-  border: 2px solid #8b00ff;
+  border: 2px solid #8B0000;
 }
 
 /* Ensure modals are always on top */
