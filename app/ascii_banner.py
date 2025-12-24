@@ -70,5 +70,5 @@ def print_rich_banner():
         rich_print(f"{_BANNER_SECTION_1}{_BANNER_SECTION_2}{BANNER_SECTION_3}")
     else:
         rich_print(
-            f"[blue]{_BANNER_SECTION_1}[/blue][purple]{_BANNER_SECTION_2}[/purple][red]{BANNER_SECTION_3}[/red]"
+            f"[cyan]{_BANNER_SECTION_1}[/cyan][magenta]{_BANNER_SECTION_2}[/magenta][red]{BANNER_SECTION_3}[/red]"
         )
