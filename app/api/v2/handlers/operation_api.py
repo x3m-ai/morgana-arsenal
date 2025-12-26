@@ -61,6 +61,13 @@ class OperationApi(BaseObjectApi):
         router.add_get('/merlino/dashboard/errors', self.merlino_dashboard_errors)
         router.add_get('/merlino/dashboard/realtime', self.merlino_dashboard_realtime)
         router.add_get('/merlino/dashboard/force-graph', self.merlino_dashboard_force_graph)
+        # New Merlino Ops Graph API
+        router.add_post('/merlino/ops-graph', self.merlino_ops_graph)
+        router.add_get('/merlino/ops-graph/problem-details', self.merlino_problem_details)
+        router.add_get('/merlino/ops-graph/operation-details', self.merlino_operation_details)
+        router.add_get('/merlino/ops-graph/agent-details', self.merlino_agent_details)
+        router.add_post('/merlino/ops-actions', self.merlino_ops_actions)
+        router.add_get('/merlino/ui-routes', self.merlino_ui_routes)
 
     @aiohttp_apispec.docs(tags=['operations'],
                           summary='Retrieve operations',
@@ -1258,6 +1265,905 @@ class OperationApi(BaseObjectApi):
         except Exception as e:
             import traceback
             return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+
+    # ========== NEW MERLINO OPS GRAPH API (2025-12-26) ==========
+
+    async def merlino_ops_graph(self, request: web.Request):
+        """
+        API 1 (CORE) — Ops Graph Aggregation
+        POST /api/v2/merlino/ops-graph
+        
+        Return operational force-graph dataset with nodes (operations, agents, problems)
+        and edges (agent-operation, operation-problem, agent-problem).
+        """
+        try:
+            import datetime
+            from collections import defaultdict
+            
+            # Parse request body
+            body = await request.json()
+            window_minutes = body.get('window_minutes', 60)
+            operation_ids_filter = body.get('operation_ids', [])
+            agent_paws_filter = body.get('agent_paws', [])
+            include_nodes = body.get('include_nodes', ['operation', 'agent', 'problem'])
+            include_edges = body.get('include_edges', ['agent_operation', 'operation_problem', 'agent_problem'])
+            limits = body.get('limits', {'max_nodes': 250, 'max_edges': 800})
+            thresholds = body.get('thresholds', {'min_edge_weight': 1})
+            grouping = body.get('grouping', 'tactic_technique')
+            
+            # Calculate time window
+            now = datetime.datetime.utcnow()
+            cutoff_time = now - datetime.timedelta(minutes=window_minutes)
+            
+            # Status normalization function
+            def normalize_status(status_value):
+                """Normalize link status to success|failed|running"""
+                try:
+                    status = int(status_value)
+                    if status == 0:
+                        return 'success'
+                    elif status in [1, 124]:  # 1=ERROR, 124=TIMEOUT
+                        return 'failed'
+                    elif status == -1:  # PAUSE
+                        return 'running'
+                    else:
+                        return 'running'  # Other statuses treated as running
+                except (ValueError, TypeError):
+                    return 'running'
+            
+            # Collect all events (links) from all operations
+            all_operations = list(self._api_manager.find_objects('operations'))
+            all_agents = list(self._api_manager.find_objects('agents'))
+            
+            # Build event list
+            events = []
+            for op in all_operations:
+                # Filter by operation_ids if specified
+                if operation_ids_filter and op.id not in operation_ids_filter:
+                    continue
+                
+                op_data = op.display
+                for link in op.chain:
+                    link_data = link.display
+                    
+                    # Parse timestamp
+                    try:
+                        link_ts = datetime.datetime.fromisoformat(link_data.get('finish', '').replace('Z', '+00:00'))
+                        if link_ts < cutoff_time:
+                            continue  # Outside time window
+                    except:
+                        continue  # Skip if no valid timestamp
+                    
+                    # Get ability details
+                    ability = link.ability
+                    if not ability:
+                        continue
+                    
+                    # Extract tactic and technique
+                    tactic = ability.tactic if hasattr(ability, 'tactic') else 'unknown'
+                    technique = 'unknown'
+                    if hasattr(ability, 'technique_id'):
+                        technique = ability.technique_id
+                    elif hasattr(ability, 'technique') and hasattr(ability.technique, 'attack_id'):
+                        technique = ability.technique['attack_id']
+                    
+                    # Normalize status
+                    status = normalize_status(link_data.get('status', -1))
+                    
+                    # Filter by agent if specified
+                    agent_paw = link_data.get('paw', '')
+                    if agent_paws_filter and agent_paw not in agent_paws_filter:
+                        continue
+                    
+                    # Create event
+                    event = {
+                        'ts': link_data.get('finish', ''),
+                        'operation_id': op.id,
+                        'operation': op_data.get('name', 'Unknown'),
+                        'agent': agent_paw,
+                        'host': link_data.get('host', ''),
+                        'ability': ability.name if hasattr(ability, 'name') else 'Unknown',
+                        'tactic': tactic,
+                        'technique': technique,
+                        'status': status
+                    }
+                    events.append(event)
+            
+            # Aggregate nodes and edges
+            operation_nodes = {}
+            agent_nodes = {}
+            problem_nodes = defaultdict(lambda: {'failed': 0, 'running': 0, 'success': 0})
+            
+            # Edges
+            agent_operation_edges = defaultdict(lambda: {'success': 0, 'failed': 0, 'running': 0})
+            operation_problem_edges = defaultdict(lambda: {'failed': 0, 'running': 0, 'success': 0})
+            agent_problem_edges = defaultdict(lambda: {'failed': 0, 'running': 0, 'success': 0})
+            
+            # Process events
+            for event in events:
+                op_id = event['operation_id']
+                agent_paw = event['agent']
+                status = event['status']
+                tactic = event['tactic']
+                technique = event['technique']
+                
+                # Problem ID based on grouping
+                if grouping == 'tactic_technique':
+                    problem_id = f"problem:{tactic}:{technique}"
+                else:
+                    problem_id = f"problem:{tactic}:{technique}"
+                
+                # Update operation node
+                if 'operation' in include_nodes:
+                    if op_id not in operation_nodes:
+                        op_obj = next((o for o in all_operations if o.id == op_id), None)
+                        if op_obj:
+                            operation_nodes[op_id] = {
+                                'id': op_id,
+                                'name': event['operation'],
+                                'state': op_obj.state,
+                                'started': op_obj.start.isoformat() if hasattr(op_obj, 'start') and op_obj.start else '',
+                                'last_activity': '',
+                                'counts': {'success': 0, 'failed': 0, 'running': 0},
+                                'agents_count': 0,
+                                'agents_set': set()
+                            }
+                    
+                    if op_id in operation_nodes:
+                        operation_nodes[op_id]['counts'][status] += 1
+                        operation_nodes[op_id]['agents_set'].add(agent_paw)
+                        # Update last_activity
+                        if not operation_nodes[op_id]['last_activity'] or event['ts'] > operation_nodes[op_id]['last_activity']:
+                            operation_nodes[op_id]['last_activity'] = event['ts']
+                
+                # Update agent node
+                if 'agent' in include_nodes:
+                    if agent_paw not in agent_nodes:
+                        agent_obj = next((a for a in all_agents if a.paw == agent_paw), None)
+                        if agent_obj:
+                            agent_nodes[agent_paw] = {
+                                'paw': agent_paw,
+                                'host': event['host'],
+                                'platform': agent_obj.platform if hasattr(agent_obj, 'platform') else 'unknown',
+                                'last_seen': '',
+                                'status': 'active',
+                                'counts': {'success': 0, 'failed': 0, 'running': 0}
+                            }
+                        else:
+                            # Agent not found in memory, create minimal node
+                            agent_nodes[agent_paw] = {
+                                'paw': agent_paw,
+                                'host': event['host'],
+                                'platform': 'unknown',
+                                'last_seen': '',
+                                'status': 'inactive',
+                                'counts': {'success': 0, 'failed': 0, 'running': 0}
+                            }
+                    
+                    if agent_paw in agent_nodes:
+                        agent_nodes[agent_paw]['counts'][status] += 1
+                        # Update last_seen
+                        if not agent_nodes[agent_paw]['last_seen'] or event['ts'] > agent_nodes[agent_paw]['last_seen']:
+                            agent_nodes[agent_paw]['last_seen'] = event['ts']
+                
+                # Update problem node
+                if 'problem' in include_nodes:
+                    problem_nodes[problem_id][status] += 1
+                
+                # Update edges
+                if 'agent_operation' in include_edges:
+                    edge_key = f"{agent_paw}|{op_id}"
+                    agent_operation_edges[edge_key][status] += 1
+                
+                if 'operation_problem' in include_edges:
+                    edge_key = f"{op_id}|{problem_id}"
+                    operation_problem_edges[edge_key][status] += 1
+                
+                if 'agent_problem' in include_edges:
+                    edge_key = f"{agent_paw}|{problem_id}"
+                    agent_problem_edges[edge_key][status] += 1
+            
+            # Finalize operation nodes (agents_count)
+            for op_id, op_node in operation_nodes.items():
+                op_node['agents_count'] = len(op_node['agents_set'])
+                del op_node['agents_set']  # Remove temporary set
+            
+            # Build response
+            response = {
+                'meta': {
+                    'window_minutes': window_minutes,
+                    'generated': now.isoformat() + 'Z'
+                },
+                'nodes': {},
+                'edges': {}
+            }
+            
+            # Add operation nodes
+            if 'operation' in include_nodes:
+                response['nodes']['operations'] = list(operation_nodes.values())
+            
+            # Add agent nodes
+            if 'agent' in include_nodes:
+                response['nodes']['agents'] = list(agent_nodes.values())
+            
+            # Add problem nodes
+            if 'problem' in include_nodes:
+                problems_list = []
+                for problem_id, counts in problem_nodes.items():
+                    parts = problem_id.split(':')
+                    tactic = parts[1] if len(parts) > 1 else 'unknown'
+                    technique = parts[2] if len(parts) > 2 else 'unknown'
+                    
+                    problems_list.append({
+                        'id': problem_id,
+                        'kind': grouping,
+                        'tactic': tactic,
+                        'technique': technique,
+                        'label': f"{tactic} / {technique}",
+                        'counts': counts
+                    })
+                response['nodes']['problems'] = problems_list
+            
+            # Add edges
+            if 'agent_operation' in include_edges:
+                edges_list = []
+                for edge_key, counts in agent_operation_edges.items():
+                    agent_paw, op_id = edge_key.split('|')
+                    weight = sum(counts.values())
+                    if weight >= thresholds.get('min_edge_weight', 1):
+                        edges_list.append({
+                            'source': f"agent:{agent_paw}",
+                            'target': f"op:{op_id}",
+                            'weight': weight,
+                            'counts': counts
+                        })
+                # Sort by weight descending and limit
+                edges_list.sort(key=lambda x: x['weight'], reverse=True)
+                response['edges']['agent_operation'] = edges_list[:limits.get('max_edges', 800)]
+            
+            if 'operation_problem' in include_edges:
+                edges_list = []
+                for edge_key, counts in operation_problem_edges.items():
+                    op_id, problem_id = edge_key.split('|', 1)
+                    weight = counts['failed']  # Only count failures for problem edges
+                    if weight >= thresholds.get('min_edge_weight', 1):
+                        edges_list.append({
+                            'source': f"op:{op_id}",
+                            'target': problem_id,
+                            'weight': weight,
+                            'counts': counts
+                        })
+                edges_list.sort(key=lambda x: x['weight'], reverse=True)
+                response['edges']['operation_problem'] = edges_list[:limits.get('max_edges', 800)]
+            
+            if 'agent_problem' in include_edges:
+                edges_list = []
+                for edge_key, counts in agent_problem_edges.items():
+                    agent_paw, problem_id = edge_key.split('|', 1)
+                    weight = counts['failed']  # Only count failures for problem edges
+                    if weight >= thresholds.get('min_edge_weight', 1):
+                        edges_list.append({
+                            'source': f"agent:{agent_paw}",
+                            'target': problem_id,
+                            'weight': weight,
+                            'counts': counts
+                        })
+                edges_list.sort(key=lambda x: x['weight'], reverse=True)
+                response['edges']['agent_problem'] = edges_list[:limits.get('max_edges', 800)]
+            
+            return web.json_response(response)
+        
+        except Exception as e:
+            import traceback
+            return web.json_response({
+                'error': str(e),
+                'traceback': traceback.format_exc()
+            }, status=500)
+
+    async def merlino_problem_details(self, request: web.Request):
+        """
+        API 2 (CORE) — Problem Drilldown
+        GET /api/v2/merlino/ops-graph/problem-details?problem_id=problem:execution:T1059&window_minutes=60&limit=100
+        
+        Return top agents, top operations, and recent events for a specific problem.
+        """
+        try:
+            import datetime
+            from collections import defaultdict
+            
+            # Parse query params
+            problem_id = request.query.get('problem_id')
+            if not problem_id:
+                return web.json_response({'error': 'problem_id is required'}, status=400)
+            
+            window_minutes = int(request.query.get('window_minutes', 60))
+            limit = int(request.query.get('limit', 100))
+            
+            # Parse problem_id
+            parts = problem_id.split(':')
+            if len(parts) < 3:
+                return web.json_response({'error': 'Invalid problem_id format'}, status=400)
+            
+            tactic = parts[1]
+            technique = parts[2]
+            
+            # Calculate time window
+            now = datetime.datetime.utcnow()
+            cutoff_time = now - datetime.timedelta(minutes=window_minutes)
+            
+            # Status normalization
+            def normalize_status(status_value):
+                try:
+                    status = int(status_value)
+                    if status == 0:
+                        return 'success'
+                    elif status in [1, 124]:
+                        return 'failed'
+                    else:
+                        return 'running'
+                except:
+                    return 'running'
+            
+            # Collect events matching this problem
+            all_operations = list(self._api_manager.find_objects('operations'))
+            all_agents = list(self._api_manager.find_objects('agents'))
+            
+            matching_events = []
+            agent_stats = defaultdict(lambda: {'failed': 0, 'running': 0, 'success': 0, 'last_seen': '', 'host': ''})
+            operation_stats = defaultdict(lambda: {'failed': 0, 'running': 0, 'success': 0, 'state': 'unknown', 'name': ''})
+            
+            for op in all_operations:
+                op_data = op.display
+                for link in op.chain:
+                    link_data = link.display
+                    
+                    # Parse timestamp
+                    try:
+                        link_ts = datetime.datetime.fromisoformat(link_data.get('finish', '').replace('Z', '+00:00'))
+                        if link_ts < cutoff_time:
+                            continue
+                    except:
+                        continue
+                    
+                    # Get ability details
+                    ability = link.ability
+                    if not ability:
+                        continue
+                    
+                    # Check if this link matches the problem
+                    link_tactic = ability.tactic if hasattr(ability, 'tactic') else 'unknown'
+                    link_technique = 'unknown'
+                    if hasattr(ability, 'technique_id'):
+                        link_technique = ability.technique_id
+                    elif hasattr(ability, 'technique') and hasattr(ability.technique, 'attack_id'):
+                        link_technique = ability.technique['attack_id']
+                    
+                    if link_tactic != tactic or link_technique != technique:
+                        continue  # Not matching this problem
+                    
+                    status = normalize_status(link_data.get('status', -1))
+                    agent_paw = link_data.get('paw', '')
+                    
+                    # Add to events
+                    event = {
+                        'ts': link_data.get('finish', ''),
+                        'operation_id': op.id,
+                        'operation': op_data.get('name', 'Unknown'),
+                        'agent': agent_paw,
+                        'host': link_data.get('host', ''),
+                        'ability': ability.name if hasattr(ability, 'name') else 'Unknown',
+                        'tactic': link_tactic,
+                        'technique': link_technique,
+                        'status': status
+                    }
+                    matching_events.append(event)
+                    
+                    # Update agent stats
+                    agent_stats[agent_paw][status] += 1
+                    agent_stats[agent_paw]['host'] = link_data.get('host', '')
+                    if not agent_stats[agent_paw]['last_seen'] or event['ts'] > agent_stats[agent_paw]['last_seen']:
+                        agent_stats[agent_paw]['last_seen'] = event['ts']
+                    
+                    # Update operation stats
+                    operation_stats[op.id][status] += 1
+                    operation_stats[op.id]['state'] = op.state
+                    operation_stats[op.id]['name'] = op_data.get('name', 'Unknown')
+            
+            # Build top_agents
+            top_agents = []
+            for paw, stats in agent_stats.items():
+                top_agents.append({
+                    'paw': paw,
+                    'host': stats['host'],
+                    'failed': stats['failed'],
+                    'running': stats['running'],
+                    'success': stats['success'],
+                    'last_seen': stats['last_seen']
+                })
+            # Sort by failures descending
+            top_agents.sort(key=lambda x: x['failed'], reverse=True)
+            
+            # Build top_operations
+            top_operations = []
+            for op_id, stats in operation_stats.items():
+                top_operations.append({
+                    'id': op_id,
+                    'name': stats['name'],
+                    'failed': stats['failed'],
+                    'running': stats['running'],
+                    'success': stats['success'],
+                    'state': stats['state']
+                })
+            top_operations.sort(key=lambda x: x['failed'], reverse=True)
+            
+            # Sort events by timestamp descending and limit
+            matching_events.sort(key=lambda x: x['ts'], reverse=True)
+            recent_events = matching_events[:limit]
+            
+            response = {
+                'problem': {
+                    'id': problem_id,
+                    'tactic': tactic,
+                    'technique': technique
+                },
+                'top_agents': top_agents,
+                'top_operations': top_operations,
+                'recent_events': recent_events
+            }
+            
+            return web.json_response(response)
+        
+        except Exception as e:
+            import traceback
+            return web.json_response({
+                'error': str(e),
+                'traceback': traceback.format_exc()
+            }, status=500)
+
+    async def merlino_operation_details(self, request: web.Request):
+        """
+        API 3 (CORE) — Operation Drilldown
+        GET /api/v2/merlino/ops-graph/operation-details?operation_id=xxx&window_minutes=60&limit=100
+        
+        Return per-agent involvement, top problems, and recent events for an operation.
+        """
+        try:
+            import datetime
+            from collections import defaultdict
+            
+            # Parse query params
+            operation_id = request.query.get('operation_id')
+            if not operation_id:
+                return web.json_response({'error': 'operation_id is required'}, status=400)
+            
+            window_minutes = int(request.query.get('window_minutes', 60))
+            limit = int(request.query.get('limit', 100))
+            
+            # Calculate time window
+            now = datetime.datetime.utcnow()
+            cutoff_time = now - datetime.timedelta(minutes=window_minutes)
+            
+            # Status normalization
+            def normalize_status(status_value):
+                try:
+                    status = int(status_value)
+                    if status == 0:
+                        return 'success'
+                    elif status in [1, 124]:
+                        return 'failed'
+                    else:
+                        return 'running'
+                except:
+                    return 'running'
+            
+            # Find the operation
+            all_operations = list(self._api_manager.find_objects('operations'))
+            operation = next((o for o in all_operations if o.id == operation_id), None)
+            
+            if not operation:
+                return web.json_response({'error': 'Operation not found'}, status=404)
+            
+            op_data = operation.display
+            
+            # Collect events from this operation
+            events = []
+            agent_stats = defaultdict(lambda: {'success': 0, 'failed': 0, 'running': 0, 'host': '', 'platform': 'unknown', 'last_seen': ''})
+            problem_stats = defaultdict(lambda: {'failed': 0, 'running': 0, 'success': 0})
+            overall_counts = {'success': 0, 'failed': 0, 'running': 0}
+            last_activity = ''
+            
+            for link in operation.chain:
+                link_data = link.display
+                
+                # Parse timestamp
+                try:
+                    link_ts = datetime.datetime.fromisoformat(link_data.get('finish', '').replace('Z', '+00:00'))
+                    if link_ts < cutoff_time:
+                        continue
+                except:
+                    continue
+                
+                # Get ability details
+                ability = link.ability
+                if not ability:
+                    continue
+                
+                tactic = ability.tactic if hasattr(ability, 'tactic') else 'unknown'
+                technique = 'unknown'
+                if hasattr(ability, 'technique_id'):
+                    technique = ability.technique_id
+                elif hasattr(ability, 'technique') and hasattr(ability.technique, 'attack_id'):
+                    technique = ability.technique['attack_id']
+                
+                status = normalize_status(link_data.get('status', -1))
+                agent_paw = link_data.get('paw', '')
+                
+                # Add event
+                event = {
+                    'ts': link_data.get('finish', ''),
+                    'agent': agent_paw,
+                    'ability': ability.name if hasattr(ability, 'name') else 'Unknown',
+                    'tactic': tactic,
+                    'technique': technique,
+                    'status': status
+                }
+                events.append(event)
+                
+                # Update stats
+                overall_counts[status] += 1
+                agent_stats[agent_paw][status] += 1
+                agent_stats[agent_paw]['host'] = link_data.get('host', '')
+                
+                # Get agent platform
+                all_agents = list(self._api_manager.find_objects('agents'))
+                agent_obj = next((a for a in all_agents if a.paw == agent_paw), None)
+                if agent_obj:
+                    agent_stats[agent_paw]['platform'] = agent_obj.platform if hasattr(agent_obj, 'platform') else 'unknown'
+                
+                if not agent_stats[agent_paw]['last_seen'] or event['ts'] > agent_stats[agent_paw]['last_seen']:
+                    agent_stats[agent_paw]['last_seen'] = event['ts']
+                
+                # Problem stats
+                problem_id = f"problem:{tactic}:{technique}"
+                problem_stats[problem_id][status] += 1
+                
+                # Last activity
+                if not last_activity or event['ts'] > last_activity:
+                    last_activity = event['ts']
+            
+            # Build agents list
+            agents_list = []
+            for paw, stats in agent_stats.items():
+                agents_list.append({
+                    'paw': paw,
+                    'host': stats['host'],
+                    'platform': stats['platform'],
+                    'last_seen': stats['last_seen'],
+                    'counts': {
+                        'success': stats['success'],
+                        'failed': stats['failed'],
+                        'running': stats['running']
+                    }
+                })
+            
+            # Build top_problems (sort by failures)
+            top_problems = []
+            for problem_id, stats in problem_stats.items():
+                if stats['failed'] > 0:  # Only include problems with failures
+                    top_problems.append({
+                        'problem_id': problem_id,
+                        'failed': stats['failed']
+                    })
+            top_problems.sort(key=lambda x: x['failed'], reverse=True)
+            
+            # Sort events by timestamp descending
+            events.sort(key=lambda x: x['ts'], reverse=True)
+            recent_events = events[:limit]
+            
+            response = {
+                'operation': {
+                    'id': operation.id,
+                    'name': op_data.get('name', 'Unknown'),
+                    'state': operation.state,
+                    'started': operation.start.isoformat() if hasattr(operation, 'start') and operation.start else '',
+                    'last_activity': last_activity,
+                    'counts': overall_counts
+                },
+                'agents': agents_list,
+                'top_problems': top_problems,
+                'recent_events': recent_events
+            }
+            
+            return web.json_response(response)
+        
+        except Exception as e:
+            import traceback
+            return web.json_response({
+                'error': str(e),
+                'traceback': traceback.format_exc()
+            }, status=500)
+
+    async def merlino_agent_details(self, request: web.Request):
+        """
+        API 4 (CORE) — Agent Drilldown
+        GET /api/v2/merlino/ops-graph/agent-details?paw=xxx&window_minutes=60&limit=100
+        
+        Return operations, top problems, and recent events for a specific agent.
+        """
+        try:
+            import datetime
+            from collections import defaultdict
+            
+            # Parse query params
+            paw = request.query.get('paw')
+            if not paw:
+                return web.json_response({'error': 'paw is required'}, status=400)
+            
+            window_minutes = int(request.query.get('window_minutes', 60))
+            limit = int(request.query.get('limit', 100))
+            
+            # Calculate time window
+            now = datetime.datetime.utcnow()
+            cutoff_time = now - datetime.timedelta(minutes=window_minutes)
+            
+            # Status normalization
+            def normalize_status(status_value):
+                try:
+                    status = int(status_value)
+                    if status == 0:
+                        return 'success'
+                    elif status in [1, 124]:
+                        return 'failed'
+                    else:
+                        return 'running'
+                except:
+                    return 'running'
+            
+            # Find the agent
+            all_agents = list(self._api_manager.find_objects('agents'))
+            agent = next((a for a in all_agents if a.paw == paw), None)
+            
+            if not agent:
+                return web.json_response({'error': 'Agent not found'}, status=404)
+            
+            # Collect events from all operations for this agent
+            all_operations = list(self._api_manager.find_objects('operations'))
+            events = []
+            operation_stats = defaultdict(lambda: {'success': 0, 'failed': 0, 'running': 0, 'name': '', 'state': 'unknown'})
+            problem_stats = defaultdict(lambda: {'failed': 0, 'running': 0, 'success': 0})
+            last_seen = ''
+            
+            for op in all_operations:
+                op_data = op.display
+                for link in op.chain:
+                    link_data = link.display
+                    
+                    # Only this agent
+                    if link_data.get('paw', '') != paw:
+                        continue
+                    
+                    # Parse timestamp
+                    try:
+                        link_ts = datetime.datetime.fromisoformat(link_data.get('finish', '').replace('Z', '+00:00'))
+                        if link_ts < cutoff_time:
+                            continue
+                    except:
+                        continue
+                    
+                    # Get ability details
+                    ability = link.ability
+                    if not ability:
+                        continue
+                    
+                    tactic = ability.tactic if hasattr(ability, 'tactic') else 'unknown'
+                    technique = 'unknown'
+                    if hasattr(ability, 'technique_id'):
+                        technique = ability.technique_id
+                    elif hasattr(ability, 'technique') and hasattr(ability.technique, 'attack_id'):
+                        technique = ability.technique['attack_id']
+                    
+                    status = normalize_status(link_data.get('status', -1))
+                    
+                    # Add event
+                    event = {
+                        'ts': link_data.get('finish', ''),
+                        'operation_id': op.id,
+                        'ability': ability.name if hasattr(ability, 'name') else 'Unknown',
+                        'tactic': tactic,
+                        'technique': technique,
+                        'status': status
+                    }
+                    events.append(event)
+                    
+                    # Update stats
+                    operation_stats[op.id][status] += 1
+                    operation_stats[op.id]['name'] = op_data.get('name', 'Unknown')
+                    operation_stats[op.id]['state'] = op.state
+                    
+                    problem_id = f"problem:{tactic}:{technique}"
+                    problem_stats[problem_id][status] += 1
+                    
+                    if not last_seen or event['ts'] > last_seen:
+                        last_seen = event['ts']
+            
+            # Build operations list
+            operations_list = []
+            for op_id, stats in operation_stats.items():
+                operations_list.append({
+                    'id': op_id,
+                    'name': stats['name'],
+                    'state': stats['state'],
+                    'counts': {
+                        'success': stats['success'],
+                        'failed': stats['failed'],
+                        'running': stats['running']
+                    }
+                })
+            
+            # Build top_problems
+            top_problems = []
+            for problem_id, stats in problem_stats.items():
+                if stats['failed'] > 0:
+                    top_problems.append({
+                        'problem_id': problem_id,
+                        'failed': stats['failed']
+                    })
+            top_problems.sort(key=lambda x: x['failed'], reverse=True)
+            
+            # Sort events by timestamp descending
+            events.sort(key=lambda x: x['ts'], reverse=True)
+            recent_events = events[:limit]
+            
+            response = {
+                'agent': {
+                    'paw': paw,
+                    'host': agent.host if hasattr(agent, 'host') else 'unknown',
+                    'platform': agent.platform if hasattr(agent, 'platform') else 'unknown',
+                    'last_seen': last_seen,
+                    'status': 'active' if agent.trusted else 'inactive'
+                },
+                'operations': operations_list,
+                'top_problems': top_problems,
+                'recent_events': recent_events
+            }
+            
+            return web.json_response(response)
+        
+        except Exception as e:
+            import traceback
+            return web.json_response({
+                'error': str(e),
+                'traceback': traceback.format_exc()
+            }, status=500)
+
+    async def merlino_ops_actions(self, request: web.Request):
+        """
+        API 5 (OPTIONAL) — Intervention Actions
+        POST /api/v2/merlino/ops-actions
+        
+        Allow Merlino UI to trigger operational actions:
+        - pause_operation
+        - stop_operation
+        - tag_agent
+        """
+        try:
+            body = await request.json()
+            action = body.get('action')
+            
+            if not action:
+                return web.json_response({'error': 'action is required'}, status=400)
+            
+            if action == 'pause_operation':
+                operation_id = body.get('operation_id')
+                if not operation_id:
+                    return web.json_response({'error': 'operation_id is required'}, status=400)
+                
+                # Find and pause the operation
+                operations = list(self._api_manager.find_objects('operations'))
+                operation = next((o for o in operations if o.id == operation_id), None)
+                
+                if not operation:
+                    return web.json_response({'error': 'Operation not found'}, status=404)
+                
+                operation.state = 'paused'
+                await self._api_manager.data_svc.store(operation)
+                
+                return web.json_response({
+                    'ok': True,
+                    'message': 'paused',
+                    'operation_id': operation_id
+                })
+            
+            elif action == 'stop_operation':
+                operation_id = body.get('operation_id')
+                if not operation_id:
+                    return web.json_response({'error': 'operation_id is required'}, status=400)
+                
+                # Find and stop the operation
+                operations = list(self._api_manager.find_objects('operations'))
+                operation = next((o for o in operations if o.id == operation_id), None)
+                
+                if not operation:
+                    return web.json_response({'error': 'Operation not found'}, status=404)
+                
+                operation.state = 'finished'
+                await self._api_manager.data_svc.store(operation)
+                
+                return web.json_response({
+                    'ok': True,
+                    'message': 'stopped',
+                    'operation_id': operation_id
+                })
+            
+            elif action == 'tag_agent':
+                paw = body.get('paw')
+                tag = body.get('tag')
+                
+                if not paw or not tag:
+                    return web.json_response({'error': 'paw and tag are required'}, status=400)
+                
+                # Find and tag the agent
+                agents = list(self._api_manager.find_objects('agents'))
+                agent = next((a for a in agents if a.paw == paw), None)
+                
+                if not agent:
+                    return web.json_response({'error': 'Agent not found'}, status=404)
+                
+                # Add tag to agent (store in group field for now)
+                if not hasattr(agent, 'tags'):
+                    agent.tags = []
+                if tag not in agent.tags:
+                    agent.tags.append(tag)
+                
+                await self._api_manager.data_svc.store(agent)
+                
+                return web.json_response({
+                    'ok': True,
+                    'message': f'tagged as {tag}',
+                    'paw': paw,
+                    'tag': tag
+                })
+            
+            else:
+                return web.json_response({'error': f'Unknown action: {action}'}, status=400)
+        
+        except Exception as e:
+            import traceback
+            return web.json_response({
+                'error': str(e),
+                'traceback': traceback.format_exc()
+            }, status=500)
+
+    async def merlino_ui_routes(self, request: web.Request):
+        """
+        API 6 (OPTIONAL) — UI Route Resolver
+        GET /api/v2/merlino/ui-routes
+        
+        Return UI URL patterns so Merlino can open Morgana pages.
+        """
+        try:
+            # Get base URL from request
+            scheme = request.scheme
+            host = request.host
+            base_url = f"{scheme}://{host}"
+            
+            response = {
+                'base_url': base_url,
+                'routes': {
+                    'operation': '/operations/{id}',
+                    'agent': '/agents/{paw}',
+                    'search': '/search?q={query}'
+                }
+            }
+            
+            return web.json_response(response)
+        
+        except Exception as e:
+            import traceback
+            return web.json_response({
+                'error': str(e),
+                'traceback': traceback.format_exc()
+            }, status=500)
             
         except Exception as e:
             import traceback
