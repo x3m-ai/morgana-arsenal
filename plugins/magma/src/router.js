@@ -16,6 +16,7 @@ import PlannersView from "./views/PlannersView.vue";
 import ContactsView from "./views/ContactsView.vue";
 import ObfuscatorsView from "./views/ObfuscatorsView.vue";
 import SettingsView from "./views/SettingsView.vue";
+import TagsView from "./views/TagsView.vue";
 import ExfilledFilesView from "./views/ExfilledFilesView.vue";
 import RedTeamView from "./views/RedTeamView.vue";
 import PluginView from "./views/PluginView.vue";
@@ -99,6 +100,11 @@ const router = createRouter({
       path: "/settings",
       name: "settings",
       component: SettingsView,
+    },
+    {
+      path: "/tags",
+      name: "tags",
+      component: TagsView,
     },
     {
       path: "/exfilledfiles",

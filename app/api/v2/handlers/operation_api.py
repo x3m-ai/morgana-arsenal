@@ -30,6 +30,120 @@ def decode_link_status(status_value):
         return 'N/A'
 
 
+def build_ops_graph_recent_link(link, operation, output_max_chars=4000, output_format='raw'):
+    """
+    Build OpsGraphRecentLink object from Caldera link.
+    
+    Args:
+        link: Caldera link object
+        operation: Caldera operation object
+        output_max_chars: Maximum characters for output (0 = omit output)
+        output_format: 'raw' or 'base64'
+    
+    Returns:
+        dict with OpsGraphRecentLink structure
+    """
+    import base64
+    import datetime
+    
+    link_data = link.display
+    
+    # Normalize status
+    def normalize_status(status_value):
+        try:
+            status = int(status_value)
+            if status == 0:
+                return 'success'
+            elif status == 1:
+                return 'failed'
+            elif status == 124:
+                return 'timeout'
+            elif status == -1:
+                return 'running'
+            else:
+                return 'unknown'
+        except:
+            return 'unknown'
+    
+    # Extract command (prefer plaintext)
+    command = link_data.get('plaintext_command', '')
+    command_is_plaintext = bool(command)
+    if not command:
+        command = link_data.get('command', '')
+        command_is_plaintext = False
+    
+    # Extract and truncate output
+    output_raw = ''
+    output_truncated = False
+    if output_max_chars > 0:
+        # Get output from link (may be base64 encoded or boolean string)
+        output_field = link_data.get('output', '')
+        if output_field and output_field not in ['True', 'False']:
+            output_raw = str(output_field)
+            if len(output_raw) > output_max_chars:
+                output_raw = output_raw[:output_max_chars]
+                output_truncated = True
+    
+    # Encode output if requested
+    if output_format == 'base64' and output_raw:
+        output_raw = base64.b64encode(output_raw.encode('utf-8')).decode('ascii')
+    
+    # Get ability details
+    ability = link.ability if hasattr(link, 'ability') else None
+    ability_id = ability.ability_id if ability and hasattr(ability, 'ability_id') else ''
+    ability_name = ability.name if ability and hasattr(ability, 'name') else ''
+    tactic = ability.tactic if ability and hasattr(ability, 'tactic') else 'unknown'
+    
+    # Extract technique
+    technique = 'unknown'
+    if ability:
+        if hasattr(ability, 'technique_id'):
+            technique = ability.technique_id
+        elif hasattr(ability, 'technique') and isinstance(ability.technique, dict):
+            technique = ability.technique.get('attack_id', 'unknown')
+    
+    # Get timestamps
+    executed_at = link_data.get('decide', '')
+    finished_at = link_data.get('finish', '')
+    
+    # Get agent details
+    agent_paw = link_data.get('paw', '')
+    host = link_data.get('host', '')
+    
+    # Find agent for platform
+    platform = 'unknown'
+    if hasattr(operation, 'agents'):
+        for agent in operation.agents:
+            if agent.paw == agent_paw:
+                platform = agent.platform
+                break
+    
+    # Get operation details
+    op_data = operation.display if hasattr(operation, 'display') else {}
+    operation_id = op_data.get('id', '')
+    operation_name = op_data.get('name', '')
+    
+    return {
+        'link_id': link_data.get('id', ''),
+        'operation_id': operation_id,
+        'operation_name': operation_name,
+        'agent_paw': agent_paw,
+        'host': host,
+        'platform': platform,
+        'ability_id': ability_id,
+        'ability_name': ability_name,
+        'tactic': tactic,
+        'technique': technique,
+        'status': normalize_status(link_data.get('status', -1)),
+        'command': command,
+        'command_is_plaintext': command_is_plaintext,
+        'output': output_raw if output_max_chars > 0 else '',
+        'output_truncated': output_truncated,
+        'executed_at': executed_at,
+        'finished_at': finished_at
+    }
+
+
 class OperationApi(BaseObjectApi):
     def __init__(self, services):
         super().__init__(description='operation', obj_class=Operation, schema=OperationSchema, ram_key='operations',
@@ -59,6 +173,18 @@ class OperationApi(BaseObjectApi):
         router.add_get('/merlino/dashboard/abilities', self.merlino_dashboard_abilities)
         router.add_get('/merlino/dashboard/operations-health', self.merlino_dashboard_operations_health)
         router.add_get('/merlino/dashboard/errors', self.merlino_dashboard_errors)
+        router.add_get('/merlino/analytics/ability-success-rate', self.merlino_analytics_ability_success_rate)
+        router.add_get('/merlino/analytics/operations-health-matrix', self.merlino_analytics_operations_health_matrix)
+        router.add_get('/merlino/analytics/operations-health-matrix/operation/{operation_id}', self.merlino_analytics_operation_health_details)
+        # Error Analytics API
+        router.add_get('/merlino/analytics/error-analytics/overview', self.merlino_error_analytics_overview)
+        router.add_get('/merlino/analytics/error-analytics/breakdown', self.merlino_error_analytics_breakdown)
+        router.add_get('/merlino/analytics/error-analytics/top-offenders', self.merlino_error_analytics_top_offenders)
+        router.add_get('/merlino/analytics/error-analytics/events/search', self.merlino_error_analytics_events_search)
+        router.add_get('/merlino/analytics/error-analytics/operation/{operation_id}', self.merlino_error_analytics_operation_drilldown)
+        router.add_get('/merlino/analytics/error-analytics/signatures', self.merlino_error_analytics_signatures)
+        router.add_get('/merlino/analytics/error-analytics/signature/{signature_id}', self.merlino_error_analytics_signature_drilldown)
+        router.add_get('/merlino/analytics/error-analytics/hints', self.merlino_error_analytics_hints)
         router.add_get('/merlino/dashboard/realtime', self.merlino_dashboard_realtime)
         router.add_get('/merlino/dashboard/force-graph', self.merlino_dashboard_force_graph)
         # New Merlino Ops Graph API
@@ -447,6 +573,41 @@ class OperationApi(BaseObjectApi):
                 if hasattr(op, 'chain') and op.chain:
                     for link in op.chain:
                         try:
+                            # Extract command (prefer plaintext) and encode to base64
+                            import base64
+                            link_command_raw = getattr(link, 'plaintext_command', '')
+                            if not link_command_raw:
+                                link_command_raw = getattr(link, 'command', '')
+                            
+                            # Always encode command to base64
+                            link_command = ''
+                            if link_command_raw:
+                                # If already base64, keep it; otherwise encode it
+                                try:
+                                    # Try to decode - if it fails, it's plaintext
+                                    base64.b64decode(link_command_raw, validate=True)
+                                    link_command = link_command_raw  # Already base64
+                                except:
+                                    # It's plaintext, encode it
+                                    link_command = base64.b64encode(link_command_raw.encode('utf-8')).decode('ascii')
+                            
+                            # Extract output from result file (encrypted)
+                            link_output = ''
+                            try:
+                                link_id = getattr(link, 'id', '')
+                                if link_id:
+                                    # Use file_svc to read and decrypt the result file
+                                    file_svc = self._api_manager._file_svc
+                                    output_content = file_svc.read_result_file(link_id)
+                                    if output_content:
+                                        link_output = output_content
+                            except FileNotFoundError:
+                                # No result file exists
+                                pass
+                            except Exception as e:
+                                # Log but don't crash
+                                self.log.warning(f'Failed to read result file for link {link_id}: {e}')
+                            
                             row = base_data.copy()
                             row.update({
                                 'status': decode_link_status(getattr(link, 'status', 'N/A')),
@@ -456,6 +617,8 @@ class OperationApi(BaseObjectApi):
                                 'agent': str(getattr(link, 'paw', 'N/A')),
                                 'host': str(getattr(link, 'host', 'N/A')),
                                 'pid': str(getattr(link, 'pid', 'N/A')),
+                                'link_command': link_command,
+                                'link_output': link_output,
                                 'operation_id': operation_id,
                                 'adversary_id': adversary_id
                             })
@@ -474,6 +637,8 @@ class OperationApi(BaseObjectApi):
                         'agent': 'N/A',
                         'host': 'N/A',
                         'pid': 'N/A',
+                        'link_command': '',
+                        'link_output': '',
                         'operation_id': operation_id,
                         'adversary_id': adversary_id
                     })
@@ -700,6 +865,53 @@ class OperationApi(BaseObjectApi):
                             
                             print(f"[MERLINO SYNC] Link {idx+1} ability: {ability_name}")
                             
+                            # Extract command (prefer plaintext) and encode to base64
+                            import base64
+                            link_command_raw = ''
+                            if isinstance(link_data, dict):
+                                link_command_raw = link_data.get('plaintext_command', '')
+                                if not link_command_raw:
+                                    link_command_raw = link_data.get('command', '')
+                            else:
+                                link_command_raw = getattr(link_data, 'plaintext_command', '')
+                                if not link_command_raw:
+                                    link_command_raw = getattr(link_data, 'command', '')
+                            
+                            # Always encode command to base64
+                            link_command = ''
+                            if link_command_raw:
+                                # If already base64, keep it; otherwise encode it
+                                try:
+                                    # Try to decode - if it fails, it's plaintext
+                                    base64.b64decode(link_command_raw, validate=True)
+                                    link_command = link_command_raw  # Already base64
+                                except:
+                                    # It's plaintext, encode it
+                                    link_command = base64.b64encode(link_command_raw.encode('utf-8')).decode('ascii')
+                            
+                            # Extract output from result file (encrypted)
+                            link_output = ''
+                            link_id = ''
+                            try:
+                                if isinstance(link_data, dict):
+                                    link_id = link_data.get('id', '')
+                                else:
+                                    link_id = getattr(link_data, 'id', '')
+                                
+                                if link_id:
+                                    # Use file_svc to read and decrypt the result file
+                                    file_svc = self._api_manager._file_svc
+                                    output_content = file_svc.read_result_file(link_id)
+                                    if output_content:
+                                        link_output = output_content
+                            except FileNotFoundError:
+                                # No result file exists
+                                pass
+                            except Exception as e:
+                                # Log but don't crash
+                                self.log.warning(f'Failed to read result file for link {link_id}: {e}')
+                            
+                            
                             row = base_data.copy()
                             row.update({
                                 'status': decode_link_status(link_status),
@@ -709,6 +921,8 @@ class OperationApi(BaseObjectApi):
                                 'agent': str(paw),
                                 'host': str(host),
                                 'pid': str(pid),
+                                'link_command': link_command,
+                                'link_output': link_output,
                                 'operation_id': operation_id,
                                 'adversary_id': adversary_id
                             })
@@ -730,6 +944,8 @@ class OperationApi(BaseObjectApi):
                         'agent': 'N/A',
                         'host': 'N/A',
                         'pid': 'N/A',
+                        'link_command': '',
+                        'link_output': '',
                         'operation_id': operation_id,
                         'adversary_id': adversary_id
                     })
@@ -1275,24 +1491,52 @@ class OperationApi(BaseObjectApi):
         
         Return operational force-graph dataset with nodes (operations, agents, problems)
         and edges (agent-operation, operation-problem, agent-problem).
+        
+        Supports two body formats:
+        1. Spec format: window_minutes, include_nodes, etc.
+        2. Frontend format: options.includeAgents, options.includeProblems, etc.
         """
         try:
             import datetime
             from collections import defaultdict
             
-            # Parse request body
+            # Parse request body (support both formats)
             body = await request.json()
-            window_minutes = body.get('window_minutes', 60)
-            operation_ids_filter = body.get('operation_ids', [])
-            agent_paws_filter = body.get('agent_paws', [])
-            include_nodes = body.get('include_nodes', ['operation', 'agent', 'problem'])
-            include_edges = body.get('include_edges', ['agent_operation', 'operation_problem', 'agent_problem'])
-            limits = body.get('limits', {'max_nodes': 250, 'max_edges': 800})
-            thresholds = body.get('thresholds', {'min_edge_weight': 1})
-            grouping = body.get('grouping', 'tactic_technique')
+            
+            # Check if using frontend format (options object)
+            if 'options' in body:
+                options = body.get('options', {})
+                window_minutes = options.get('windowMinutes', 10080)  # Default 7 days for frontend
+                operation_ids_filter = []
+                agent_paws_filter = []
+                
+                # Determine which nodes to include
+                include_nodes = ['operation']  # Always include operations
+                if options.get('includeAgents', True):
+                    include_nodes.append('agent')
+                if options.get('includeProblems', True):
+                    include_nodes.append('problem')
+                
+                include_edges = ['agent_operation', 'operation_problem', 'agent_problem']
+                limits = {
+                    'max_nodes': options.get('maxNodes', 400),
+                    'max_edges': options.get('maxEdges', 1200)
+                }
+                thresholds = {'min_edge_weight': 1}
+                grouping = 'tactic_technique'
+            else:
+                # Spec format
+                window_minutes = body.get('window_minutes', 60)
+                operation_ids_filter = body.get('operation_ids', [])
+                agent_paws_filter = body.get('agent_paws', [])
+                include_nodes = body.get('include_nodes', ['operation', 'agent', 'problem'])
+                include_edges = body.get('include_edges', ['agent_operation', 'operation_problem', 'agent_problem'])
+                limits = body.get('limits', {'max_nodes': 250, 'max_edges': 800})
+                thresholds = body.get('thresholds', {'min_edge_weight': 1})
+                grouping = body.get('grouping', 'tactic_technique')
             
             # Calculate time window
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime.now(datetime.timezone.utc)  # Timezone-aware
             cutoff_time = now - datetime.timedelta(minutes=window_minutes)
             
             # Status normalization function
@@ -1328,11 +1572,20 @@ class OperationApi(BaseObjectApi):
                     
                     # Parse timestamp
                     try:
-                        link_ts = datetime.datetime.fromisoformat(link_data.get('finish', '').replace('Z', '+00:00'))
+                        # Check for finish timestamp
+                        if 'finish' not in link_data:
+                            continue
+                        
+                        finish_value = link_data['finish']
+                        if not finish_value or finish_value is None:
+                            continue
+                        
+                        # Parse and check time window
+                        link_ts = datetime.datetime.fromisoformat(str(finish_value).replace('Z', '+00:00'))
                         if link_ts < cutoff_time:
                             continue  # Outside time window
-                    except:
-                        continue  # Skip if no valid timestamp
+                    except Exception as e:
+                        continue  # Skip if timestamp parsing fails
                     
                     # Get ability details
                     ability = link.ability
@@ -1551,6 +1804,85 @@ class OperationApi(BaseObjectApi):
                 edges_list.sort(key=lambda x: x['weight'], reverse=True)
                 response['edges']['agent_problem'] = edges_list[:limits.get('max_edges', 800)]
             
+            # Check if frontend wants flat format
+            if 'options' in body:
+                # Convert to frontend format: flat nodes and edges arrays
+                flat_nodes = []
+                flat_edges = []
+                edge_id_counter = 0
+                
+                # Convert operation nodes
+                for op_node in response['nodes'].get('operations', []):
+                    flat_nodes.append({
+                        'id': f"op:{op_node['id']}",
+                        'type': 'operation',
+                        'label': op_node['name'],
+                        'state': op_node['state'],
+                        'counts': op_node['counts']
+                    })
+                
+                # Convert agent nodes
+                for agent_node in response['nodes'].get('agents', []):
+                    flat_nodes.append({
+                        'id': f"agent:{agent_node['paw']}",
+                        'type': 'agent',
+                        'label': f"{agent_node['host']} ({agent_node['paw'][:6]})",
+                        'paw': agent_node['paw'],
+                        'host': agent_node['host'],
+                        'platform': agent_node['platform'],
+                        'status': agent_node['status'],
+                        'counts': agent_node['counts']
+                    })
+                
+                # Convert problem nodes
+                for prob_node in response['nodes'].get('problems', []):
+                    flat_nodes.append({
+                        'id': prob_node['id'],
+                        'type': 'problem',
+                        'label': prob_node['label'],
+                        'tactic': prob_node['tactic'],
+                        'technique': prob_node['technique'],
+                        'counts': prob_node['counts']
+                    })
+                
+                # Convert edges
+                for edge in response['edges'].get('agent_operation', []):
+                    flat_edges.append({
+                        'id': f"edge_{edge_id_counter}",
+                        'source': edge['source'],
+                        'target': edge['target'],
+                        'type': 'agent_in_operation',
+                        'weight': edge['weight']
+                    })
+                    edge_id_counter += 1
+                
+                for edge in response['edges'].get('operation_problem', []):
+                    flat_edges.append({
+                        'id': f"edge_{edge_id_counter}",
+                        'source': edge['source'],
+                        'target': edge['target'],
+                        'type': 'operation_has_problem',
+                        'weight': edge['weight']
+                    })
+                    edge_id_counter += 1
+                
+                for edge in response['edges'].get('agent_problem', []):
+                    flat_edges.append({
+                        'id': f"edge_{edge_id_counter}",
+                        'source': edge['source'],
+                        'target': edge['target'],
+                        'type': 'agent_has_problem',
+                        'weight': edge['weight']
+                    })
+                    edge_id_counter += 1
+                
+                # Return flat format
+                return web.json_response({
+                    'nodes': flat_nodes,
+                    'edges': flat_edges
+                })
+            
+            # Return spec format (nested)
             return web.json_response(response)
         
         except Exception as e:
@@ -1579,6 +1911,17 @@ class OperationApi(BaseObjectApi):
             window_minutes = int(request.query.get('window_minutes', 60))
             limit = int(request.query.get('limit', 100))
             
+            # New query params for link details
+            include_links = request.query.get('include_links', 'false').lower() == 'true'
+            output_max_chars = int(request.query.get('output_max_chars', 4000))
+            output_format = request.query.get('output_format', 'raw')
+            
+            # Enforce caps
+            limit = min(limit, 200)
+            output_max_chars = max(0, min(output_max_chars, 50000))
+            if output_format not in ['raw', 'base64']:
+                output_format = 'raw'
+            
             # Parse problem_id
             parts = problem_id.split(':')
             if len(parts) < 3:
@@ -1588,7 +1931,7 @@ class OperationApi(BaseObjectApi):
             technique = parts[2]
             
             # Calculate time window
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime.now(datetime.timezone.utc)
             cutoff_time = now - datetime.timedelta(minutes=window_minutes)
             
             # Status normalization
@@ -1611,6 +1954,7 @@ class OperationApi(BaseObjectApi):
             matching_events = []
             agent_stats = defaultdict(lambda: {'failed': 0, 'running': 0, 'success': 0, 'last_seen': '', 'host': ''})
             operation_stats = defaultdict(lambda: {'failed': 0, 'running': 0, 'success': 0, 'state': 'unknown', 'name': ''})
+            recent_links_data = []  # For include_links
             
             for op in all_operations:
                 op_data = op.display
@@ -1658,6 +2002,11 @@ class OperationApi(BaseObjectApi):
                     }
                     matching_events.append(event)
                     
+                    # Build link detail if requested
+                    if include_links:
+                        link_detail = build_ops_graph_recent_link(link, op, output_max_chars, output_format)
+                        recent_links_data.append(link_detail)
+                    
                     # Update agent stats
                     agent_stats[agent_paw][status] += 1
                     agent_stats[agent_paw]['host'] = link_data.get('host', '')
@@ -1700,6 +2049,11 @@ class OperationApi(BaseObjectApi):
             matching_events.sort(key=lambda x: x['ts'], reverse=True)
             recent_events = matching_events[:limit]
             
+            # Limit and sort recent_links
+            if include_links:
+                recent_links_data.sort(key=lambda x: x['finished_at'], reverse=True)
+                recent_links_data = recent_links_data[:limit]
+            
             response = {
                 'problem': {
                     'id': problem_id,
@@ -1710,6 +2064,15 @@ class OperationApi(BaseObjectApi):
                 'top_operations': top_operations,
                 'recent_events': recent_events
             }
+            
+            # Add link details if requested
+            if include_links:
+                response['recent_links'] = recent_links_data
+                response['links_meta'] = {
+                    'include_links': True,
+                    'output_max_chars': output_max_chars,
+                    'output_format': output_format
+                }
             
             return web.json_response(response)
         
@@ -1739,8 +2102,19 @@ class OperationApi(BaseObjectApi):
             window_minutes = int(request.query.get('window_minutes', 60))
             limit = int(request.query.get('limit', 100))
             
+            # New query params for link details
+            include_links = request.query.get('include_links', 'false').lower() == 'true'
+            output_max_chars = int(request.query.get('output_max_chars', 4000))
+            output_format = request.query.get('output_format', 'raw')
+            
+            # Enforce caps
+            limit = min(limit, 200)
+            output_max_chars = max(0, min(output_max_chars, 50000))
+            if output_format not in ['raw', 'base64']:
+                output_format = 'raw'
+            
             # Calculate time window
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime.now(datetime.timezone.utc)
             cutoff_time = now - datetime.timedelta(minutes=window_minutes)
             
             # Status normalization
@@ -1771,6 +2145,7 @@ class OperationApi(BaseObjectApi):
             problem_stats = defaultdict(lambda: {'failed': 0, 'running': 0, 'success': 0})
             overall_counts = {'success': 0, 'failed': 0, 'running': 0}
             last_activity = ''
+            recent_links_data = []  # For include_links
             
             for link in operation.chain:
                 link_data = link.display
@@ -1808,6 +2183,11 @@ class OperationApi(BaseObjectApi):
                     'status': status
                 }
                 events.append(event)
+                
+                # Build link detail if requested
+                if include_links:
+                    link_detail = build_ops_graph_recent_link(link, operation, output_max_chars, output_format)
+                    recent_links_data.append(link_detail)
                 
                 # Update stats
                 overall_counts[status] += 1
@@ -1860,6 +2240,11 @@ class OperationApi(BaseObjectApi):
             events.sort(key=lambda x: x['ts'], reverse=True)
             recent_events = events[:limit]
             
+            # Limit and sort recent_links
+            if include_links:
+                recent_links_data.sort(key=lambda x: x['finished_at'], reverse=True)
+                recent_links_data = recent_links_data[:limit]
+            
             response = {
                 'operation': {
                     'id': operation.id,
@@ -1874,6 +2259,15 @@ class OperationApi(BaseObjectApi):
                 'recent_events': recent_events
             }
             
+            # Add link details if requested
+            if include_links:
+                response['recent_links'] = recent_links_data
+                response['links_meta'] = {
+                    'include_links': True,
+                    'output_max_chars': output_max_chars,
+                    'output_format': output_format
+                }
+            
             return web.json_response(response)
         
         except Exception as e:
@@ -1886,24 +2280,36 @@ class OperationApi(BaseObjectApi):
     async def merlino_agent_details(self, request: web.Request):
         """
         API 4 (CORE) — Agent Drilldown
-        GET /api/v2/merlino/ops-graph/agent-details?paw=xxx&window_minutes=60&limit=100
+        GET /api/v2/merlino/ops-graph/agent-details?agent_paw=xxx&window_minutes=60&limit=100
         
         Return operations, top problems, and recent events for a specific agent.
+        Supports both 'agent_paw' (frontend) and 'paw' (spec) query parameters.
         """
         try:
             import datetime
             from collections import defaultdict
             
-            # Parse query params
-            paw = request.query.get('paw')
+            # Parse query params (support both agent_paw and paw)
+            paw = request.query.get('agent_paw') or request.query.get('paw')
             if not paw:
-                return web.json_response({'error': 'paw is required'}, status=400)
+                return web.json_response({'error': 'agent_paw or paw is required'}, status=400)
             
             window_minutes = int(request.query.get('window_minutes', 60))
             limit = int(request.query.get('limit', 100))
             
+            # New query params for link details
+            include_links = request.query.get('include_links', 'false').lower() == 'true'
+            output_max_chars = int(request.query.get('output_max_chars', 4000))
+            output_format = request.query.get('output_format', 'raw')
+            
+            # Enforce caps
+            limit = min(limit, 200)
+            output_max_chars = max(0, min(output_max_chars, 50000))
+            if output_format not in ['raw', 'base64']:
+                output_format = 'raw'
+            
             # Calculate time window
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime.now(datetime.timezone.utc)
             cutoff_time = now - datetime.timedelta(minutes=window_minutes)
             
             # Status normalization
@@ -1932,6 +2338,7 @@ class OperationApi(BaseObjectApi):
             operation_stats = defaultdict(lambda: {'success': 0, 'failed': 0, 'running': 0, 'name': '', 'state': 'unknown'})
             problem_stats = defaultdict(lambda: {'failed': 0, 'running': 0, 'success': 0})
             last_seen = ''
+            recent_links_data = []  # For include_links
             
             for op in all_operations:
                 op_data = op.display
@@ -1975,6 +2382,11 @@ class OperationApi(BaseObjectApi):
                     }
                     events.append(event)
                     
+                    # Build link detail if requested
+                    if include_links:
+                        link_detail = build_ops_graph_recent_link(link, op, output_max_chars, output_format)
+                        recent_links_data.append(link_detail)
+                    
                     # Update stats
                     operation_stats[op.id][status] += 1
                     operation_stats[op.id]['name'] = op_data.get('name', 'Unknown')
@@ -2014,6 +2426,11 @@ class OperationApi(BaseObjectApi):
             events.sort(key=lambda x: x['ts'], reverse=True)
             recent_events = events[:limit]
             
+            # Limit and sort recent_links
+            if include_links:
+                recent_links_data.sort(key=lambda x: x['finished_at'], reverse=True)
+                recent_links_data = recent_links_data[:limit]
+            
             response = {
                 'agent': {
                     'paw': paw,
@@ -2026,6 +2443,15 @@ class OperationApi(BaseObjectApi):
                 'top_problems': top_problems,
                 'recent_events': recent_events
             }
+            
+            # Add link details if requested
+            if include_links:
+                response['recent_links'] = recent_links_data
+                response['links_meta'] = {
+                    'include_links': True,
+                    'output_max_chars': output_max_chars,
+                    'output_format': output_format
+                }
             
             return web.json_response(response)
         
@@ -2164,9 +2590,2644 @@ class OperationApi(BaseObjectApi):
                 'error': str(e),
                 'traceback': traceback.format_exc()
             }, status=500)
+    
+    async def merlino_analytics_ability_success_rate(self, request: web.Request):
+        """
+        Merlino Analytics - Ability Success Rate Analysis
+        
+        Provides aggregate statistics on ability execution success rates, execution times,
+        and recent failures for troubleshooting.
+        
+        Query params:
+        - since_hours (int, default 72): time window in hours
+        - from (ISO-8601): window start time
+        - to (ISO-8601): window end time  
+        - operation_id (str): filter to specific operation
+        - agent_paw (str): filter to specific agent
+        - group (str): filter to agent group
+        - limit (int, default 250, max 2000): max abilities returned
+        - min_executions (int, default 1): minimum executions to include ability
+        """
+        try:
+            from datetime import datetime, timezone, timedelta
+            from collections import defaultdict
+            import base64
+            import json as json_lib
             
+            # Parse query parameters
+            params = request.rel_url.query
+            since_hours = int(params.get('since_hours', 72))
+            from_str = params.get('from')
+            to_str = params.get('to')
+            operation_id_filter = params.get('operation_id')
+            agent_paw_filter = params.get('agent_paw')
+            group_filter = params.get('group')
+            limit = min(int(params.get('limit', 250)), 2000)
+            min_executions = int(params.get('min_executions', 1))
+            
+            # Determine time window
+            now = datetime.now(timezone.utc)
+            if from_str and to_str:
+                window_from = datetime.fromisoformat(from_str.replace('Z', '+00:00'))
+                window_to = datetime.fromisoformat(to_str.replace('Z', '+00:00'))
+            else:
+                window_from = now - timedelta(hours=since_hours)
+                window_to = now
+            
+            # Get all operations
+            operations = list(self._api_manager.find_objects('operations'))
+            agents = list(self._api_manager.find_objects('agents'))
+            
+            # Build agent lookup for group filtering
+            agent_lookup = {agent.paw: agent for agent in agents}
+            
+            # Aggregate data by ability_id
+            ability_data = defaultdict(lambda: {
+                'ability_id': None,
+                'ability_name': None,
+                'plugin': None,
+                'tactics': set(),
+                'techniques': set(),
+                'total_executions': 0,
+                'success_count': 0,
+                'failure_count': 0,
+                'timeout_count': 0,
+                'running_count': 0,
+                'execution_times': [],
+                'operations': defaultdict(lambda: {
+                    'operation_id': None,
+                    'operation_name': None,
+                    'executions': 0,
+                    'success': 0,
+                    'failed': 0,
+                    'timeout': 0,
+                    'running': 0
+                }),
+                'recent_failures': []
+            })
+            
+            # Process operations and links
+            for op in operations:
+                # Filter by operation_id
+                if operation_id_filter and op.id != operation_id_filter:
+                    continue
+                
+                if not hasattr(op, 'chain') or not op.chain:
+                    continue
+                
+                for link in op.chain:
+                    # Get link properties
+                    link_paw = getattr(link, 'paw', None)
+                    link_status = getattr(link, 'status', -1)
+                    link_ability = getattr(link, 'ability', None)
+                    
+                    if not link_ability:
+                        continue
+                    
+                    # Filter by agent_paw
+                    if agent_paw_filter and link_paw != agent_paw_filter:
+                        continue
+                    
+                    # Filter by group
+                    if group_filter:
+                        agent = agent_lookup.get(link_paw)
+                        if not agent or getattr(agent, 'group', None) != group_filter:
+                            continue
+                    
+                    # Get ability details
+                    ability_id = getattr(link_ability, 'ability_id', None)
+                    if not ability_id:
+                        continue
+                    
+                    ability_name = getattr(link_ability, 'name', 'Unknown')
+                    ability_tactic = getattr(link_ability, 'tactic', None)
+                    ability_technique = getattr(link_ability, 'technique_id', None)
+                    ability_plugin = getattr(link_ability, 'plugin', None)
+                    
+                    # Get execution time (if available)
+                    exec_time_ms = None
+                    if hasattr(link, 'finish') and hasattr(link, 'decide'):
+                        finish = getattr(link, 'finish', None)
+                        decide = getattr(link, 'decide', None)
+                        if finish and decide:
+                            try:
+                                if isinstance(finish, str):
+                                    finish = datetime.fromisoformat(finish.replace('Z', '+00:00'))
+                                if isinstance(decide, str):
+                                    decide = datetime.fromisoformat(decide.replace('Z', '+00:00'))
+                                exec_time_ms = int((finish - decide).total_seconds() * 1000)
+                            except:
+                                pass
+                    
+                    # Normalize status
+                    if link_status == 0:
+                        status_bucket = 'success'
+                    elif link_status == 1:
+                        status_bucket = 'failed'
+                    elif link_status == 124:
+                        status_bucket = 'timeout'
+                    elif link_status == -1:
+                        status_bucket = 'running'
+                    else:
+                        status_bucket = 'running'  # Unknown = running
+                    
+                    # Update ability aggregate data
+                    data = ability_data[ability_id]
+                    if not data['ability_id']:
+                        data['ability_id'] = ability_id
+                        data['ability_name'] = ability_name
+                        data['plugin'] = ability_plugin or 'unknown'
+                        if ability_tactic:
+                            data['tactics'].add(ability_tactic)
+                        if ability_technique:
+                            data['techniques'].add(ability_technique)
+                    
+                    data['total_executions'] += 1
+                    
+                    if status_bucket == 'success':
+                        data['success_count'] += 1
+                    elif status_bucket == 'failed':
+                        data['failure_count'] += 1
+                    elif status_bucket == 'timeout':
+                        data['timeout_count'] += 1
+                    elif status_bucket == 'running':
+                        data['running_count'] += 1
+                    
+                    if exec_time_ms:
+                        data['execution_times'].append(exec_time_ms)
+                    
+                    # Update per-operation stats
+                    op_stats = data['operations'][op.id]
+                    if not op_stats['operation_id']:
+                        op_stats['operation_id'] = op.id
+                        op_stats['operation_name'] = op.name
+                    op_stats['executions'] += 1
+                    if status_bucket == 'success':
+                        op_stats['success'] += 1
+                    elif status_bucket == 'failed':
+                        op_stats['failed'] += 1
+                    elif status_bucket == 'timeout':
+                        op_stats['timeout'] += 1
+                    elif status_bucket == 'running':
+                        op_stats['running'] += 1
+                    
+                    # Track recent failures (up to 5 per ability)
+                    if status_bucket in ['failed', 'timeout'] and len(data['recent_failures']) < 5:
+                        # Read output for error context
+                        stdout_preview = ''
+                        stderr_preview = ''
+                        exit_code = None
+                        
+                        try:
+                            link_id = getattr(link, 'id', '')
+                            if link_id:
+                                file_svc = self._api_manager._file_svc
+                                output_content = file_svc.read_result_file(link_id)
+                                if output_content:
+                                    decoded_output = base64.b64decode(output_content).decode('utf-8')
+                                    output_json = json_lib.loads(decoded_output)
+                                    stdout_preview = output_json.get('stdout', '')[:200]
+                                    stderr_preview = output_json.get('stderr', '')[:200]
+                                    exit_code = output_json.get('exit_code')
+                        except:
+                            pass
+                        
+                        # Get timestamp (prefer finish, fallback to now)
+                        when = now
+                        if hasattr(link, 'finish'):
+                            finish = getattr(link, 'finish', None)
+                            if finish:
+                                try:
+                                    if isinstance(finish, str):
+                                        when = datetime.fromisoformat(finish.replace('Z', '+00:00'))
+                                    else:
+                                        when = finish
+                                except:
+                                    pass
+                        
+                        # Build problem_id for drilldown
+                        problem_id = None
+                        if ability_tactic and ability_technique:
+                            problem_id = f"{ability_tactic}/{ability_technique}"
+                        
+                        data['recent_failures'].append({
+                            'when': when.isoformat(),
+                            'operation_id': op.id,
+                            'operation_name': op.name,
+                            'agent_paw': link_paw or 'unknown',
+                            'agent_host': getattr(link, 'host', 'unknown'),
+                            'exit_code': exit_code,
+                            'stderr_preview': stderr_preview,
+                            'stdout_preview': stdout_preview,
+                            'problem_id': problem_id
+                        })
+            
+            # Compute final metrics and filter by min_executions
+            abilities_list = []
+            for ability_id, data in ability_data.items():
+                if data['total_executions'] < min_executions:
+                    continue
+                
+                # Calculate success rate
+                if data['total_executions'] > 0:
+                    success_rate = (data['success_count'] / data['total_executions']) * 100
+                else:
+                    success_rate = 0.0
+                
+                # Calculate execution time stats
+                avg_execution_time_ms = None
+                p95_execution_time_ms = None
+                if data['execution_times']:
+                    avg_execution_time_ms = int(sum(data['execution_times']) / len(data['execution_times']))
+                    sorted_times = sorted(data['execution_times'])
+                    p95_index = int(len(sorted_times) * 0.95)
+                    p95_execution_time_ms = sorted_times[p95_index] if p95_index < len(sorted_times) else sorted_times[-1]
+                
+                # Convert operations dict to list
+                operations_list = list(data['operations'].values())
+                
+                abilities_list.append({
+                    'ability_id': data['ability_id'],
+                    'ability_name': data['ability_name'],
+                    'plugin': data['plugin'],
+                    'tactics': sorted(list(data['tactics'])),
+                    'techniques': sorted(list(data['techniques'])),
+                    'total_executions': data['total_executions'],
+                    'success_count': data['success_count'],
+                    'failure_count': data['failure_count'],
+                    'timeout_count': data['timeout_count'],
+                    'running_count': data['running_count'],
+                    'success_rate': round(success_rate, 2),
+                    'avg_execution_time_ms': avg_execution_time_ms,
+                    'p95_execution_time_ms': p95_execution_time_ms,
+                    'operations': operations_list,
+                    'recent_failures': data['recent_failures']
+                })
+            
+            # Sort by total_executions descending, then by success_rate ascending
+            abilities_list.sort(key=lambda x: (-x['total_executions'], x['success_rate']))
+            
+            # Apply limit
+            abilities_list = abilities_list[:limit]
+            
+            # Calculate global stats
+            unique_abilities = len(abilities_list)
+            total_executions = sum(a['total_executions'] for a in abilities_list)
+            success_total = sum(a['success_count'] for a in abilities_list)
+            failed_total = sum(a['failure_count'] for a in abilities_list)
+            timeout_total = sum(a['timeout_count'] for a in abilities_list)
+            running_total = sum(a['running_count'] for a in abilities_list)
+            
+            # Build response
+            response = {
+                'generated_at': now.isoformat(),
+                'window': {
+                    'from': window_from.isoformat(),
+                    'to': window_to.isoformat(),
+                    'since_hours': since_hours
+                },
+                'filters': {
+                    'operation_id': operation_id_filter,
+                    'agent_paw': agent_paw_filter,
+                    'group': group_filter,
+                    'min_executions': min_executions
+                },
+                'stats': {
+                    'unique_abilities': unique_abilities,
+                    'total_executions': total_executions,
+                    'success': success_total,
+                    'failed': failed_total,
+                    'timeout': timeout_total,
+                    'running': running_total
+                },
+                'abilities': abilities_list
+            }
+            
+            return web.json_response(response)
+        
+        except ValueError as e:
+            return web.json_response({'error': f'Invalid query parameter: {str(e)}'}, status=400)
         except Exception as e:
             import traceback
-            error_msg = f"Error in merlino_synchronize: {str(e)}\n{traceback.format_exc()}"
+            return web.json_response({
+                'error': str(e),
+                'traceback': traceback.format_exc()
+            }, status=500)
+    
+    async def merlino_analytics_operations_health_matrix(self, request: web.Request):
+        """
+        Merlino Analytics - Operations Health Matrix
+        
+        Provides a complete matrix (rows/columns/cells) with operation health metrics,
+        already classified and render-ready for the frontend.
+        
+        Query params:
+        - from (ISO-8601): start of time window (default: now - 7d)
+        - to (ISO-8601): end of time window (default: now)
+        - groupBy (str): operation|operation_agent|operation_group (default: operation)
+        - scope (str): all|picked (default: all)
+        - include (CSV str): cells,operationSummaries,topIssues (default: cells,operationSummaries)
+        - limit (int): max rows (default: 200)
+        - minSamples (int): min executions to include (default: 1)
+        """
+        try:
+            from datetime import datetime, timezone, timedelta
+            from collections import defaultdict
+            import base64
+            import json as json_lib
+            
+            # Parse query parameters
+            params = request.rel_url.query
+            from_str = params.get('from')
+            to_str = params.get('to')
+            group_by = params.get('groupBy', 'operation')
+            scope = params.get('scope', 'all')
+            include_str = params.get('include', 'cells,operationSummaries')
+            limit = int(params.get('limit', 200))
+            min_samples = int(params.get('minSamples', 1))
+            
+            # Parse include flags
+            include_parts = [p.strip() for p in include_str.split(',')]
+            include_cells = 'cells' in include_parts
+            include_summaries = 'operationSummaries' in include_parts
+            include_top_issues = 'topIssues' in include_parts
+            
+            # Determine time window
+            now = datetime.now(timezone.utc)
+            if from_str and to_str:
+                window_from = datetime.fromisoformat(from_str.replace('Z', '+00:00'))
+                window_to = datetime.fromisoformat(to_str.replace('Z', '+00:00'))
+            else:
+                window_from = now - timedelta(days=7)
+                window_to = now
+            
+            # Thresholds (configurable)
+            thresholds = {
+                'stale_minutes': 30,
+                'warn_error_rate': 0.05,
+                'bad_error_rate': 0.2,
+                'warn_timeout_rate': 0.05,
+                'bad_timeout_rate': 0.2,
+                'min_samples': min_samples
+            }
+            
+            # Get all operations and agents
+            operations = list(self._api_manager.find_objects('operations'))
+            agents = list(self._api_manager.find_objects('agents'))
+            
+            # Build agent lookup
+            agent_lookup = {agent.paw: agent for agent in agents}
+            
+            # Data structures
+            rows = []
+            cells = []
+            operation_summaries = []
+            
+            # Define columns (fixed structure)
+            columns = [
+                {'column_id': 'health_score', 'label': 'Health', 'kind': 'score', 'description': '0..100 score'},
+                {'column_id': 'success_rate', 'label': 'Success Rate', 'kind': 'score'},
+                {'column_id': 'error_rate', 'label': 'Error Rate', 'kind': 'score'},
+                {'column_id': 'timeout_rate', 'label': 'Timeout Rate', 'kind': 'score'},
+                {'column_id': 'last_event_at', 'label': 'Last Event', 'kind': 'time'},
+                {'column_id': 'freshness_minutes', 'label': 'Freshness (min)', 'kind': 'count'}
+            ]
+            
+            # Process operations
+            for op in operations[:limit]:
+                if not hasattr(op, 'chain') or not op.chain:
+                    continue
+                
+                # Aggregate data based on groupBy
+                if group_by == 'operation':
+                    # One row per operation
+                    row_data = self._compute_operation_health_row(
+                        op, agent_lookup, thresholds, now, window_from, window_to, group_by
+                    )
+                    if row_data and row_data['counts']['total'] >= min_samples:
+                        rows.append(row_data['row'])
+                        if include_cells:
+                            cells.extend(row_data['cells'])
+                        if include_summaries:
+                            operation_summaries.append(row_data['summary'])
+                
+                elif group_by in ['operation_agent', 'operation_group']:
+                    # Group by agent or agent_group
+                    agent_groups = defaultdict(list)
+                    for link in op.chain:
+                        link_paw = getattr(link, 'paw', None)
+                        if group_by == 'operation_agent':
+                            key = link_paw or 'unknown'
+                        else:  # operation_group
+                            agent = agent_lookup.get(link_paw)
+                            key = getattr(agent, 'group', 'unknown') if agent else 'unknown'
+                        agent_groups[key].append(link)
+                    
+                    for group_key, links in agent_groups.items():
+                        row_data = self._compute_operation_health_row_grouped(
+                            op, group_key, links, agent_lookup, thresholds, now, window_from, window_to, group_by
+                        )
+                        if row_data and row_data['counts']['total'] >= min_samples:
+                            rows.append(row_data['row'])
+                            if include_cells:
+                                cells.extend(row_data['cells'])
+                            if include_summaries:
+                                operation_summaries.append(row_data['summary'])
+            
+            # Build response
+            response = {
+                'version': '1.0',
+                'generated_at': now.isoformat(),
+                'time_window': {
+                    'from': window_from.isoformat(),
+                    'to': window_to.isoformat()
+                },
+                'groupBy': group_by,
+                'thresholds': thresholds,
+                'rows': rows if include_cells else [],
+                'columns': columns if include_cells else [],
+                'cells': cells if include_cells else [],
+                'operationSummaries': operation_summaries if include_summaries else []
+            }
+            
+            if include_top_issues:
+                response['topIssues'] = []
+            
+            return web.json_response(response)
+        
+        except ValueError as e:
+            return web.json_response({'error': f'Invalid query parameter: {str(e)}'}, status=400)
+        except Exception as e:
+            import traceback
+            return web.json_response({
+                'error': str(e),
+                'traceback': traceback.format_exc()
+            }, status=500)
+    
+    def _compute_operation_health_row(self, op, agent_lookup, thresholds, now, window_from, window_to, group_by):
+        """Compute health metrics for a single operation row"""
+        from datetime import datetime, timezone
+        
+        # Initialize counters
+        counts = {'success': 0, 'fail': 0, 'timeout': 0, 'pending': 0, 'total': 0}
+        last_event_at = None
+        agent_paws = set()
+        
+        # Process links
+        for link in op.chain:
+            link_status = getattr(link, 'status', -1)
+            link_paw = getattr(link, 'paw', None)
+            
+            if link_paw:
+                agent_paws.add(link_paw)
+            
+            # Normalize status
+            if link_status == 0:
+                counts['success'] += 1
+            elif link_status == 1:
+                counts['fail'] += 1
+            elif link_status == 124:
+                counts['timeout'] += 1
+            elif link_status == -1:
+                counts['pending'] += 1
+            else:
+                counts['pending'] += 1
+            
+            counts['total'] += 1
+            
+            # Track last event
+            link_finish = getattr(link, 'finish', None)
+            if link_finish:
+                try:
+                    if isinstance(link_finish, str):
+                        link_finish = datetime.fromisoformat(link_finish.replace('Z', '+00:00'))
+                    if not last_event_at or link_finish > last_event_at:
+                        last_event_at = link_finish
+                except:
+                    pass
+        
+        # Calculate rates
+        denominator = counts['success'] + counts['fail'] + counts['timeout']
+        if denominator > 0:
+            success_rate = counts['success'] / denominator
+            error_rate = counts['fail'] / denominator
+            timeout_rate = counts['timeout'] / denominator
+        else:
+            success_rate = None
+            error_rate = None
+            timeout_rate = None
+        
+        # Calculate freshness
+        freshness_minutes = None
+        stale = False
+        if last_event_at:
+            freshness_minutes = int((now - last_event_at).total_seconds() / 60)
+            stale = freshness_minutes > thresholds['stale_minutes']
+        
+        # Calculate health score and severity
+        if counts['total'] < thresholds['min_samples']:
+            severity = 'nodata'
+            health_score = None
+            reasons = ['insufficient data']
+        else:
+            health_score = 100.0
+            reasons = []
+            
+            # Apply penalties
+            if error_rate is not None:
+                penalty = error_rate * 100 * 1.0
+                health_score -= penalty
+                if error_rate >= thresholds['bad_error_rate']:
+                    reasons.append(f'error_rate={error_rate:.2f}')
+                elif error_rate >= thresholds['warn_error_rate']:
+                    reasons.append(f'error_rate={error_rate:.2f}')
+            
+            if timeout_rate is not None:
+                penalty = timeout_rate * 100 * 0.7
+                health_score -= penalty
+                if timeout_rate >= thresholds['bad_timeout_rate']:
+                    reasons.append(f'timeout_rate={timeout_rate:.2f}')
+                elif timeout_rate >= thresholds['warn_timeout_rate']:
+                    reasons.append(f'timeout_rate={timeout_rate:.2f}')
+            
+            if stale:
+                health_score -= 20
+                reasons.append('stale')
+            
+            health_score = max(0, min(100, health_score))
+            
+            # Determine severity
+            if error_rate is not None and error_rate >= thresholds['bad_error_rate']:
+                severity = 'bad'
+            elif timeout_rate is not None and timeout_rate >= thresholds['bad_timeout_rate']:
+                severity = 'bad'
+            elif stale:
+                severity = 'bad'
+            elif error_rate is not None and error_rate >= thresholds['warn_error_rate']:
+                severity = 'warn'
+            elif timeout_rate is not None and timeout_rate >= thresholds['warn_timeout_rate']:
+                severity = 'warn'
+            else:
+                severity = 'good'
+        
+        # Build row
+        row_id = f"op:{op.id}"
+        row = {
+            'row_id': row_id,
+            'operation_id': op.id,
+            'operation_name': op.name,
+            'agent_paw': None,
+            'agent_host': None,
+            'agent_group': None,
+            'last_seen': last_event_at.isoformat() if last_event_at else None
+        }
+        
+        # Build cells
+        cells_data = [
+            {
+                'row_id': row_id,
+                'column_id': 'health_score',
+                'value': int(health_score) if health_score is not None else None,
+                'severity': severity,
+                'details': {
+                    'sample_size': counts['total'],
+                    'success': counts['success'],
+                    'fail': counts['fail'],
+                    'timeout': counts['timeout'],
+                    'pending': counts['pending'],
+                    'success_rate': success_rate,
+                    'error_rate': error_rate,
+                    'timeout_rate': timeout_rate,
+                    'last_event_at': last_event_at.isoformat() if last_event_at else None,
+                    'stale': stale,
+                    'top_reasons': reasons
+                }
+            },
+            {
+                'row_id': row_id,
+                'column_id': 'success_rate',
+                'value': round(success_rate * 100, 1) if success_rate is not None else None,
+                'severity': severity
+            },
+            {
+                'row_id': row_id,
+                'column_id': 'error_rate',
+                'value': round(error_rate * 100, 1) if error_rate is not None else None,
+                'severity': severity
+            },
+            {
+                'row_id': row_id,
+                'column_id': 'timeout_rate',
+                'value': round(timeout_rate * 100, 1) if timeout_rate is not None else None,
+                'severity': severity
+            },
+            {
+                'row_id': row_id,
+                'column_id': 'last_event_at',
+                'value': last_event_at.isoformat() if last_event_at else None,
+                'severity': severity
+            },
+            {
+                'row_id': row_id,
+                'column_id': 'freshness_minutes',
+                'value': freshness_minutes,
+                'severity': severity
+            }
+        ]
+        
+        # Build summary
+        summary = {
+            'operation_id': op.id,
+            'operation_name': op.name,
+            'state': op.state,
+            'group': getattr(op, 'group', ''),
+            'agent_count': len(agent_paws),
+            'counts': counts,
+            'rates': {
+                'success_rate': success_rate,
+                'error_rate': error_rate,
+                'timeout_rate': timeout_rate
+            },
+            'last_event_at': last_event_at.isoformat() if last_event_at else None,
+            'freshness_minutes': freshness_minutes,
+            'health': {
+                'severity': severity,
+                'score': int(health_score) if health_score is not None else None,
+                'reasons': reasons
+            }
+        }
+        
+        return {
+            'row': row,
+            'cells': cells_data,
+            'summary': summary,
+            'counts': counts
+        }
+    
+    def _compute_operation_health_row_grouped(self, op, group_key, links, agent_lookup, thresholds, now, window_from, window_to, group_by):
+        """Compute health metrics for a grouped row (by agent or group)"""
+        from datetime import datetime, timezone
+        
+        # Initialize counters
+        counts = {'success': 0, 'fail': 0, 'timeout': 0, 'pending': 0, 'total': 0}
+        last_event_at = None
+        
+        # Process links
+        for link in links:
+            link_status = getattr(link, 'status', -1)
+            
+            # Normalize status
+            if link_status == 0:
+                counts['success'] += 1
+            elif link_status == 1:
+                counts['fail'] += 1
+            elif link_status == 124:
+                counts['timeout'] += 1
+            elif link_status == -1:
+                counts['pending'] += 1
+            else:
+                counts['pending'] += 1
+            
+            counts['total'] += 1
+            
+            # Track last event
+            link_finish = getattr(link, 'finish', None)
+            if link_finish:
+                try:
+                    if isinstance(link_finish, str):
+                        link_finish = datetime.fromisoformat(link_finish.replace('Z', '+00:00'))
+                    if not last_event_at or link_finish > last_event_at:
+                        last_event_at = link_finish
+                except:
+                    pass
+        
+        # Calculate rates (same logic as _compute_operation_health_row)
+        denominator = counts['success'] + counts['fail'] + counts['timeout']
+        if denominator > 0:
+            success_rate = counts['success'] / denominator
+            error_rate = counts['fail'] / denominator
+            timeout_rate = counts['timeout'] / denominator
+        else:
+            success_rate = None
+            error_rate = None
+            timeout_rate = None
+        
+        # Calculate freshness
+        freshness_minutes = None
+        stale = False
+        if last_event_at:
+            freshness_minutes = int((now - last_event_at).total_seconds() / 60)
+            stale = freshness_minutes > thresholds['stale_minutes']
+        
+        # Calculate health score and severity (same logic)
+        if counts['total'] < thresholds['min_samples']:
+            severity = 'nodata'
+            health_score = None
+            reasons = ['insufficient data']
+        else:
+            health_score = 100.0
+            reasons = []
+            
+            if error_rate is not None:
+                penalty = error_rate * 100 * 1.0
+                health_score -= penalty
+                if error_rate >= thresholds['bad_error_rate']:
+                    reasons.append(f'error_rate={error_rate:.2f}')
+                elif error_rate >= thresholds['warn_error_rate']:
+                    reasons.append(f'error_rate={error_rate:.2f}')
+            
+            if timeout_rate is not None:
+                penalty = timeout_rate * 100 * 0.7
+                health_score -= penalty
+                if timeout_rate >= thresholds['bad_timeout_rate']:
+                    reasons.append(f'timeout_rate={timeout_rate:.2f}')
+                elif timeout_rate >= thresholds['warn_timeout_rate']:
+                    reasons.append(f'timeout_rate={timeout_rate:.2f}')
+            
+            if stale:
+                health_score -= 20
+                reasons.append('stale')
+            
+            health_score = max(0, min(100, health_score))
+            
+            # Determine severity
+            if error_rate is not None and error_rate >= thresholds['bad_error_rate']:
+                severity = 'bad'
+            elif timeout_rate is not None and timeout_rate >= thresholds['bad_timeout_rate']:
+                severity = 'bad'
+            elif stale:
+                severity = 'bad'
+            elif error_rate is not None and error_rate >= thresholds['warn_error_rate']:
+                severity = 'warn'
+            elif timeout_rate is not None and timeout_rate >= thresholds['warn_timeout_rate']:
+                severity = 'warn'
+            else:
+                severity = 'good'
+        
+        # Build row
+        row_id = f"op:{op.id}:{group_by}:{group_key}"
+        row = {
+            'row_id': row_id,
+            'operation_id': op.id,
+            'operation_name': op.name,
+            'agent_paw': group_key if group_by == 'operation_agent' else None,
+            'agent_host': None,
+            'agent_group': group_key if group_by == 'operation_group' else None,
+            'last_seen': last_event_at.isoformat() if last_event_at else None
+        }
+        
+        # Build cells (same structure as ungrouped)
+        cells_data = [
+            {
+                'row_id': row_id,
+                'column_id': 'health_score',
+                'value': int(health_score) if health_score is not None else None,
+                'severity': severity,
+                'details': {
+                    'sample_size': counts['total'],
+                    'success': counts['success'],
+                    'fail': counts['fail'],
+                    'timeout': counts['timeout'],
+                    'pending': counts['pending'],
+                    'success_rate': success_rate,
+                    'error_rate': error_rate,
+                    'timeout_rate': timeout_rate,
+                    'last_event_at': last_event_at.isoformat() if last_event_at else None,
+                    'stale': stale,
+                    'top_reasons': reasons
+                }
+            },
+            {
+                'row_id': row_id,
+                'column_id': 'success_rate',
+                'value': round(success_rate * 100, 1) if success_rate is not None else None,
+                'severity': severity
+            },
+            {
+                'row_id': row_id,
+                'column_id': 'error_rate',
+                'value': round(error_rate * 100, 1) if error_rate is not None else None,
+                'severity': severity
+            },
+            {
+                'row_id': row_id,
+                'column_id': 'timeout_rate',
+                'value': round(timeout_rate * 100, 1) if timeout_rate is not None else None,
+                'severity': severity
+            },
+            {
+                'row_id': row_id,
+                'column_id': 'last_event_at',
+                'value': last_event_at.isoformat() if last_event_at else None,
+                'severity': severity
+            },
+            {
+                'row_id': row_id,
+                'column_id': 'freshness_minutes',
+                'value': freshness_minutes,
+                'severity': severity
+            }
+        ]
+        
+        # Build summary
+        summary = {
+            'operation_id': op.id,
+            'operation_name': op.name,
+            'state': op.state,
+            'group': group_key if group_by == 'operation_group' else getattr(op, 'group', ''),
+            'agent_count': 1 if group_by == 'operation_agent' else None,
+            'counts': counts,
+            'rates': {
+                'success_rate': success_rate,
+                'error_rate': error_rate,
+                'timeout_rate': timeout_rate
+            },
+            'last_event_at': last_event_at.isoformat() if last_event_at else None,
+            'freshness_minutes': freshness_minutes,
+            'health': {
+                'severity': severity,
+                'score': int(health_score) if health_score is not None else None,
+                'reasons': reasons
+            }
+        }
+        
+        return {
+            'row': row,
+            'cells': cells_data,
+            'summary': summary,
+            'counts': counts
+        }
+    
+    async def merlino_analytics_operation_health_details(self, request: web.Request):
+        """
+        Merlino Analytics - Operation Health Details (Drilldown)
+        
+        Returns detailed items for a specific operation with optional decoded output and command.
+        
+        Path params:
+        - operation_id (str): UUID of the operation
+        
+        Query params:
+        - from (ISO-8601): start of time window
+        - to (ISO-8601): end of time window
+        - limit (int): max items (default 500)
+        - offset (int): pagination offset (default 0)
+        - status (CSV str): filter by status (success,fail,timeout,pending,unknown)
+        - agent_paw (str): filter by agent PAW
+        - includeOutput (bool): include output field (default false)
+        - outputFormat (str): decoded|raw (default decoded)
+        - includeCommand (bool): include command field (default false)
+        - commandFormat (str): decoded|raw (default decoded)
+        """
+        try:
+            from datetime import datetime, timezone, timedelta
+            import base64
+            import json as json_lib
+            
+            # Get operation_id from path
+            operation_id = request.match_info['operation_id']
+            
+            # Parse query parameters
+            params = request.rel_url.query
+            from_str = params.get('from')
+            to_str = params.get('to')
+            limit = int(params.get('limit', 500))
+            offset = int(params.get('offset', 0))
+            status_filter = params.get('status', '').split(',') if params.get('status') else []
+            agent_paw_filter = params.get('agent_paw')
+            include_output = params.get('includeOutput', 'false').lower() == 'true'
+            output_format = params.get('outputFormat', 'decoded')
+            include_command = params.get('includeCommand', 'false').lower() == 'true'
+            command_format = params.get('commandFormat', 'decoded')
+            
+            # Determine time window
+            now = datetime.now(timezone.utc)
+            if from_str and to_str:
+                window_from = datetime.fromisoformat(from_str.replace('Z', '+00:00'))
+                window_to = datetime.fromisoformat(to_str.replace('Z', '+00:00'))
+            else:
+                window_from = now - timedelta(days=7)
+                window_to = now
+            
+            # Find operation
+            all_operations = list(self._api_manager.find_objects(self.ram_key))
+            operations = [op for op in all_operations if op.id == operation_id]
+            if not operations:
+                return web.json_response({'error': f'Operation {operation_id} not found'}, status=404)
+            
+            op = operations[0]
+            
+            # Initialize counters and items
+            counts = {'success': 0, 'fail': 0, 'timeout': 0, 'pending': 0, 'total': 0}
+            last_event_at = None
+            items = []
+            
+            # Get agents for lookup
+            agents = list(self._api_manager.find_objects('agents'))
+            agent_lookup = {agent.paw: agent for agent in agents}
+            
+            # Process links
+            if hasattr(op, 'chain') and op.chain:
+                all_links = []
+                
+                for link in op.chain:
+                    link_status = getattr(link, 'status', -1)
+                    link_paw = getattr(link, 'paw', None)
+                    
+                    # Normalize status to string
+                    if link_status == 0:
+                        status_str = 'success'
+                        counts['success'] += 1
+                    elif link_status == 1:
+                        status_str = 'fail'
+                        counts['fail'] += 1
+                    elif link_status == 124:
+                        status_str = 'timeout'
+                        counts['timeout'] += 1
+                    elif link_status == -1:
+                        status_str = 'pending'
+                        counts['pending'] += 1
+                    else:
+                        status_str = 'unknown'
+                        counts['pending'] += 1
+                    
+                    counts['total'] += 1
+                    
+                    # Apply filters
+                    if status_filter and status_str not in status_filter:
+                        continue
+                    if agent_paw_filter and link_paw != agent_paw_filter:
+                        continue
+                    
+                    # Track last event
+                    link_finish = getattr(link, 'finish', None)
+                    if link_finish:
+                        try:
+                            if isinstance(link_finish, str):
+                                link_finish = datetime.fromisoformat(link_finish.replace('Z', '+00:00'))
+                            if not last_event_at or link_finish > last_event_at:
+                                last_event_at = link_finish
+                        except:
+                            pass
+                    
+                    # Build item
+                    link_ability = getattr(link, 'ability', None)
+                    agent = agent_lookup.get(link_paw)
+                    
+                    # Extract executor name if it's an Executor object
+                    executor_obj = getattr(link, 'executor', None)
+                    executor_name = getattr(executor_obj, 'name', None) if executor_obj else None
+                    
+                    item = {
+                        'item_id': f"link:{getattr(link, 'id', 'unknown')}",
+                        'occurred_at': link_finish if link_finish else None,
+                        'status': status_str,
+                        'ability_id': getattr(link_ability, 'ability_id', None) if link_ability else None,
+                        'ability_name': getattr(link_ability, 'name', None) if link_ability else None,
+                        'technique_id': getattr(link_ability, 'technique_id', None) if link_ability else None,
+                        'tactic': getattr(link_ability, 'tactic', None) if link_ability else None,
+                        'agent_paw': link_paw,
+                        'agent_host': getattr(link, 'host', None),
+                        'agent_group': getattr(agent, 'group', None) if agent else None,
+                        'executor': executor_name,
+                        'platform': getattr(link, 'platform', None),
+                        'source': 'caldera'
+                    }
+                    
+                    # Add command if requested
+                    if include_command:
+                        link_command_raw = getattr(link, 'plaintext_command', '') or getattr(link, 'command', '')
+                        if link_command_raw:
+                            try:
+                                # Check if already base64
+                                base64.b64decode(link_command_raw, validate=True)
+                                is_base64 = True
+                            except:
+                                is_base64 = False
+                            
+                            if command_format == 'decoded':
+                                if is_base64:
+                                    decoded_cmd = base64.b64decode(link_command_raw).decode('utf-8', errors='ignore')
+                                    item['command'] = {'encoding': 'plain', 'value': decoded_cmd}
+                                else:
+                                    item['command'] = {'encoding': 'plain', 'value': link_command_raw}
+                            else:  # raw
+                                if is_base64:
+                                    item['command'] = {'encoding': 'base64', 'value': link_command_raw}
+                                else:
+                                    encoded_cmd = base64.b64encode(link_command_raw.encode('utf-8')).decode('ascii')
+                                    item['command'] = {'encoding': 'base64', 'value': encoded_cmd}
+                    
+                    # Add output if requested
+                    if include_output:
+                        try:
+                            link_id = getattr(link, 'id', '')
+                            if link_id:
+                                file_svc = self._api_manager._file_svc
+                                output_content = file_svc.read_result_file(link_id)
+                                
+                                if output_content:
+                                    if output_format == 'decoded':
+                                        # Decode base64 and parse JSON if possible
+                                        try:
+                                            decoded_output = base64.b64decode(output_content).decode('utf-8')
+                                            output_json = json_lib.loads(decoded_output)
+                                            item['output'] = {
+                                                'encoding': 'json-base64',
+                                                'value': output_content,
+                                                'parsed': output_json
+                                            }
+                                            
+                                            # Add error hint
+                                            if output_json.get('exit_code', 0) != 0:
+                                                item['error_hint'] = f"exit_code={output_json['exit_code']}"
+                                        except:
+                                            # Not JSON, just decoded text
+                                            item['output'] = {
+                                                'encoding': 'plain',
+                                                'value': decoded_output
+                                            }
+                                    else:  # raw
+                                        item['output'] = {
+                                            'encoding': 'base64',
+                                            'value': output_content
+                                        }
+                        except FileNotFoundError:
+                            pass
+                        except Exception as e:
+                            self.log.warning(f'Failed to read output for link {link_id}: {e}')
+                    
+                    all_links.append(item)
+                
+                # Apply pagination
+                total_filtered = len(all_links)
+                items = all_links[offset:offset + limit]
+            else:
+                total_filtered = 0
+            
+            # Calculate rates
+            denominator = counts['success'] + counts['fail'] + counts['timeout']
+            if denominator > 0:
+                success_rate = counts['success'] / denominator
+                error_rate = counts['fail'] / denominator
+                timeout_rate = counts['timeout'] / denominator
+            else:
+                success_rate = None
+                error_rate = None
+                timeout_rate = None
+            
+            # Build response
+            response = {
+                'operation_id': op.id,
+                'operation_name': op.name,
+                'time_window': {
+                    'from': window_from.isoformat(),
+                    'to': window_to.isoformat()
+                },
+                'summary': {
+                    'counts': counts,
+                    'rates': {
+                        'success_rate': success_rate,
+                        'error_rate': error_rate,
+                        'timeout_rate': timeout_rate
+                    },
+                    'last_event_at': last_event_at.isoformat() if last_event_at else None
+                },
+                'items': items,
+                'paging': {
+                    'limit': limit,
+                    'offset': offset,
+                    'total': total_filtered
+                }
+            }
+            
+            return web.json_response(response)
+        
+        except ValueError as e:
+            return web.json_response({'error': f'Invalid parameter: {str(e)}'}, status=400)
+        except Exception as e:
+            import traceback
+            return web.json_response({
+                'error': str(e),
+                'traceback': traceback.format_exc()
+            }, status=500)
+    
+    # ============================================================================
+    # ERROR ANALYTICS API - Helper Methods
+    # ============================================================================
+    
+    def _normalize_error_reason(self, link, output_content=None):
+        """
+        Normalize error reasons for clustering and analytics.
+        
+        Returns: tuple (reason: str, error_hint: str | None)
+        """
+        import re
+        
+        # Default
+        reason = 'unknown'
+        hint = None
+        
+        # Check status first
+        link_status = getattr(link, 'status', -1)
+        
+        if link_status == 124:
+            return ('timeout', 'Execution timed out - consider increasing timeout or optimizing command')
+        
+        if link_status == -1:
+            return ('pending', None)
+        
+        if link_status == 0:
+            return ('success', None)
+        
+        # For failures (status=1), analyze output
+        if output_content:
+            try:
+                import base64
+                import json as json_lib
+                
+                decoded = base64.b64decode(output_content).decode('utf-8', errors='ignore')
+                output_json = json_lib.loads(decoded)
+                
+                stdout = output_json.get('stdout', '').lower()
+                stderr = output_json.get('stderr', '').lower()
+                combined = stdout + stderr
+                
+                # Access denied
+                if any(x in combined for x in ['access is denied', 'access denied', 'permission denied', 'unauthorized', 'sedebugprivilege']):
+                    reason = 'access_denied'
+                    hint = 'Run as elevated or enable required privileges'
+                
+                # Command not found
+                elif any(x in combined for x in ['not recognized as', 'command not found', 'is not recognized', 'cmdlet does not exist']):
+                    reason = 'command_not_found'
+                    hint = 'Verify command exists or install required dependencies'
+                
+                # File not found
+                elif any(x in combined for x in ['file not found', 'cannot find', 'no such file', 'path not found']):
+                    reason = 'file_not_found'
+                    hint = 'Check file path and verify file exists'
+                
+                # Network errors
+                elif any(x in combined for x in ['network', 'connection', 'unreachable', 'timeout', 'timed out']):
+                    reason = 'network_unreachable'
+                    hint = 'Check network connectivity and firewall rules'
+                
+                # AMSI/EDR blocks
+                elif any(x in combined for x in ['amsi', 'antimalware', 'windows defender', 'blocked', 'quarantine']):
+                    reason = 'amsi_block'
+                    hint = 'Content blocked by endpoint protection - adjust detection rules'
+                
+                # Invalid arguments
+                elif any(x in combined for x in ['invalid argument', 'invalid parameter', 'syntax error', 'unexpected token']):
+                    reason = 'invalid_argument'
+                    hint = 'Check command syntax and parameter values'
+                
+                # Dependency missing
+                elif any(x in combined for x in ['module', 'assembly', 'dll not found', 'import error']):
+                    reason = 'dependency_missing'
+                    hint = 'Install required modules or dependencies'
+                
+                # Parser error (server-side)
+                elif 'parser' in combined or 'decode' in combined:
+                    reason = 'parser_error'
+                    hint = 'Server failed to parse output - check output format'
+                    
+            except:
+                pass
+        
+        return (reason, hint)
+    
+    # ============================================================================
+    # ERROR ANALYTICS API - Endpoints
+    # ============================================================================
+    
+    async def merlino_error_analytics_overview(self, request: web.Request):
+        """
+        Error Analytics - Overview with KPIs and trend.
+        
+        GET /api/v2/merlino/analytics/error-analytics/overview
+        """
+        try:
+            from datetime import datetime, timezone, timedelta
+            from collections import defaultdict, Counter
+            
+            # Parse query parameters
+            params = request.rel_url.query
+            from_str = params.get('from')
+            to_str = params.get('to')
+            group_by = params.get('groupBy', 'day')
+            operation_id_filter = params.get('operation_id')
+            agent_paw_filter = params.get('agent_paw')
+            group_filter = params.get('group')
+            
+            # Determine time window
+            now = datetime.now(timezone.utc)
+            if from_str and to_str:
+                window_from = datetime.fromisoformat(from_str.replace('Z', '+00:00'))
+                window_to = datetime.fromisoformat(to_str.replace('Z', '+00:00'))
+            else:
+                window_from = now - timedelta(days=7)
+                window_to = now
+            
+            # Get operations and agents
+            operations = list(self._api_manager.find_objects(self.ram_key))
+            agents = list(self._api_manager.find_objects('agents'))
+            agent_lookup = {agent.paw: agent for agent in agents}
+            
+            # Counters
+            totals = {'events': 0, 'errors': 0, 'timeouts': 0, 'success': 0, 'unknown': 0}
+            reason_counter = Counter()
+            trend_buckets = defaultdict(lambda: {'events': 0, 'errors': 0, 'timeouts': 0, 'success': 0})
+            
+            # Process operations
+            for op in operations:
+                if operation_id_filter and op.id != operation_id_filter:
+                    continue
+                
+                if not hasattr(op, 'chain') or not op.chain:
+                    continue
+                
+                for link in op.chain:
+                    link_paw = getattr(link, 'paw', None)
+                    link_status = getattr(link, 'status', -1)
+                    link_finish = getattr(link, 'finish', None)
+                    
+                    # Apply filters
+                    if agent_paw_filter and link_paw != agent_paw_filter:
+                        continue
+                    
+                    if group_filter:
+                        agent = agent_lookup.get(link_paw)
+                        agent_group = getattr(agent, 'group', None) if agent else None
+                        if agent_group != group_filter:
+                            continue
+                    
+                    # Check timestamp
+                    if link_finish:
+                        try:
+                            if isinstance(link_finish, str):
+                                finish_dt = datetime.fromisoformat(link_finish.replace('Z', '+00:00'))
+                            else:
+                                finish_dt = link_finish
+                            
+                            if finish_dt < window_from or finish_dt > window_to:
+                                continue
+                            
+                            # Bucket key
+                            if group_by == 'hour':
+                                bucket_key = finish_dt.strftime('%Y-%m-%dT%H:00:00Z')
+                            elif group_by == 'week':
+                                bucket_key = finish_dt.strftime('%Y-W%U')
+                            else:
+                                bucket_key = finish_dt.strftime('%Y-%m-%d')
+                        except:
+                            continue
+                    else:
+                        continue
+                    
+                    # Count
+                    totals['events'] += 1
+                    trend_buckets[bucket_key]['events'] += 1
+                    
+                    if link_status == 0:
+                        totals['success'] += 1
+                        trend_buckets[bucket_key]['success'] += 1
+                    elif link_status == 1:
+                        totals['errors'] += 1
+                        trend_buckets[bucket_key]['errors'] += 1
+                        try:
+                            link_id = getattr(link, 'id', '')
+                            file_svc = self._api_manager._file_svc
+                            output_content = file_svc.read_result_file(link_id)
+                            reason, _ = self._normalize_error_reason(link, output_content)
+                            reason_counter[reason] += 1
+                        except:
+                            reason_counter['unknown'] += 1
+                    elif link_status == 124:
+                        totals['timeouts'] += 1
+                        trend_buckets[bucket_key]['timeouts'] += 1
+                        reason_counter['timeout'] += 1
+                    else:
+                        totals['unknown'] += 1
+            
+            # Calculate rates
+            denominator = totals['events'] or 1
+            rates = {
+                'error_rate': totals['errors'] / denominator,
+                'timeout_rate': totals['timeouts'] / denominator,
+                'success_rate': totals['success'] / denominator
+            }
+            
+            # Build trend
+            trend = [
+                {'bucket': bucket, 'events': data['events'], 'errors': data['errors'], 
+                 'timeouts': data['timeouts'], 'success': data['success']}
+                for bucket, data in sorted(trend_buckets.items())
+            ]
+            
+            # Top reasons
+            top_reasons = [{'reason': reason, 'count': count} for reason, count in reason_counter.most_common(10)]
+            
+            return web.json_response({
+                'time_window': {'from': window_from.isoformat(), 'to': window_to.isoformat()},
+                'totals': totals,
+                'rates': rates,
+                'trend': trend,
+                'top_reasons': top_reasons
+            })
+        
+        except ValueError as e:
+            return web.json_response({'error': f'Invalid parameter: {str(e)}'}, status=400)
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+    
+    async def merlino_error_analytics_breakdown(self, request: web.Request):
+        """
+        Error Analytics - Breakdown by dimension.
+        
+        GET /api/v2/merlino/analytics/error-analytics/breakdown
+        """
+        try:
+            from datetime import datetime, timezone, timedelta
+            from collections import defaultdict, Counter
+            
+            params = request.rel_url.query
+            dimension = params.get('dimension')
+            if not dimension:
+                return web.json_response({'error': 'Missing required parameter: dimension'}, status=422)
+            
+            valid_dimensions = ['status', 'operation', 'agent', 'group', 'ability', 'executor', 'platform', 'plugin', 'reason']
+            if dimension not in valid_dimensions:
+                return web.json_response({'error': f'Invalid dimension. Must be one of: {", ".join(valid_dimensions)}'}, status=400)
+            
+            # Parse other params
+            from_str = params.get('from')
+            to_str = params.get('to')
+            metric = params.get('metric', 'count')
+            operation_id_filter = params.get('operation_id')
+            agent_paw_filter = params.get('agent_paw')
+            group_filter = params.get('group')
+            ability_id_filter = params.get('ability_id')
+            status_filter = params.get('status', '').split(',') if params.get('status') else []
+            
+            # Time window
+            now = datetime.now(timezone.utc)
+            if from_str and to_str:
+                window_from = datetime.fromisoformat(from_str.replace('Z', '+00:00'))
+                window_to = datetime.fromisoformat(to_str.replace('Z', '+00:00'))
+            else:
+                window_from = now - timedelta(days=7)
+                window_to = now
+            
+            # Get data
+            operations = list(self._api_manager.find_objects(self.ram_key))
+            agents = list(self._api_manager.find_objects('agents'))
+            agent_lookup = {agent.paw: agent for agent in agents}
+            
+            # Aggregate by dimension
+            dimension_counter = Counter()
+            total_events = 0
+            
+            for op in operations:
+                if operation_id_filter and op.id != operation_id_filter:
+                    continue
+                
+                if not hasattr(op, 'chain') or not op.chain:
+                    continue
+                
+                for link in op.chain:
+                    link_paw = getattr(link, 'paw', None)
+                    link_status = getattr(link, 'status', -1)
+                    link_finish = getattr(link, 'finish', None)
+                    link_ability = getattr(link, 'ability', None)
+                    
+                    # Apply filters
+                    if agent_paw_filter and link_paw != agent_paw_filter:
+                        continue
+                    
+                    if group_filter:
+                        agent = agent_lookup.get(link_paw)
+                        agent_group = getattr(agent, 'group', None) if agent else None
+                        if agent_group != group_filter:
+                            continue
+                    
+                    if ability_id_filter and (not link_ability or getattr(link_ability, 'ability_id', None) != ability_id_filter):
+                        continue
+                    
+                    # Status filter
+                    if status_filter:
+                        status_str = 'success' if link_status == 0 else 'fail' if link_status == 1 else 'timeout' if link_status == 124 else 'pending' if link_status == -1 else 'unknown'
+                        if status_str not in status_filter:
+                            continue
+                    
+                    # Time window check
+                    if link_finish:
+                        try:
+                            if isinstance(link_finish, str):
+                                finish_dt = datetime.fromisoformat(link_finish.replace('Z', '+00:00'))
+                            else:
+                                finish_dt = link_finish
+                            if finish_dt < window_from or finish_dt > window_to:
+                                continue
+                        except:
+                            continue
+                    else:
+                        continue
+                    
+                    total_events += 1
+                    
+                    # Extract dimension value
+                    if dimension == 'status':
+                        key = 'success' if link_status == 0 else 'fail' if link_status == 1 else 'timeout' if link_status == 124 else 'pending' if link_status == -1 else 'unknown'
+                    elif dimension == 'operation':
+                        key = op.name
+                    elif dimension == 'agent':
+                        key = link_paw or 'unknown'
+                    elif dimension == 'group':
+                        agent = agent_lookup.get(link_paw)
+                        key = getattr(agent, 'group', 'unknown') if agent else 'unknown'
+                    elif dimension == 'ability':
+                        key = getattr(link_ability, 'name', 'unknown') if link_ability else 'unknown'
+                    elif dimension == 'executor':
+                        executor_obj = getattr(link, 'executor', None)
+                        key = getattr(executor_obj, 'name', 'unknown') if executor_obj else 'unknown'
+                    elif dimension == 'platform':
+                        key = getattr(link, 'platform', 'unknown') or 'unknown'
+                    elif dimension == 'plugin':
+                        key = getattr(link_ability, 'plugin', 'unknown') if link_ability and hasattr(link_ability, 'plugin') else 'unknown'
+                    elif dimension == 'reason':
+                        try:
+                            link_id = getattr(link, 'id', '')
+                            file_svc = self._api_manager._file_svc
+                            output_content = file_svc.read_result_file(link_id)
+                            key, _ = self._normalize_error_reason(link, output_content)
+                        except:
+                            key = 'unknown'
+                    else:
+                        key = 'unknown'
+                    
+                    dimension_counter[key] += 1
+            
+            # Build items
+            items = []
+            for key, count in dimension_counter.most_common():
+                rate = count / total_events if total_events > 0 else 0
+                items.append({
+                    'key': key,
+                    'label': key.replace('_', ' ').title(),
+                    'count': count,
+                    'rate': rate
+                })
+            
+            return web.json_response({
+                'time_window': {'from': window_from.isoformat(), 'to': window_to.isoformat()},
+                'dimension': dimension,
+                'metric': metric,
+                'items': items
+            })
+        
+        except ValueError as e:
+            return web.json_response({'error': f'Invalid parameter: {str(e)}'}, status=400)
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+    
+    async def merlino_error_analytics_top_offenders(self, request: web.Request):
+        """
+        Error Analytics - Top Offenders (entities with most errors).
+        
+        GET /api/v2/merlino/analytics/error-analytics/top-offenders
+        """
+        try:
+            from datetime import datetime, timezone, timedelta
+            from collections import defaultdict, Counter
+            
+            params = request.rel_url.query
+            entity_type = params.get('entity')
+            if not entity_type:
+                return web.json_response({'error': 'Missing required parameter: entity'}, status=422)
+            
+            valid_entities = ['operation', 'agent', 'ability', 'group']
+            if entity_type not in valid_entities:
+                return web.json_response({'error': f'Invalid entity. Must be one of: {", ".join(valid_entities)}'}, status=400)
+            
+            # Parse params
+            from_str = params.get('from')
+            to_str = params.get('to')
+            metric = params.get('metric', 'error_rate')
+            limit = int(params.get('limit', 50))
+            min_samples = int(params.get('minSamples', 25))
+            
+            # Time window
+            now = datetime.now(timezone.utc)
+            if from_str and to_str:
+                window_from = datetime.fromisoformat(from_str.replace('Z', '+00:00'))
+                window_to = datetime.fromisoformat(to_str.replace('Z', '+00:00'))
+            else:
+                window_from = now - timedelta(days=7)
+                window_to = now
+            
+            # Get data
+            operations = list(self._api_manager.find_objects(self.ram_key))
+            agents = list(self._api_manager.find_objects('agents'))
+            agent_lookup = {agent.paw: agent for agent in agents}
+            
+            # Aggregate by entity
+            entity_stats = defaultdict(lambda: {'success': 0, 'fail': 0, 'timeout': 0, 'pending': 0, 'total': 0, 'reasons': Counter(), 'name': ''})
+            
+            for op in operations:
+                if not hasattr(op, 'chain') or not op.chain:
+                    continue
+                
+                for link in op.chain:
+                    link_paw = getattr(link, 'paw', None)
+                    link_status = getattr(link, 'status', -1)
+                    link_finish = getattr(link, 'finish', None)
+                    link_ability = getattr(link, 'ability', None)
+                    
+                    # Time window check
+                    if link_finish:
+                        try:
+                            if isinstance(link_finish, str):
+                                finish_dt = datetime.fromisoformat(link_finish.replace('Z', '+00:00'))
+                            else:
+                                finish_dt = link_finish
+                            if finish_dt < window_from or finish_dt > window_to:
+                                continue
+                        except:
+                            continue
+                    else:
+                        continue
+                    
+                    # Determine entity key
+                    if entity_type == 'operation':
+                        entity_key = op.id
+                        entity_name = op.name
+                    elif entity_type == 'agent':
+                        entity_key = link_paw or 'unknown'
+                        agent = agent_lookup.get(link_paw)
+                        entity_name = getattr(agent, 'host', link_paw) if agent else link_paw
+                    elif entity_type == 'ability':
+                        entity_key = getattr(link_ability, 'ability_id', 'unknown') if link_ability else 'unknown'
+                        entity_name = getattr(link_ability, 'name', entity_key) if link_ability else entity_key
+                    elif entity_type == 'group':
+                        agent = agent_lookup.get(link_paw)
+                        entity_key = getattr(agent, 'group', 'unknown') if agent else 'unknown'
+                        entity_name = entity_key
+                    else:
+                        entity_key = 'unknown'
+                        entity_name = 'unknown'
+                    
+                    # Update stats
+                    entity_stats[entity_key]['name'] = entity_name
+                    entity_stats[entity_key]['total'] += 1
+                    
+                    if link_status == 0:
+                        entity_stats[entity_key]['success'] += 1
+                    elif link_status == 1:
+                        entity_stats[entity_key]['fail'] += 1
+                        try:
+                            link_id = getattr(link, 'id', '')
+                            file_svc = self._api_manager._file_svc
+                            output_content = file_svc.read_result_file(link_id)
+                            reason, _ = self._normalize_error_reason(link, output_content)
+                            entity_stats[entity_key]['reasons'][reason] += 1
+                        except:
+                            entity_stats[entity_key]['reasons']['unknown'] += 1
+                    elif link_status == 124:
+                        entity_stats[entity_key]['timeout'] += 1
+                        entity_stats[entity_key]['reasons']['timeout'] += 1
+                    else:
+                        entity_stats[entity_key]['pending'] += 1
+            
+            # Build items list
+            items = []
+            for entity_id, stats in entity_stats.items():
+                if stats['total'] < min_samples:
+                    continue
+                
+                denominator = stats['success'] + stats['fail'] + stats['timeout']
+                if denominator > 0:
+                    success_rate = stats['success'] / denominator
+                    error_rate = stats['fail'] / denominator
+                    timeout_rate = stats['timeout'] / denominator
+                else:
+                    success_rate = None
+                    error_rate = None
+                    timeout_rate = None
+                
+                # Determine severity
+                if error_rate is not None and error_rate >= 0.2:
+                    severity = 'bad'
+                elif timeout_rate is not None and timeout_rate >= 0.2:
+                    severity = 'bad'
+                elif error_rate is not None and error_rate >= 0.05:
+                    severity = 'warn'
+                elif timeout_rate is not None and timeout_rate >= 0.05:
+                    severity = 'warn'
+                else:
+                    severity = 'good'
+                
+                top_reasons = [r for r, _ in stats['reasons'].most_common(3)]
+                
+                items.append({
+                    'entity_id': entity_id,
+                    'entity_name': stats['name'],
+                    'sample_size': stats['total'],
+                    'counts': {
+                        'success': stats['success'],
+                        'fail': stats['fail'],
+                        'timeout': stats['timeout'],
+                        'pending': stats['pending'],
+                        'total': stats['total']
+                    },
+                    'rates': {
+                        'success_rate': success_rate,
+                        'error_rate': error_rate,
+                        'timeout_rate': timeout_rate
+                    },
+                    'severity': severity,
+                    'top_reasons': top_reasons
+                })
+            
+            # Sort by metric
+            if metric == 'error_count':
+                items.sort(key=lambda x: x['counts']['fail'], reverse=True)
+            elif metric == 'timeout_count':
+                items.sort(key=lambda x: x['counts']['timeout'], reverse=True)
+            elif metric == 'error_rate':
+                items.sort(key=lambda x: x['rates']['error_rate'] or 0, reverse=True)
+            elif metric == 'combined_bad_rate':
+                items.sort(key=lambda x: (x['rates']['error_rate'] or 0) + (x['rates']['timeout_rate'] or 0), reverse=True)
+            
+            items = items[:limit]
+            
+            return web.json_response({
+                'time_window': {'from': window_from.isoformat(), 'to': window_to.isoformat()},
+                'entity': entity_type,
+                'metric': metric,
+                'items': items
+            })
+        
+        except ValueError as e:
+            return web.json_response({'error': f'Invalid parameter: {str(e)}'}, status=400)
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+    
+    async def merlino_error_analytics_events_search(self, request: web.Request):
+        """
+        Error Analytics - Events Search with filters.
+        
+        GET /api/v2/merlino/analytics/error-analytics/events/search
+        """
+        try:
+            from datetime import datetime, timezone, timedelta
+            import base64
+            import json as json_lib
+            
+            params = request.rel_url.query
+            
+            # Parse params
+            from_str = params.get('from')
+            to_str = params.get('to')
+            limit = int(params.get('limit', 250))
+            offset = int(params.get('offset', 0))
+            
+            # Filters
+            status_filter = params.get('status', '').split(',') if params.get('status') else []
+            operation_id_filter = params.get('operation_id')
+            agent_paw_filter = params.get('agent_paw')
+            group_filter = params.get('group')
+            ability_id_filter = params.get('ability_id')
+            executor_filter = params.get('executor')
+            platform_filter = params.get('platform')
+            plugin_filter = params.get('plugin')
+            reason_filter = params.get('reason')
+            q_filter = params.get('q', '')[:200]  # Cap at 200 chars
+            
+            # Include flags
+            include_command = params.get('includeCommand', 'false').lower() == 'true'
+            include_output = params.get('includeOutput', 'false').lower() == 'true'
+            command_format = params.get('commandFormat', 'decoded')
+            output_format = params.get('outputFormat', 'decoded')
+            
+            # Validate limit
+            if limit > 1000:
+                return web.json_response({'error': 'limit cannot exceed 1000'}, status=400)
+            
+            # Time window
+            now = datetime.now(timezone.utc)
+            if from_str and to_str:
+                window_from = datetime.fromisoformat(from_str.replace('Z', '+00:00'))
+                window_to = datetime.fromisoformat(to_str.replace('Z', '+00:00'))
+            else:
+                window_from = now - timedelta(days=7)
+                window_to = now
+            
+            # Get data
+            operations = list(self._api_manager.find_objects(self.ram_key))
+            agents = list(self._api_manager.find_objects('agents'))
+            agent_lookup = {agent.paw: agent for agent in agents}
+            
+            # Collect matching events
+            all_events = []
+            
+            for op in operations:
+                if operation_id_filter and op.id != operation_id_filter:
+                    continue
+                
+                if not hasattr(op, 'chain') or not op.chain:
+                    continue
+                
+                for link in op.chain:
+                    link_paw = getattr(link, 'paw', None)
+                    link_status = getattr(link, 'status', -1)
+                    link_finish = getattr(link, 'finish', None)
+                    link_ability = getattr(link, 'ability', None)
+                    link_id = getattr(link, 'id', '')
+                    
+                    # Status normalization
+                    if link_status == 0:
+                        status_str = 'success'
+                    elif link_status == 1:
+                        status_str = 'fail'
+                    elif link_status == 124:
+                        status_str = 'timeout'
+                    elif link_status == -1:
+                        status_str = 'pending'
+                    else:
+                        status_str = 'unknown'
+                    
+                    # Apply filters
+                    if status_filter and status_str not in status_filter:
+                        continue
+                    
+                    if agent_paw_filter and link_paw != agent_paw_filter:
+                        continue
+                    
+                    if group_filter:
+                        agent = agent_lookup.get(link_paw)
+                        agent_group = getattr(agent, 'group', None) if agent else None
+                        if agent_group != group_filter:
+                            continue
+                    
+                    if ability_id_filter and (not link_ability or getattr(link_ability, 'ability_id', None) != ability_id_filter):
+                        continue
+                    
+                    if executor_filter:
+                        executor_obj = getattr(link, 'executor', None)
+                        executor_name = getattr(executor_obj, 'name', None) if executor_obj else None
+                        if executor_name != executor_filter:
+                            continue
+                    
+                    if platform_filter:
+                        platform = getattr(link, 'platform', None)
+                        if platform != platform_filter:
+                            continue
+                    
+                    if plugin_filter and link_ability:
+                        plugin = getattr(link_ability, 'plugin', None) if hasattr(link_ability, 'plugin') else None
+                        if plugin != plugin_filter:
+                            continue
+                    
+                    # Time window
+                    if link_finish:
+                        try:
+                            if isinstance(link_finish, str):
+                                finish_dt = datetime.fromisoformat(link_finish.replace('Z', '+00:00'))
+                            else:
+                                finish_dt = link_finish
+                            if finish_dt < window_from or finish_dt > window_to:
+                                continue
+                        except:
+                            continue
+                    else:
+                        continue
+                    
+                    # Get reason and hint
+                    try:
+                        file_svc = self._api_manager._file_svc
+                        output_content = file_svc.read_result_file(link_id)
+                        reason, hint = self._normalize_error_reason(link, output_content)
+                    except:
+                        reason = 'unknown'
+                        hint = None
+                        output_content = None
+                    
+                    # Reason filter
+                    if reason_filter and reason != reason_filter:
+                        continue
+                    
+                    # Free text search (q filter)
+                    if q_filter:
+                        search_text = ''
+                        try:
+                            link_command_raw = getattr(link, 'plaintext_command', '') or getattr(link, 'command', '')
+                            search_text += link_command_raw.lower() + ' '
+                            if output_content:
+                                decoded_output = base64.b64decode(output_content).decode('utf-8', errors='ignore')
+                                search_text += decoded_output.lower()
+                        except:
+                            pass
+                        
+                        if q_filter.lower() not in search_text:
+                            continue
+                    
+                    # Build event item
+                    agent = agent_lookup.get(link_paw)
+                    executor_obj = getattr(link, 'executor', None)
+                    executor_name = getattr(executor_obj, 'name', None) if executor_obj else None
+                    
+                    item = {
+                        'item_id': f"link:{link_id}",
+                        'occurred_at': link_finish if link_finish else None,
+                        'status': status_str,
+                        'reason': reason,
+                        'severity': 'bad' if status_str in ['fail', 'timeout'] else 'good',
+                        'operation_id': op.id,
+                        'operation_name': op.name,
+                        'ability_id': getattr(link_ability, 'ability_id', None) if link_ability else None,
+                        'ability_name': getattr(link_ability, 'name', None) if link_ability else None,
+                        'tactic': getattr(link_ability, 'tactic', None) if link_ability else None,
+                        'technique_id': getattr(link_ability, 'technique_id', None) if link_ability else None,
+                        'agent_paw': link_paw,
+                        'agent_host': getattr(agent, 'host', None) if agent else None,
+                        'agent_group': getattr(agent, 'group', None) if agent else None,
+                        'executor': executor_name,
+                        'platform': getattr(link, 'platform', None),
+                        'plugin': getattr(link_ability, 'plugin', None) if link_ability and hasattr(link_ability, 'plugin') else None,
+                        'error_hint': hint,
+                        'source': 'caldera'
+                    }
+                    
+                    # Add command if requested
+                    if include_command:
+                        link_command_raw = getattr(link, 'plaintext_command', '') or getattr(link, 'command', '')
+                        if link_command_raw:
+                            try:
+                                base64.b64decode(link_command_raw, validate=True)
+                                is_base64 = True
+                            except:
+                                is_base64 = False
+                            
+                            if command_format == 'decoded':
+                                if is_base64:
+                                    decoded_cmd = base64.b64decode(link_command_raw).decode('utf-8', errors='ignore')
+                                    item['command'] = {'encoding': 'plain', 'value': decoded_cmd}
+                                else:
+                                    item['command'] = {'encoding': 'plain', 'value': link_command_raw}
+                            else:
+                                if is_base64:
+                                    item['command'] = {'encoding': 'base64', 'value': link_command_raw}
+                                else:
+                                    encoded_cmd = base64.b64encode(link_command_raw.encode('utf-8')).decode('ascii')
+                                    item['command'] = {'encoding': 'base64', 'value': encoded_cmd}
+                    
+                    # Add output if requested
+                    if include_output and output_content:
+                        if output_format == 'decoded':
+                            try:
+                                decoded_output = base64.b64decode(output_content).decode('utf-8')
+                                output_json = json_lib.loads(decoded_output)
+                                item['output'] = {
+                                    'encoding': 'json-base64',
+                                    'value': output_content,
+                                    'parsed': output_json
+                                }
+                            except:
+                                item['output'] = {'encoding': 'plain', 'value': decoded_output}
+                        else:
+                            item['output'] = {'encoding': 'base64', 'value': output_content}
+                    
+                    all_events.append(item)
+            
+            # Sort by occurred_at descending
+            all_events.sort(key=lambda x: x['occurred_at'] or '', reverse=True)
+            
+            # Paginate
+            total_events = len(all_events)
+            paginated_events = all_events[offset:offset + limit]
+            
+            return web.json_response({
+                'time_window': {'from': window_from.isoformat(), 'to': window_to.isoformat()},
+                'paging': {'limit': limit, 'offset': offset, 'total': total_events},
+                'items': paginated_events
+            })
+        
+        except ValueError as e:
+            return web.json_response({'error': f'Invalid parameter: {str(e)}'}, status=400)
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+    
+    async def merlino_error_analytics_operation_drilldown(self, request: web.Request):
+        """
+        Error Analytics - Operation Drilldown (shortcut endpoint).
+        
+        GET /api/v2/merlino/analytics/error-analytics/operation/{operation_id}
+        """
+        try:
+            from datetime import datetime, timezone, timedelta
+            import base64
+            import json as json_lib
+            
+            # Get operation_id from path
+            operation_id = request.match_info['operation_id']
+            
+            # Parse query parameters
+            params = request.rel_url.query
+            from_str = params.get('from')
+            to_str = params.get('to')
+            limit = int(params.get('limit', 250))
+            offset = int(params.get('offset', 0))
+            status_filter = params.get('status', 'fail,timeout').split(',')  # Default to errors
+            agent_paw_filter = params.get('agent_paw')
+            
+            # Include flags
+            include_command = params.get('includeCommand', 'false').lower() == 'true'
+            include_output = params.get('includeOutput', 'false').lower() == 'true'
+            command_format = params.get('commandFormat', 'decoded')
+            output_format = params.get('outputFormat', 'decoded')
+            
+            # Time window
+            now = datetime.now(timezone.utc)
+            if from_str and to_str:
+                window_from = datetime.fromisoformat(from_str.replace('Z', '+00:00'))
+                window_to = datetime.fromisoformat(to_str.replace('Z', '+00:00'))
+            else:
+                window_from = now - timedelta(days=7)
+                window_to = now
+            
+            # Find operation
+            all_operations = list(self._api_manager.find_objects(self.ram_key))
+            operations = [op for op in all_operations if op.id == operation_id]
+            if not operations:
+                return web.json_response({'error': f'Operation {operation_id} not found'}, status=404)
+            
+            op = operations[0]
+            
+            # Get agents
+            agents = list(self._api_manager.find_objects('agents'))
+            agent_lookup = {agent.paw: agent for agent in agents}
+            
+            # Collect stats and items
+            counts = {'success': 0, 'fail': 0, 'timeout': 0, 'pending': 0, 'total': 0}
+            last_event_at = None
+            all_items = []
+            
+            if hasattr(op, 'chain') and op.chain:
+                for link in op.chain:
+                    link_paw = getattr(link, 'paw', None)
+                    link_status = getattr(link, 'status', -1)
+                    link_finish = getattr(link, 'finish', None)
+                    link_ability = getattr(link, 'ability', None)
+                    link_id = getattr(link, 'id', '')
+                    
+                    # Status normalization
+                    if link_status == 0:
+                        status_str = 'success'
+                        counts['success'] += 1
+                    elif link_status == 1:
+                        status_str = 'fail'
+                        counts['fail'] += 1
+                    elif link_status == 124:
+                        status_str = 'timeout'
+                        counts['timeout'] += 1
+                    elif link_status == -1:
+                        status_str = 'pending'
+                        counts['pending'] += 1
+                    else:
+                        status_str = 'unknown'
+                    
+                    counts['total'] += 1
+                    
+                    # Apply filters
+                    if status_filter and status_str not in status_filter:
+                        continue
+                    
+                    if agent_paw_filter and link_paw != agent_paw_filter:
+                        continue
+                    
+                    # Time window
+                    if link_finish:
+                        try:
+                            if isinstance(link_finish, str):
+                                finish_dt = datetime.fromisoformat(link_finish.replace('Z', '+00:00'))
+                            else:
+                                finish_dt = link_finish
+                            
+                            if finish_dt < window_from or finish_dt > window_to:
+                                continue
+                            
+                            if not last_event_at or finish_dt > last_event_at:
+                                last_event_at = finish_dt
+                        except:
+                            continue
+                    else:
+                        continue
+                    
+                    # Get reason and hint
+                    try:
+                        file_svc = self._api_manager._file_svc
+                        output_content = file_svc.read_result_file(link_id)
+                        reason, hint = self._normalize_error_reason(link, output_content)
+                    except:
+                        reason = 'unknown'
+                        hint = None
+                        output_content = None
+                    
+                    # Build item (same as events/search)
+                    agent = agent_lookup.get(link_paw)
+                    executor_obj = getattr(link, 'executor', None)
+                    executor_name = getattr(executor_obj, 'name', None) if executor_obj else None
+                    
+                    item = {
+                        'item_id': f"link:{link_id}",
+                        'occurred_at': link_finish if link_finish else None,
+                        'status': status_str,
+                        'reason': reason,
+                        'severity': 'bad' if status_str in ['fail', 'timeout'] else 'good',
+                        'operation_id': op.id,
+                        'operation_name': op.name,
+                        'ability_id': getattr(link_ability, 'ability_id', None) if link_ability else None,
+                        'ability_name': getattr(link_ability, 'name', None) if link_ability else None,
+                        'tactic': getattr(link_ability, 'tactic', None) if link_ability else None,
+                        'technique_id': getattr(link_ability, 'technique_id', None) if link_ability else None,
+                        'agent_paw': link_paw,
+                        'agent_host': getattr(agent, 'host', None) if agent else None,
+                        'agent_group': getattr(agent, 'group', None) if agent else None,
+                        'executor': executor_name,
+                        'platform': getattr(link, 'platform', None),
+                        'plugin': getattr(link_ability, 'plugin', None) if link_ability and hasattr(link_ability, 'plugin') else None,
+                        'error_hint': hint,
+                        'source': 'caldera'
+                    }
+                    
+                    # Add command if requested
+                    if include_command:
+                        link_command_raw = getattr(link, 'plaintext_command', '') or getattr(link, 'command', '')
+                        if link_command_raw:
+                            try:
+                                base64.b64decode(link_command_raw, validate=True)
+                                is_base64 = True
+                            except:
+                                is_base64 = False
+                            
+                            if command_format == 'decoded':
+                                if is_base64:
+                                    decoded_cmd = base64.b64decode(link_command_raw).decode('utf-8', errors='ignore')
+                                    item['command'] = {'encoding': 'plain', 'value': decoded_cmd}
+                                else:
+                                    item['command'] = {'encoding': 'plain', 'value': link_command_raw}
+                            else:
+                                if is_base64:
+                                    item['command'] = {'encoding': 'base64', 'value': link_command_raw}
+                                else:
+                                    encoded_cmd = base64.b64encode(link_command_raw.encode('utf-8')).decode('ascii')
+                                    item['command'] = {'encoding': 'base64', 'value': encoded_cmd}
+                    
+                    # Add output if requested
+                    if include_output and output_content:
+                        if output_format == 'decoded':
+                            try:
+                                decoded_output = base64.b64decode(output_content).decode('utf-8')
+                                output_json = json_lib.loads(decoded_output)
+                                item['output'] = {
+                                    'encoding': 'json-base64',
+                                    'value': output_content,
+                                    'parsed': output_json
+                                }
+                            except:
+                                item['output'] = {'encoding': 'plain', 'value': decoded_output}
+                        else:
+                            item['output'] = {'encoding': 'base64', 'value': output_content}
+                    
+                    all_items.append(item)
+            
+            # Sort and paginate
+            all_items.sort(key=lambda x: x['occurred_at'] or '', reverse=True)
+            total_items = len(all_items)
+            paginated_items = all_items[offset:offset + limit]
+            
+            # Calculate rates
+            denominator = counts['success'] + counts['fail'] + counts['timeout']
+            if denominator > 0:
+                success_rate = counts['success'] / denominator
+                error_rate = counts['fail'] / denominator
+                timeout_rate = counts['timeout'] / denominator
+            else:
+                success_rate = None
+                error_rate = None
+                timeout_rate = None
+            
+            return web.json_response({
+                'operation_id': op.id,
+                'operation_name': op.name,
+                'time_window': {'from': window_from.isoformat(), 'to': window_to.isoformat()},
+                'summary': {
+                    'counts': counts,
+                    'rates': {
+                        'success_rate': success_rate,
+                        'error_rate': error_rate,
+                        'timeout_rate': timeout_rate
+                    },
+                    'last_event_at': last_event_at.isoformat() if last_event_at else None
+                },
+                'items': paginated_items,
+                'paging': {'limit': limit, 'offset': offset, 'total': total_items}
+            })
+        
+        except ValueError as e:
+            return web.json_response({'error': f'Invalid parameter: {str(e)}'}, status=400)
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+    
+    async def merlino_error_analytics_signatures(self, request: web.Request):
+        """
+        Error Analytics - Signatures (error clustering).
+        
+        GET /api/v2/merlino/analytics/error-analytics/signatures
+        """
+        try:
+            from datetime import datetime, timezone, timedelta
+            from collections import defaultdict, Counter
+            import hashlib
+            
+            params = request.rel_url.query
+            from_str = params.get('from')
+            to_str = params.get('to')
+            limit = int(params.get('limit', 100))
+            
+            # Time window
+            now = datetime.now(timezone.utc)
+            if from_str and to_str:
+                window_from = datetime.fromisoformat(from_str.replace('Z', '+00:00'))
+                window_to = datetime.fromisoformat(to_str.replace('Z', '+00:00'))
+            else:
+                window_from = now - timedelta(days=7)
+                window_to = now
+            
+            # Get data
+            operations = list(self._api_manager.find_objects(self.ram_key))
+            agents = list(self._api_manager.find_objects('agents'))
+            agent_lookup = {agent.paw: agent for agent in agents}
+            
+            # Collect signatures
+            signatures = defaultdict(lambda: {
+                'reason': '',
+                'title': '',
+                'count': 0,
+                'abilities': Counter(),
+                'agents': Counter(),
+                'example_item_id': '',
+                'first_seen': None,
+                'last_seen': None,
+                'hint': ''
+            })
+            
+            for op in operations:
+                if not hasattr(op, 'chain') or not op.chain:
+                    continue
+                
+                for link in op.chain:
+                    link_paw = getattr(link, 'paw', None)
+                    link_status = getattr(link, 'status', -1)
+                    link_finish = getattr(link, 'finish', None)
+                    link_ability = getattr(link, 'ability', None)
+                    link_id = getattr(link, 'id', '')
+                    
+                    # Only process errors and timeouts
+                    if link_status not in [1, 124]:
+                        continue
+                    
+                    # Time window
+                    if link_finish:
+                        try:
+                            if isinstance(link_finish, str):
+                                finish_dt = datetime.fromisoformat(link_finish.replace('Z', '+00:00'))
+                            else:
+                                finish_dt = link_finish
+                            if finish_dt < window_from or finish_dt > window_to:
+                                continue
+                        except:
+                            continue
+                    else:
+                        continue
+                    
+                    # Get reason
+                    try:
+                        file_svc = self._api_manager._file_svc
+                        output_content = file_svc.read_result_file(link_id)
+                        reason, hint = self._normalize_error_reason(link, output_content)
+                    except:
+                        reason = 'unknown'
+                        hint = None
+                    
+                    # Create signature ID based on reason
+                    signature_id = f"sig-{hashlib.md5(reason.encode()).hexdigest()[:8]}"
+                    
+                    # Update signature
+                    sig = signatures[signature_id]
+                    sig['reason'] = reason
+                    sig['title'] = reason.replace('_', ' ').title()
+                    sig['count'] += 1
+                    sig['hint'] = hint or sig['hint']
+                    
+                    if not sig['example_item_id']:
+                        sig['example_item_id'] = f"link:{link_id}"
+                    
+                    if not sig['first_seen'] or finish_dt < sig['first_seen']:
+                        sig['first_seen'] = finish_dt
+                    
+                    if not sig['last_seen'] or finish_dt > sig['last_seen']:
+                        sig['last_seen'] = finish_dt
+                    
+                    # Track top entities
+                    if link_ability:
+                        ability_id = getattr(link_ability, 'ability_id', 'unknown')
+                        ability_name = getattr(link_ability, 'name', ability_id)
+                        sig['abilities'][(ability_id, ability_name)] += 1
+                    
+                    if link_paw:
+                        agent = agent_lookup.get(link_paw)
+                        agent_host = getattr(agent, 'host', link_paw) if agent else link_paw
+                        sig['agents'][(link_paw, agent_host)] += 1
+            
+            # Build items
+            items = []
+            for signature_id, sig in signatures.items():
+                top_abilities = [
+                    {'ability_id': aid, 'name': name, 'count': count}
+                    for (aid, name), count in sig['abilities'].most_common(3)
+                ]
+                
+                top_agents = [
+                    {'agent_paw': paw, 'host': host, 'count': count}
+                    for (paw, host), count in sig['agents'].most_common(3)
+                ]
+                
+                items.append({
+                    'signature_id': signature_id,
+                    'reason': sig['reason'],
+                    'title': sig['title'],
+                    'count': sig['count'],
+                    'top_entities': {
+                        'abilities': top_abilities,
+                        'agents': top_agents
+                    },
+                    'example_item_id': sig['example_item_id'],
+                    'first_seen_at': sig['first_seen'].isoformat() if sig['first_seen'] else None,
+                    'last_seen_at': sig['last_seen'].isoformat() if sig['last_seen'] else None,
+                    'hint': sig['hint']
+                })
+            
+            # Sort by count descending
+            items.sort(key=lambda x: x['count'], reverse=True)
+            items = items[:limit]
+            
+            return web.json_response({
+                'time_window': {'from': window_from.isoformat(), 'to': window_to.isoformat()},
+                'items': items
+            })
+        
+        except ValueError as e:
+            return web.json_response({'error': f'Invalid parameter: {str(e)}'}, status=400)
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+    
+    async def merlino_error_analytics_signature_drilldown(self, request: web.Request):
+        """
+        Error Analytics - Signature Drilldown.
+        
+        GET /api/v2/merlino/analytics/error-analytics/signature/{signature_id}
+        """
+        try:
+            from datetime import datetime, timezone, timedelta
+            import hashlib
+            import base64
+            import json as json_lib
+            
+            # Get signature_id from path
+            signature_id = request.match_info['signature_id']
+            
+            # Extract reason from signature_id (reverse of signature generation)
+            # This is a simplified approach - in production you'd store signatures persistently
+            
+            params = request.rel_url.query
+            from_str = params.get('from')
+            to_str = params.get('to')
+            limit = int(params.get('limit', 250))
+            offset = int(params.get('offset', 0))
+            
+            # Include flags
+            include_command = params.get('includeCommand', 'false').lower() == 'true'
+            include_output = params.get('includeOutput', 'false').lower() == 'true'
+            command_format = params.get('commandFormat', 'decoded')
+            output_format = params.get('outputFormat', 'decoded')
+            
+            # Time window
+            now = datetime.now(timezone.utc)
+            if from_str and to_str:
+                window_from = datetime.fromisoformat(from_str.replace('Z', '+00:00'))
+                window_to = datetime.fromisoformat(to_str.replace('Z', '+00:00'))
+            else:
+                window_from = now - timedelta(days=7)
+                window_to = now
+            
+            # Get data
+            operations = list(self._api_manager.find_objects(self.ram_key))
+            agents = list(self._api_manager.find_objects('agents'))
+            agent_lookup = {agent.paw: agent for agent in agents}
+            
+            # Find matching events
+            all_items = []
+            summary_reason = ''
+            summary_title = ''
+            
+            for op in operations:
+                if not hasattr(op, 'chain') or not op.chain:
+                    continue
+                
+                for link in op.chain:
+                    link_paw = getattr(link, 'paw', None)
+                    link_status = getattr(link, 'status', -1)
+                    link_finish = getattr(link, 'finish', None)
+                    link_ability = getattr(link, 'ability', None)
+                    link_id = getattr(link, 'id', '')
+                    
+                    if link_status not in [1, 124]:
+                        continue
+                    
+                    # Time window
+                    if link_finish:
+                        try:
+                            if isinstance(link_finish, str):
+                                finish_dt = datetime.fromisoformat(link_finish.replace('Z', '+00:00'))
+                            else:
+                                finish_dt = link_finish
+                            if finish_dt < window_from or finish_dt > window_to:
+                                continue
+                        except:
+                            continue
+                    else:
+                        continue
+                    
+                    # Get reason
+                    try:
+                        file_svc = self._api_manager._file_svc
+                        output_content = file_svc.read_result_file(link_id)
+                        reason, hint = self._normalize_error_reason(link, output_content)
+                    except:
+                        reason = 'unknown'
+                        hint = None
+                        output_content = None
+                    
+                    # Check if matches signature
+                    event_signature_id = f"sig-{hashlib.md5(reason.encode()).hexdigest()[:8]}"
+                    if event_signature_id != signature_id:
+                        continue
+                    
+                    summary_reason = reason
+                    summary_title = reason.replace('_', ' ').title()
+                    
+                    # Build item (same structure as events/search)
+                    status_str = 'fail' if link_status == 1 else 'timeout'
+                    agent = agent_lookup.get(link_paw)
+                    executor_obj = getattr(link, 'executor', None)
+                    executor_name = getattr(executor_obj, 'name', None) if executor_obj else None
+                    
+                    item = {
+                        'item_id': f"link:{link_id}",
+                        'occurred_at': link_finish if link_finish else None,
+                        'status': status_str,
+                        'reason': reason,
+                        'severity': 'bad',
+                        'operation_id': op.id,
+                        'operation_name': op.name,
+                        'ability_id': getattr(link_ability, 'ability_id', None) if link_ability else None,
+                        'ability_name': getattr(link_ability, 'name', None) if link_ability else None,
+                        'tactic': getattr(link_ability, 'tactic', None) if link_ability else None,
+                        'technique_id': getattr(link_ability, 'technique_id', None) if link_ability else None,
+                        'agent_paw': link_paw,
+                        'agent_host': getattr(agent, 'host', None) if agent else None,
+                        'agent_group': getattr(agent, 'group', None) if agent else None,
+                        'executor': executor_name,
+                        'platform': getattr(link, 'platform', None),
+                        'plugin': getattr(link_ability, 'plugin', None) if link_ability and hasattr(link_ability, 'plugin') else None,
+                        'error_hint': hint,
+                        'source': 'caldera'
+                    }
+                    
+                    # Add command/output if requested (same logic as before)
+                    if include_command:
+                        link_command_raw = getattr(link, 'plaintext_command', '') or getattr(link, 'command', '')
+                        if link_command_raw:
+                            try:
+                                base64.b64decode(link_command_raw, validate=True)
+                                is_base64 = True
+                            except:
+                                is_base64 = False
+                            
+                            if command_format == 'decoded':
+                                if is_base64:
+                                    decoded_cmd = base64.b64decode(link_command_raw).decode('utf-8', errors='ignore')
+                                    item['command'] = {'encoding': 'plain', 'value': decoded_cmd}
+                                else:
+                                    item['command'] = {'encoding': 'plain', 'value': link_command_raw}
+                            else:
+                                if is_base64:
+                                    item['command'] = {'encoding': 'base64', 'value': link_command_raw}
+                                else:
+                                    encoded_cmd = base64.b64encode(link_command_raw.encode('utf-8')).decode('ascii')
+                                    item['command'] = {'encoding': 'base64', 'value': encoded_cmd}
+                    
+                    if include_output and output_content:
+                        if output_format == 'decoded':
+                            try:
+                                decoded_output = base64.b64decode(output_content).decode('utf-8')
+                                output_json = json_lib.loads(decoded_output)
+                                item['output'] = {
+                                    'encoding': 'json-base64',
+                                    'value': output_content,
+                                    'parsed': output_json
+                                }
+                            except:
+                                item['output'] = {'encoding': 'plain', 'value': decoded_output}
+                        else:
+                            item['output'] = {'encoding': 'base64', 'value': output_content}
+                    
+                    all_items.append(item)
+            
+            # Sort and paginate
+            all_items.sort(key=lambda x: x['occurred_at'] or '', reverse=True)
+            total_items = len(all_items)
+            paginated_items = all_items[offset:offset + limit]
+            
+            return web.json_response({
+                'signature_id': signature_id,
+                'time_window': {'from': window_from.isoformat(), 'to': window_to.isoformat()},
+                'summary': {
+                    'reason': summary_reason,
+                    'title': summary_title,
+                    'count': total_items
+                },
+                'items': paginated_items,
+                'paging': {'limit': limit, 'offset': offset, 'total': total_items}
+            })
+        
+        except ValueError as e:
+            return web.json_response({'error': f'Invalid parameter: {str(e)}'}, status=400)
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+    
+    async def merlino_error_analytics_hints(self, request: web.Request):
+        """
+        Error Analytics - Hints Knowledge Base.
+        
+        GET /api/v2/merlino/analytics/error-analytics/hints
+        """
+        try:
+            params = request.rel_url.query
+            reason_filter = params.get('reason')
+            signature_filter = params.get('signature_id')
+            
+            # Static knowledge base of hints
+            hints_db = [
+                {
+                    'id': 'hint-access-denied-1',
+                    'reason': 'access_denied',
+                    'title': 'Access Denied',
+                    'steps': [
+                        'Verify agent privilege level (check if running as admin/root)',
+                        'Try running ability with elevated executor (e.g., use "psh" with "Run as Administrator")',
+                        'Check endpoint protection logs for access denials',
+                        'Enable required privileges (e.g., SeDebugPrivilege for LSASS dump)',
+                        'Review User Account Control (UAC) settings'
+                    ],
+                    'links': [
+                        {'label': 'Windows Privilege Escalation Guide', 'url': 'https://docs.microsoft.com/windows/security/threat-protection/'},
+                        {'label': 'Linux Privilege Escalation', 'url': 'https://blog.g0tmi1k.com/2011/08/basic-linux-privilege-escalation/'}
+                    ]
+                },
+                {
+                    'id': 'hint-command-not-found-1',
+                    'reason': 'command_not_found',
+                    'title': 'Command Not Found',
+                    'steps': [
+                        'Verify command exists on target system (check PATH)',
+                        'Install required dependencies or tools',
+                        'Use absolute path to command binary',
+                        'Check for typos in command name',
+                        'Verify correct shell/executor is being used (cmd vs psh vs sh)'
+                    ],
+                    'links': [
+                        {'label': 'PowerShell cmdlet reference', 'url': 'https://docs.microsoft.com/powershell/'},
+                        {'label': 'Linux command reference', 'url': 'https://man7.org/'}
+                    ]
+                },
+                {
+                    'id': 'hint-timeout-1',
+                    'reason': 'timeout',
+                    'title': 'Execution Timeout',
+                    'steps': [
+                        'Increase timeout value in ability configuration',
+                        'Optimize command to reduce execution time',
+                        'Check network latency between server and agent',
+                        'Verify target system is not overloaded (CPU/memory)',
+                        'Consider breaking long-running tasks into smaller steps'
+                    ],
+                    'links': []
+                },
+                {
+                    'id': 'hint-network-unreachable-1',
+                    'reason': 'network_unreachable',
+                    'title': 'Network Unreachable',
+                    'steps': [
+                        'Verify network connectivity between agent and target',
+                        'Check firewall rules (both host and network firewalls)',
+                        'Verify DNS resolution for target hostnames',
+                        'Test connectivity with ping or telnet',
+                        'Check proxy settings if applicable'
+                    ],
+                    'links': []
+                },
+                {
+                    'id': 'hint-amsi-block-1',
+                    'reason': 'amsi_block',
+                    'title': 'AMSI/EDR Block',
+                    'steps': [
+                        'Content detected by endpoint protection (AMSI, Windows Defender, EDR)',
+                        'Consider obfuscating payload or command',
+                        'Test ability in controlled environment first',
+                        'Adjust detection rules if this is expected behavior',
+                        'Use alternative techniques that avoid AMSI inspection',
+                        'Review Morgana Arsenal AMSI bypass techniques'
+                    ],
+                    'links': [
+                        {'label': 'AMSI Bypass Guide', 'url': 'https://github.com/S3cur3Th1sSh1t/Amsi-Bypass-Powershell'}
+                    ]
+                },
+                {
+                    'id': 'hint-file-not-found-1',
+                    'reason': 'file_not_found',
+                    'title': 'File Not Found',
+                    'steps': [
+                        'Verify file path exists on target system',
+                        'Check for typos in file path',
+                        'Use absolute paths instead of relative paths',
+                        'Ensure file was created by previous ability',
+                        'Check file permissions'
+                    ],
+                    'links': []
+                },
+                {
+                    'id': 'hint-dependency-missing-1',
+                    'reason': 'dependency_missing',
+                    'title': 'Missing Dependency',
+                    'steps': [
+                        'Install required PowerShell modules or Python packages',
+                        'Verify .NET framework version (for PowerShell cmdlets)',
+                        'Install missing system libraries',
+                        'Check ability requirements in ability YAML',
+                        'Use payload deployment to stage required files'
+                    ],
+                    'links': []
+                },
+                {
+                    'id': 'hint-invalid-argument-1',
+                    'reason': 'invalid_argument',
+                    'title': 'Invalid Argument',
+                    'steps': [
+                        'Review command syntax for errors',
+                        'Verify parameter values match expected format',
+                        'Check for missing required parameters',
+                        'Validate fact substitution (#{fact.name}) resolved correctly',
+                        'Test command manually on target system'
+                    ],
+                    'links': []
+                }
+            ]
+            
+            # Filter hints
+            filtered_hints = hints_db
+            if reason_filter:
+                filtered_hints = [h for h in filtered_hints if h['reason'] == reason_filter]
+            
+            # Note: signature_filter would require looking up signature->reason mapping
+            # For now, we only filter by reason
+            
+            return web.json_response({'items': filtered_hints})
+        
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+            
             print(error_msg)
             return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+

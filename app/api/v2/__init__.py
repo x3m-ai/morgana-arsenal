@@ -58,4 +58,7 @@ def make_app(services):
     from .handlers.payload_api import PayloadApi
     PayloadApi(services).add_routes(app)
 
+    from .handlers.tag_api import TagApi
+    TagApi(services).add_routes(app)
+
     return app

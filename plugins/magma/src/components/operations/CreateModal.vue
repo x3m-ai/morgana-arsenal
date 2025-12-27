@@ -47,6 +47,39 @@ let validation = ref({
     name: "",
 });
 
+// Tags management
+const availableTags = ref([]);
+const operationTags = ref({});
+const selectedTagName = ref("");
+const selectedTagValue = ref("");
+
+async function loadAvailableTags() {
+    try {
+        const response = await $api.get("/api/v2/tags");
+        availableTags.value = response.data || [];
+    } catch (error) {
+        console.error("Error loading tags:", error);
+    }
+}
+
+function addTag() {
+    if (!selectedTagName.value) return;
+    operationTags.value[selectedTagName.value] = selectedTagValue.value;
+    selectedTagName.value = "";
+    selectedTagValue.value = "";
+}
+
+function removeTag(tagName) {
+    delete operationTags.value[tagName];
+}
+
+function onTagNameChange() {
+    const tag = availableTags.value.find(t => t.name === selectedTagName.value);
+    if (tag) {
+        selectedTagValue.value = tag.value;
+    }
+}
+
 // Check for duplicate operation name
 const isDuplicateName = computed(() => {
     if (!operationName.value) return false;
@@ -72,6 +105,7 @@ onMounted(async () => {
     await getSources();
     await coreStore.getObfuscators($api);
     await getPlanners();
+    await loadAvailableTags();
 });
 
 async function getSources() {
@@ -123,6 +157,7 @@ async function createOperation() {
         planner: { id: sanitizeInput(selectedPlanner.value.id) },
         adversary: { adversary_id: sanitizeInput(selectedAdversary.value.adversary_id) },
         group: sanitizeInput(selectedGroup.value),
+        tags: operationTags.value,
     };
     try {
         await operationStore.createOperation($api, newOperation);
@@ -135,6 +170,8 @@ async function createOperation() {
             duration: 2000,
             position: "bottom-right",
         });
+        // Reset tags
+        operationTags.value = {};
     } catch(error) {
         console.error("Error creating operation", error);
         toast({
@@ -253,7 +290,29 @@ async function createOperation() {
                     input.input.is-small(v-model="minJitter")
                     span /
                     input.input.is-small(v-model="maxJitter")
-        footer.modal-card-foot.is-justify-content-right
+            .field.is-horizontal
+                .field-label.is-normal
+                    label.label Tags
+                .field-body
+                    .field
+                        .field.is-grouped.is-grouped-multiline.mb-2(v-if="Object.keys(operationTags).length")
+                            .control(v-for="(value, name) in operationTags" :key="name")
+                                .tags.has-addons
+                                    span.tag.is-info {{ name }}
+                                    span.tag.is-light {{ value }}
+                                    a.tag.is-delete(@click="removeTag(name)")
+                        .field.has-addons
+                            .control.is-expanded
+                                .select.is-fullwidth
+                                    select(v-model="selectedTagName" @change="onTagNameChange")
+                                        option(value="") Select tag...
+                                        option(v-for="tag in availableTags" :key="tag.name" :value="tag.name") {{ tag.name }}
+                            .control
+                                input.input(v-model="selectedTagValue" type="text" placeholder="Value" style="width: 200px")
+                            .control
+                                button.button.is-info(@click="addTag" :disabled="!selectedTagName")
+                                    span.icon
+                                        font-awesome-icon(icon="fas fa-plus")        footer.modal-card-foot.is-justify-content-right
             button.button(@click="modals.operations.showCreate = false") Cancel
             button.button.is-primary(@click="createOperation()" :disabled="isDuplicateName") Start 
 </template>

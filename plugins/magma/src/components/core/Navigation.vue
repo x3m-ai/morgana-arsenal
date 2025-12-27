@@ -83,6 +83,8 @@ function promptToEnablePlugin(pluginName) {
             li
                 router-link.menu-item(to="/settings") settings
             li
+                router-link.menu-item(to="/tags") tags
+            li
                 router-link.menu-item(to="/redteam") red team members
             li
                 router-link.menu-item(to="/factsources") fact sources

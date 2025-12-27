@@ -41,6 +41,7 @@ class AgentFieldsSchema(ma.Schema):
     deadman_enabled = ma.fields.Boolean(allow_none=True)
     available_contacts = ma.fields.List(ma.fields.String(), allow_none=True)
     host_ip_addrs = ma.fields.List(ma.fields.String(), allow_none=True)
+    tags = ma.fields.Dict(keys=ma.fields.String(), values=ma.fields.String(), load_default=dict)
 
     display_name = ma.fields.String(dump_only=True)
     created = ma.fields.DateTime(format=BaseObject.TIME_FORMAT, dump_only=True)
@@ -99,7 +100,7 @@ class Agent(FirstClassObjectInterface, BaseObject):
                  username='unknown', architecture='unknown', group='red', location='unknown', pid=0, ppid=0,
                  trusted=True, executors=(), privilege='User', exe_name='unknown', contact='unknown', paw=None,
                  proxy_receivers=None, proxy_chain=None, origin_link_id='', deadman_enabled=False,
-                 available_contacts=None, host_ip_addrs=None, upstream_dest=None, pending_contact=None):
+                 available_contacts=None, host_ip_addrs=None, upstream_dest=None, pending_contact=None, tags=None):
         super().__init__()
         self.paw = paw if paw else self.generate_name(size=6)
         self.host = host
@@ -124,6 +125,7 @@ class Agent(FirstClassObjectInterface, BaseObject):
         self.watchdog = int(watchdog)
         self.contact = contact
         self.links = []
+        self.tags = tags if tags else {}
         self.access = self.Access.BLUE if group == 'blue' else self.Access.RED
         self.proxy_receivers = proxy_receivers if proxy_receivers else dict()
         self.proxy_chain = proxy_chain if proxy_chain else []

@@ -57,6 +57,7 @@ class OperationSchema(ma.Schema):
     group = ma.fields.String(load_default='')
     source = ma.fields.Nested(SourceSchema())
     comments = ma.fields.String(load_default='')
+    tags = ma.fields.Dict(keys=ma.fields.String(), values=ma.fields.String(), load_default=dict)
 
     @ma.pre_load()
     def remove_properties(self, data, **_):
@@ -134,7 +135,7 @@ class Operation(FirstClassObjectInterface, BaseObject):
 
     def __init__(self, name, adversary=None, agents=None, id='', jitter='2/8', source=None, planner=None,
                  state='running', autonomous=True, obfuscator='plain-text', group=None, auto_close=True, visibility=50,
-                 access=None, use_learning_parsers=True, comments=''):
+                 access=None, use_learning_parsers=True, comments='', tags=None):
         super().__init__()
         self.id = str(id) if id else str(uuid.uuid4())
         self.start, self.finish = None, None
@@ -156,6 +157,7 @@ class Operation(FirstClassObjectInterface, BaseObject):
         self.visibility = visibility
         self.objective = None
         self.comments = comments
+        self.tags = tags if tags else {}
         self.chain, self.potential_links, self.rules = [], [], []
         self.ignored_links = set()
         self.access = access if access else self.Access.APP

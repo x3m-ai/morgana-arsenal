@@ -1,5 +1,5 @@
 <script setup>
-import { inject, reactive } from "vue";
+import { inject, reactive, ref, onMounted } from "vue";
 import { useAgentStore } from "../../stores/agentStore";
 import { useCoreDisplayStore } from "../../stores/coreDisplayStore";
 import { storeToRefs } from "pinia";
@@ -10,6 +10,46 @@ const agentStore = useAgentStore();
 const { selectedAgent } = storeToRefs(agentStore);
 const coreDisplayStore = useCoreDisplayStore();
 const { modals } = storeToRefs(coreDisplayStore);
+
+const availableTags = ref([]);
+const selectedTagName = ref("");
+const selectedTagValue = ref("");
+
+onMounted(async () => {
+    await loadAvailableTags();
+});
+
+async function loadAvailableTags() {
+    try {
+        const response = await $api.get("/api/v2/tags");
+        availableTags.value = response.data || [];
+    } catch (error) {
+        console.error("Error loading tags:", error);
+    }
+}
+
+function addTag() {
+    if (!selectedTagName.value) return;
+    if (!selectedAgent.value.tags) {
+        selectedAgent.value.tags = {};
+    }
+    selectedAgent.value.tags[selectedTagName.value] = selectedTagValue.value;
+    selectedTagName.value = "";
+    selectedTagValue.value = "";
+}
+
+function removeTag(tagName) {
+    if (selectedAgent.value.tags) {
+        delete selectedAgent.value.tags[tagName];
+    }
+}
+
+function onTagNameChange() {
+    const tag = availableTags.value.find(t => t.name === selectedTagName.value);
+    if (tag) {
+        selectedTagValue.value = tag.value;
+    }
+}
 
 let validation = reactive({
     group: "",
@@ -101,6 +141,27 @@ function saveAgent() {
                         td
                             input.input(type="number" v-model="selectedAgent.watchdog" min="0" :class="{ 'is-danger': validation.watchdogTimer }")
                             p.help.has-text-danger(v-if="validation.watchdogTimer") {{ validation.watchdogTimer }}
+                    tr
+                        th.has-text-right Tags
+                        td
+                            .field.is-grouped.is-grouped-multiline.mb-2(v-if="selectedAgent.tags && Object.keys(selectedAgent.tags).length")
+                                .control(v-for="(value, name) in selectedAgent.tags" :key="name")
+                                    .tags.has-addons
+                                        span.tag.is-info {{ name }}
+                                        span.tag.is-light {{ value }}
+                                        a.tag.is-delete(@click="removeTag(name)")
+                            .field.has-addons
+                                .control.is-expanded
+                                    .select.is-fullwidth
+                                        select(v-model="selectedTagName" @change="onTagNameChange")
+                                            option(value="") Select tag...
+                                            option(v-for="tag in availableTags" :key="tag.name" :value="tag.name") {{ tag.name }}
+                                .control
+                                    input.input(v-model="selectedTagValue" type="text" placeholder="Value" style="width: 150px")
+                                .control
+                                    button.button.is-info(@click="addTag" :disabled="!selectedTagName")
+                                        span.icon
+                                            font-awesome-icon(icon="fas fa-plus")
             button.button.is-primary.is-fullwidth.mt-4(@click="saveAgent()") Save Settings
             hr
             p.has-text-weight-bold.has-text-centered.mb-3 Agent Details
@@ -165,6 +226,14 @@ function saveAgent() {
                     tr
                         th.has-text-right Peer-toPeer Proxy Chains
                         td {{ (selectedAgent.proxy_chain && selectedAgent.proxy_chain.length) ? selectedAgent.proxy_chain.join(', ') : 'Not using P2P agents to reach C2.' }}
+                    tr(v-if="selectedAgent.tags && Object.keys(selectedAgent.tags).length")
+                        th.has-text-right Tags
+                        td 
+                            .field.is-grouped.is-grouped-multiline
+                                .control(v-for="(value, name) in selectedAgent.tags" :key="name")
+                                    .tags.has-addons
+                                        span.tag.is-info {{ name }}
+                                        span.tag.is-light {{ value }}
         footer.modal-card-foot.is-flex.is-justify-content-flex-end 
             button.button(@click="modals.agents.showDetails = false") Close
             button.button.is-danger.is-outlined(@click="agentStore.killAgent($api, selectedAgent.paw); modals.agents.showDetails = false;")
