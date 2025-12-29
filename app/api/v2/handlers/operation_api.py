@@ -185,8 +185,17 @@ class OperationApi(BaseObjectApi):
         router.add_get('/merlino/analytics/error-analytics/signatures', self.merlino_error_analytics_signatures)
         router.add_get('/merlino/analytics/error-analytics/signature/{signature_id}', self.merlino_error_analytics_signature_drilldown)
         router.add_get('/merlino/analytics/error-analytics/hints', self.merlino_error_analytics_hints)
+        # Realtime Operations Metrics API
+        router.add_get('/merlino/realtime/operations/metrics', self.merlino_realtime_operations_metrics)
+        router.add_get('/merlino/realtime/operations', self.merlino_realtime_operations)
+        router.add_get('/merlino/realtime/agents', self.merlino_realtime_agents)
+        router.add_get('/merlino/realtime/timeline', self.merlino_realtime_timeline)
         router.add_get('/merlino/dashboard/realtime', self.merlino_dashboard_realtime)
         router.add_get('/merlino/dashboard/force-graph', self.merlino_dashboard_force_graph)
+        # Agents Intelligence API
+        router.add_get('/merlino/agents/intelligence/overview', self.merlino_agents_intelligence_overview)
+        router.add_get('/merlino/agents/intelligence/agent/{paw}', self.merlino_agents_intelligence_agent_detail)
+        router.add_get('/merlino/agents/intelligence/graph', self.merlino_agents_intelligence_graph)
         # New Merlino Ops Graph API
         router.add_post('/merlino/ops-graph', self.merlino_ops_graph)
         router.add_get('/merlino/ops-graph/problem-details', self.merlino_problem_details)
@@ -5227,7 +5236,1172 @@ class OperationApi(BaseObjectApi):
         except Exception as e:
             import traceback
             return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+    
+    async def merlino_realtime_operations_metrics(self, request: web.Request):
+        """Realtime Operations Metrics - Snapshot completo."""
+        try:
+            from datetime import datetime, timezone, timedelta
             
-            print(error_msg)
+            params = request.rel_url.query
+            window_minutes = int(params.get('windowMinutes', 60))
+            include_timeline = params.get('includeTimeline', 'true').lower() == 'true'
+            timeline_limit = int(params.get('timelineLimit', 20))
+            
+            generated_at = datetime.now(timezone.utc)
+            window_start = generated_at - timedelta(minutes=window_minutes)
+            
+            operations = list(self._api_manager.find_objects(self.ram_key))
+            agents = list(self._api_manager.find_objects('agents'))
+            
+            operations_realtime = []
+            total_abilities = 0
+            total_success = 0
+            total_errors = 0
+            running_ops = 0
+            completed_ops = 0
+            failed_ops = 0
+            
+            for op in operations:
+                state = getattr(op, 'state', 'unknown')
+                if state == 'running':
+                    running_ops += 1
+                elif state == 'finished':
+                    completed_ops += 1
+                elif state in ['stopped', 'paused']:
+                    failed_ops += 1
+                
+                op_total = 0
+                op_success = 0
+                op_error = 0
+                op_running = 0
+                tcodes = set()
+                abilities_list = []
+                
+                if hasattr(op, 'chain') and op.chain:
+                    for link in op.chain:
+                        op_total += 1
+                        link_status = getattr(link, 'status', -1)
+                        link_ability = getattr(link, 'ability', None)
+                        
+                        if link_status == 0:
+                            op_success += 1
+                            ability_status = 'success'
+                        elif link_status in [1, 124]:
+                            op_error += 1
+                            ability_status = 'error'
+                        elif link_status == -1:
+                            op_running += 1
+                            ability_status = 'running'
+                        else:
+                            ability_status = 'unknown'
+                        
+                        if link_ability:
+                            abilities_list.append({
+                                'name': getattr(link_ability, 'name', 'Unknown'),
+                                'tactic': getattr(link_ability, 'tactic', None),
+                                'technique': getattr(link_ability, 'technique_id', None),
+                                'status': ability_status
+                            })
+                            technique_id = getattr(link_ability, 'technique_id', None)
+                            if technique_id:
+                                tcodes.add(technique_id)
+                
+                total_abilities += op_total
+                total_success += op_success
+                total_errors += op_error
+                
+                agent_paws = set()
+                if hasattr(op, 'chain') and op.chain:
+                    for link in op.chain:
+                        paw = getattr(link, 'paw', None)
+                        if paw:
+                            agent_paws.add(paw)
+                
+                started = getattr(op, 'start', None)
+                start_time = getattr(op, 'start', None)
+                finish_time = getattr(op, 'finish', None)
+                
+                if started and hasattr(started, 'isoformat'):
+                    started = started.isoformat()
+                if start_time and hasattr(start_time, 'isoformat'):
+                    start_time = start_time.isoformat()
+                if finish_time and hasattr(finish_time, 'isoformat'):
+                    finish_time = finish_time.isoformat()
+                
+                operations_realtime.append({
+                    'id': op.id,
+                    'name': op.name,
+                    'adversary': getattr(op.adversary, 'adversary_id', None) if hasattr(op, 'adversary') and op.adversary else None,
+                    'state': state,
+                    'started': started,
+                    'start_time': start_time,
+                    'finish_time': finish_time,
+                    'total_abilities': op_total,
+                    'success_count': op_success,
+                    'error_count': op_error,
+                    'running_count': op_running,
+                    'agents_count': len(agent_paws),
+                    'techniques_count': len(tcodes),
+                    'tcodes': sorted(list(tcodes)),
+                    'abilities': abilities_list[:10]
+                })
+            
+            success_rate = (total_success / total_abilities * 100) if total_abilities > 0 else 0.0
+            global_stats = {
+                'totalOps': len(operations),
+                'totalAbilities': total_abilities,
+                'totalSuccess': total_success,
+                'totalErrors': total_errors,
+                'successRate': round(success_rate, 3),
+                'runningOps': running_ops,
+                'completedOps': completed_ops,
+                'failedOps': failed_ops,
+                'totalAgents': len(agents)
+            }
+            
+            agents_realtime = []
+            for agent in agents:
+                last_seen = getattr(agent, 'last_seen', None)
+                if last_seen and hasattr(last_seen, 'isoformat'):
+                    last_seen = last_seen.isoformat()
+                agents_realtime.append({
+                    'paw': agent.paw,
+                    'host': getattr(agent, 'host', None),
+                    'platform': getattr(agent, 'platform', None),
+                    'last_seen': last_seen
+                })
+            
+            timeline = []
+            if include_timeline:
+                # Generate timeline events from operations and abilities
+                for op in operations:
+                    op_id = op.id
+                    op_name = op.name
+                    op_state = getattr(op, 'state', 'unknown')
+                    
+                    # Event 1: Operation started
+                    start_time = getattr(op, 'start', None)
+                    if start_time:
+                        try:
+                            if isinstance(start_time, str):
+                                start_dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                                start_ts = start_time if start_time.endswith('Z') or '+' in start_time else start_time + 'Z'
+                            else:
+                                start_dt = start_time
+                                start_ts = start_time.isoformat()
+                            
+                            timeline.append({
+                                'ts': start_ts,
+                                'type': 'operation_started',
+                                'operation_id': op_id,
+                                'operation_name': op_name,
+                                'details': f'Operation "{op_name}" started'
+                            })
+                        except Exception as e:
+                            pass
+                    
+                    # Event 2: Operation finished (if completed)
+                    finish_time = getattr(op, 'finish', None)
+                    if finish_time and op_state == 'finished':
+                        try:
+                            if isinstance(finish_time, str):
+                                finish_dt = datetime.fromisoformat(finish_time.replace('Z', '+00:00'))
+                                finish_ts = finish_time if finish_time.endswith('Z') or '+' in finish_time else finish_time + 'Z'
+                            else:
+                                finish_dt = finish_time
+                                finish_ts = finish_time.isoformat()
+                            
+                            timeline.append({
+                                'ts': finish_ts,
+                                'type': 'operation_finished',
+                                'operation_id': op_id,
+                                'operation_name': op_name,
+                                'details': f'Operation "{op_name}" finished'
+                            })
+                        except Exception as e:
+                            pass
+                    
+                    # Event 3: Abilities executed
+                    if hasattr(op, 'chain') and op.chain:
+                        for link in op.chain:
+                            # Use display to get all fields including finish
+                            link_dict = link.display if hasattr(link, 'display') else {}
+                            
+                            link_finish = link_dict.get('finish') or getattr(link, 'finish', None)
+                            link_status = link_dict.get('status', getattr(link, 'status', -1))
+                            link_paw = link_dict.get('paw', getattr(link, 'paw', None))
+                            
+                            if link_finish:
+                                ability_name = 'Unknown'
+                                ability_id = None
+                                
+                                # Try to get ability from link
+                                if 'ability' in link_dict and link_dict['ability']:
+                                    ability_dict = link_dict['ability']
+                                    ability_name = ability_dict.get('name', 'Unknown')
+                                    ability_id = ability_dict.get('ability_id', ability_dict.get('id', None))
+                                elif hasattr(link, 'ability') and link.ability:
+                                    ability_name = getattr(link.ability, 'name', 'Unknown')
+                                    ability_id = getattr(link.ability, 'ability_id', None)
+                                
+                                try:
+                                    if isinstance(link_finish, str):
+                                        link_ts = link_finish if link_finish.endswith('Z') or '+' in link_finish else link_finish + 'Z'
+                                    else:
+                                        link_ts = link_finish.isoformat()
+                                    
+                                    # Map status to human-readable
+                                    if link_status == 0:
+                                        status_str = 'success'
+                                    elif link_status in [1, 124]:
+                                        status_str = 'failed'
+                                    elif link_status == -1:
+                                        status_str = 'running'
+                                    else:
+                                        status_str = 'unknown'
+                                    
+                                    # Get command output if available (truncated)
+                                    link_output = link_dict.get('output', getattr(link, 'output', ''))
+                                    details = f'Status: {status_str}'
+                                    if link_output and len(link_output) > 0:
+                                        output_preview = link_output[:100] + '...' if len(link_output) > 100 else link_output
+                                        details += f' | Output: {output_preview}'
+                                    
+                                    timeline.append({
+                                        'ts': link_ts,
+                                        'type': 'ability_executed',
+                                        'operation_id': op_id,
+                                        'operation_name': op_name,
+                                        'agent_paw': link_paw,
+                                        'ability_id': ability_id,
+                                        'ability_name': ability_name,
+                                        'status': status_str,
+                                        'details': details
+                                    })
+                                except Exception as e:
+                                    pass
+                
+                # Sort timeline by timestamp descending (most recent first)
+                timeline.sort(key=lambda x: x.get('ts', ''), reverse=True)
+                
+                # Apply limit
+                timeline = timeline[:timeline_limit]
+            
+            return web.json_response({
+                'generatedAt': generated_at.isoformat(),
+                'window': f'{window_minutes}m',
+                'globalStats': global_stats,
+                'operations': operations_realtime,
+                'agents': agents_realtime,
+                'timeline': timeline
+            })
+        except Exception as e:
+            import traceback
             return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+    
+    async def merlino_realtime_operations(self, request: web.Request):
+        """Realtime Operations - Solo lista operazioni."""
+        try:
+            from datetime import datetime, timezone
+            generated_at = datetime.now(timezone.utc)
+            operations = list(self._api_manager.find_objects(self.ram_key))
+            operations_realtime = []
+            for op in operations:
+                operations_realtime.append({
+                    'id': op.id,
+                    'name': op.name,
+                    'state': getattr(op, 'state', 'unknown')
+                })
+            return web.json_response({'meta': {'generatedAt': generated_at.isoformat()}, 'operations': operations_realtime})
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+    
+    async def merlino_realtime_agents(self, request: web.Request):
+        """Realtime Agents - Solo lista agents."""
+        try:
+            from datetime import datetime, timezone
+            generated_at = datetime.now(timezone.utc)
+            agents = list(self._api_manager.find_objects('agents'))
+            agents_realtime = []
+            for a in agents:
+                last_seen = getattr(a, 'last_seen', None)
+                if last_seen and hasattr(last_seen, 'isoformat'):
+                    last_seen = last_seen.isoformat()
+                agents_realtime.append({'paw': a.paw, 'host': getattr(a, 'host', None), 'platform': getattr(a, 'platform', None), 'last_seen': last_seen})
+            return web.json_response({'meta': {'generatedAt': generated_at.isoformat()}, 'agents': agents_realtime})
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+    
+    async def merlino_realtime_timeline(self, request: web.Request):
+        """Realtime Timeline - Solo eventi timeline."""
+        try:
+            from datetime import datetime, timezone, timedelta
+            params = request.rel_url.query
+            window_minutes = int(params.get('windowMinutes', 60))
+            limit = int(params.get('limit', 20))
+            generated_at = datetime.now(timezone.utc)
+            window_start = generated_at - timedelta(minutes=window_minutes)
+            operations = list(self._api_manager.find_objects(self.ram_key))
+            
+            timeline = []
+            for op in operations:
+                op_id = op.id
+                op_name = op.name
+                
+                # Operation started events
+                start_time = getattr(op, 'start', None)
+                if start_time:
+                    try:
+                        if isinstance(start_time, str):
+                            start_ts = start_time if start_time.endswith('Z') or '+' in start_time else start_time + 'Z'
+                        else:
+                            start_ts = start_time.isoformat()
+                        timeline.append({
+                            'ts': start_ts,
+                            'type': 'operation_started',
+                            'operation_id': op_id,
+                            'operation_name': op_name,
+                            'details': f'Operation "{op_name}" started'
+                        })
+                    except:
+                        pass
+                
+                # Ability executed events
+                if hasattr(op, 'chain') and op.chain:
+                    for link in op.chain:
+                        # Use display to get all fields including finish
+                        link_dict = link.display if hasattr(link, 'display') else {}
+                        
+                        link_finish = link_dict.get('finish') or getattr(link, 'finish', None)
+                        link_status = link_dict.get('status', getattr(link, 'status', -1))
+                        link_paw = link_dict.get('paw', getattr(link, 'paw', None))
+                        
+                        if link_finish:
+                            ability_name = 'Unknown'
+                            ability_id = None
+                            
+                            # Try to get ability from link
+                            if 'ability' in link_dict and link_dict['ability']:
+                                ability_dict = link_dict['ability']
+                                ability_name = ability_dict.get('name', 'Unknown')
+                                ability_id = ability_dict.get('ability_id', ability_dict.get('id', None))
+                            elif hasattr(link, 'ability') and link.ability:
+                                ability_name = getattr(link.ability, 'name', 'Unknown')
+                                ability_id = getattr(link.ability, 'ability_id', None)
+                            
+                            try:
+                                if isinstance(link_finish, str):
+                                    link_ts = link_finish if link_finish.endswith('Z') or '+' in link_finish else link_finish + 'Z'
+                                else:
+                                    link_ts = link_finish.isoformat()
+                                
+                                status_str = 'success' if link_status == 0 else ('failed' if link_status in [1, 124] else 'running')
+                                
+                                # Get command output if available (truncated)
+                                link_output = link_dict.get('output', getattr(link, 'output', ''))
+                                details = f'Status: {status_str}'
+                                if link_output and len(link_output) > 0:
+                                    output_preview = link_output[:100] + '...' if len(link_output) > 100 else link_output
+                                    details += f' | Output: {output_preview}'
+                                
+                                timeline.append({
+                                    'ts': link_ts,
+                                    'type': 'ability_executed',
+                                    'operation_id': op_id,
+                                    'operation_name': op_name,
+                                    'agent_paw': link_paw,
+                                    'ability_id': ability_id,
+                                    'ability_name': ability_name,
+                                    'status': status_str,
+                                    'details': details
+                                })
+                            except:
+                                pass
+            
+            timeline.sort(key=lambda x: x.get('ts', ''), reverse=True)
+            return web.json_response({
+                'generatedAt': generated_at.isoformat(),
+                'window': f'{window_minutes}m',
+                'timeline': timeline[:limit]
+            })
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+    
+    # ========================================================================
+    # AGENTS INTELLIGENCE APIs (Merlino v2)
+    # ========================================================================
+    
+    async def merlino_agents_intelligence_overview(self, request: web.Request):
+        """
+        Agents Intelligence Overview - Main endpoint for Agents Intelligence taskpane.
+        Returns agents stats, timeline, graph, and insights.
+        """
+        try:
+            from datetime import datetime, timezone, timedelta
+            
+            params = request.rel_url.query
+            window_str = params.get('window', '15m')
+            include_timeline = params.get('includeTimeline', 'true').lower() == 'true'
+            timeline_limit = int(params.get('timelineLimit', 250))
+            include_graph = params.get('includeGraph', 'true').lower() == 'true'
+            graph_depth = int(params.get('graphDepth', 2))
+            include_insights = params.get('includeTopInsights', 'true').lower() == 'true'
+            
+            # Parse window
+            window_minutes = self._parse_window_string(window_str)
+            generated_at = datetime.now(timezone.utc)
+            window_start = generated_at - timedelta(minutes=window_minutes)
+            
+            # Get all agents
+            agents = list(self._api_manager.find_objects('agents'))
+            operations = list(self._api_manager.find_objects(self.ram_key))
+            
+            # Activity window for active/inactive determination (5 minutes default)
+            activity_window_seconds = 300
+            activity_threshold = generated_at - timedelta(seconds=activity_window_seconds)
+            
+            # Calculate agent stats
+            total_agents = len(agents)
+            active_agents = 0
+            inactive_agents = 0
+            platform_dist = {}
+            privilege_dist = {}
+            group_dist = {}
+            
+            for agent in agents:
+                # Activity status
+                last_seen = getattr(agent, 'last_seen', None)
+                if last_seen:
+                    if isinstance(last_seen, str):
+                        last_seen_dt = datetime.fromisoformat(last_seen.replace('Z', '+00:00'))
+                    else:
+                        last_seen_dt = last_seen
+                    
+                    if last_seen_dt >= activity_threshold:
+                        active_agents += 1
+                    else:
+                        inactive_agents += 1
+                else:
+                    inactive_agents += 1
+                
+                # Platform distribution
+                platform = getattr(agent, 'platform', 'unknown')
+                platform_dist[platform] = platform_dist.get(platform, 0) + 1
+                
+                # Privilege distribution
+                privilege = getattr(agent, 'privilege', 'unknown')
+                privilege_dist[privilege] = privilege_dist.get(privilege, 0) + 1
+                
+                # Group distribution
+                group = getattr(agent, 'group', '')
+                group_dist[group] = group_dist.get(group, 0) + 1
+            
+            agent_stats = {
+                'totalAgents': total_agents,
+                'activeAgents': active_agents,
+                'inactiveAgents': inactive_agents,
+                'activityWindowSeconds': activity_window_seconds,
+                'platformDistribution': platform_dist,
+                'privilegeDistribution': privilege_dist,
+                'groupDistribution': group_dist
+            }
+            
+            # Build agents list with rich metadata
+            agents_list = []
+            for agent in agents:
+                paw = agent.paw
+                host = getattr(agent, 'host', 'unknown')
+                platform = getattr(agent, 'platform', 'unknown')
+                group = getattr(agent, 'group', '')
+                privilege = getattr(agent, 'privilege', 'User')
+                trusted = getattr(agent, 'trusted', True)
+                
+                last_seen = getattr(agent, 'last_seen', None)
+                last_seen_ts = None
+                seconds_since_last_seen = None
+                status = 'inactive'
+                
+                if last_seen:
+                    if isinstance(last_seen, str):
+                        last_seen_ts = last_seen if last_seen.endswith('Z') or '+' in last_seen else last_seen + 'Z'
+                        last_seen_dt = datetime.fromisoformat(last_seen.replace('Z', '+00:00'))
+                    else:
+                        last_seen_ts = last_seen.isoformat()
+                        last_seen_dt = last_seen
+                    
+                    seconds_since_last_seen = int((generated_at - last_seen_dt).total_seconds())
+                    status = 'active' if seconds_since_last_seen <= activity_window_seconds else 'inactive'
+                
+                # Calculate agent activity in window
+                ops_in_window = 0
+                abilities_in_window = 0
+                success_in_window = 0
+                failed_in_window = 0
+                pending_in_window = 0
+                tcodes_set = set()
+                tactics_set = set()
+                
+                for op in operations:
+                    if hasattr(op, 'chain') and op.chain:
+                        for link in op.chain:
+                            link_dict = link.display if hasattr(link, 'display') else {}
+                            link_paw = link_dict.get('paw', getattr(link, 'paw', None))
+                            
+                            if link_paw == paw:
+                                link_finish = link_dict.get('finish') or getattr(link, 'finish', None)
+                                if link_finish:
+                                    try:
+                                        if isinstance(link_finish, str):
+                                            link_dt = datetime.fromisoformat(link_finish.replace('Z', '+00:00'))
+                                        else:
+                                            link_dt = link_finish
+                                        
+                                        if link_dt >= window_start:
+                                            abilities_in_window += 1
+                                            
+                                            link_status = link_dict.get('status', getattr(link, 'status', -1))
+                                            if link_status == 0:
+                                                success_in_window += 1
+                                            elif link_status in [1, 124]:
+                                                failed_in_window += 1
+                                            else:
+                                                pending_in_window += 1
+                                            
+                                            # Get technique/tactic
+                                            if 'ability' in link_dict and link_dict['ability']:
+                                                ability_dict = link_dict['ability']
+                                                if 'technique_id' in ability_dict:
+                                                    tcodes_set.add(ability_dict['technique_id'])
+                                                if 'tactic' in ability_dict:
+                                                    tactics_set.add(ability_dict['tactic'])
+                                    except:
+                                        pass
+                
+                # Calculate risk score (simple heuristic)
+                risk_score = 30  # Base score
+                risk_reasons = []
+                
+                if privilege in ['Elevated', 'Administrator']:
+                    risk_score += 20
+                    risk_reasons.append('Elevated privilege')
+                
+                if failed_in_window > 0:
+                    risk_score += min(failed_in_window * 5, 30)
+                    risk_reasons.append(f'{failed_in_window} failed abilities')
+                
+                if any('credential' in t.lower() or 'T1003' in t for t in tcodes_set):
+                    risk_score += 20
+                    risk_reasons.append('Credential access technique observed')
+                
+                risk_score = min(risk_score, 100)
+                risk_level = 'low' if risk_score < 40 else ('medium' if risk_score < 70 else 'high')
+                
+                agents_list.append({
+                    'paw': paw,
+                    'host': host,
+                    'display_name': host,
+                    'platform': platform,
+                    'architecture': getattr(agent, 'architecture', 'unknown'),
+                    'group': group,
+                    'privilege': privilege,
+                    'trusted': trusted,
+                    'last_seen': last_seen_ts,
+                    'first_seen': getattr(agent, 'created', generated_at).isoformat() if hasattr(getattr(agent, 'created', None), 'isoformat') else None,
+                    'health': {
+                        'status': status,
+                        'secondsSinceLastSeen': seconds_since_last_seen,
+                        'confidence': 'high' if seconds_since_last_seen and seconds_since_last_seen < 60 else 'medium'
+                    },
+                    'tcodes': sorted(list(tcodes_set)),
+                    'tactics': sorted(list(tactics_set)),
+                    'activity': {
+                        'operationsInWindow': ops_in_window,
+                        'abilitiesInWindow': abilities_in_window,
+                        'successInWindow': success_in_window,
+                        'failedInWindow': failed_in_window,
+                        'pendingInWindow': pending_in_window
+                    },
+                    'risk': {
+                        'score': risk_score,
+                        'level': risk_level,
+                        'reasons': risk_reasons
+                    }
+                })
+            
+            # Build timeline (if requested)
+            timeline = []
+            if include_timeline:
+                # Agent seen events
+                for agent in agents:
+                    last_seen = getattr(agent, 'last_seen', None)
+                    if last_seen:
+                        try:
+                            if isinstance(last_seen, str):
+                                last_seen_dt = datetime.fromisoformat(last_seen.replace('Z', '+00:00'))
+                                last_seen_ts = last_seen if last_seen.endswith('Z') or '+' in last_seen else last_seen + 'Z'
+                            else:
+                                last_seen_dt = last_seen
+                                last_seen_ts = last_seen.isoformat()
+                            
+                            if last_seen_dt >= window_start:
+                                timeline.append({
+                                    'ts': last_seen_ts,
+                                    'type': 'agent_seen',
+                                    'severity': 'info',
+                                    'agent_paw': agent.paw,
+                                    'agent_host': getattr(agent, 'host', 'unknown'),
+                                    'details': f'Agent {getattr(agent, "host", "unknown")} checked in'
+                                })
+                        except:
+                            pass
+                
+                # Operation events
+                for op in operations:
+                    op_id = op.id
+                    op_name = op.name
+                    
+                    # Operation started
+                    start_time = getattr(op, 'start', None)
+                    if start_time:
+                        try:
+                            if isinstance(start_time, str):
+                                start_dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                                start_ts = start_time if start_time.endswith('Z') or '+' in start_time else start_time + 'Z'
+                            else:
+                                start_dt = start_time
+                                start_ts = start_time.isoformat()
+                            
+                            if start_dt >= window_start:
+                                timeline.append({
+                                    'ts': start_ts,
+                                    'type': 'operation_started',
+                                    'severity': 'info',
+                                    'operation_id': op_id,
+                                    'operation_name': op_name,
+                                    'details': f'Operation "{op_name}" started'
+                                })
+                        except:
+                            pass
+                    
+                    # Ability executed events
+                    if hasattr(op, 'chain') and op.chain:
+                        for link in op.chain:
+                            link_dict = link.display if hasattr(link, 'display') else {}
+                            link_finish = link_dict.get('finish') or getattr(link, 'finish', None)
+                            
+                            if link_finish:
+                                try:
+                                    if isinstance(link_finish, str):
+                                        link_dt = datetime.fromisoformat(link_finish.replace('Z', '+00:00'))
+                                        link_ts = link_finish if link_finish.endswith('Z') or '+' in link_finish else link_finish + 'Z'
+                                    else:
+                                        link_dt = link_finish
+                                        link_ts = link_finish.isoformat()
+                                    
+                                    if link_dt >= window_start:
+                                        link_status = link_dict.get('status', getattr(link, 'status', -1))
+                                        link_paw = link_dict.get('paw', getattr(link, 'paw', None))
+                                        
+                                        ability_name = 'Unknown'
+                                        ability_id = None
+                                        technique = None
+                                        tactic = None
+                                        
+                                        if 'ability' in link_dict and link_dict['ability']:
+                                            ability_dict = link_dict['ability']
+                                            ability_name = ability_dict.get('name', 'Unknown')
+                                            ability_id = ability_dict.get('ability_id', ability_dict.get('id', None))
+                                            technique = ability_dict.get('technique_id', None)
+                                            tactic = ability_dict.get('tactic', None)
+                                        
+                                        status_str = 'success' if link_status == 0 else ('failed' if link_status in [1, 124] else 'running')
+                                        severity = 'warning' if link_status in [1, 124] else 'info'
+                                        
+                                        # Find agent host
+                                        agent_host = 'unknown'
+                                        for a in agents:
+                                            if a.paw == link_paw:
+                                                agent_host = getattr(a, 'host', 'unknown')
+                                                break
+                                        
+                                        link_output = link_dict.get('output', '')
+                                        details = f'Status: {status_str}'
+                                        if link_output:
+                                            details = link_output[:100]
+                                        
+                                        timeline.append({
+                                            'ts': link_ts,
+                                            'type': 'ability_executed',
+                                            'severity': severity,
+                                            'agent_paw': link_paw,
+                                            'agent_host': agent_host,
+                                            'operation_id': op_id,
+                                            'operation_name': op_name,
+                                            'ability_name': ability_name,
+                                            'ability_id': ability_id,
+                                            'status': status_str,
+                                            'technique': technique,
+                                            'tactic': tactic,
+                                            'details': details
+                                        })
+                                except:
+                                    pass
+                
+                timeline.sort(key=lambda x: x.get('ts', ''), reverse=True)
+                timeline = timeline[:timeline_limit]
+            
+            # Build graph (if requested)
+            graph = {'nodes': [], 'edges': [], 'legend': {'nodeTypes': [], 'edgeTypes': []}}
+            if include_graph:
+                # Add agent nodes
+                for agent_data in agents_list[:50]:  # Limit to 50 agents for performance
+                    paw = agent_data['paw']
+                    status = agent_data['health']['status']
+                    color = '#4ec9b0' if status == 'active' else '#808080'
+                    
+                    graph['nodes'].append({
+                        'id': f'agent:{paw}',
+                        'type': 'agent',
+                        'label': agent_data['display_name'],
+                        'subtitle': f"{agent_data['platform']} | {agent_data['group']}",
+                        'metrics': {
+                            'last_seen': agent_data['last_seen'],
+                            'risk': agent_data['risk']['score']
+                        },
+                        'style': {
+                            'status': status,
+                            'color': color
+                        }
+                    })
+                
+                # Add technique nodes and edges
+                technique_counts = {}
+                agent_technique_edges = {}
+                
+                for op in operations:
+                    if hasattr(op, 'chain') and op.chain:
+                        for link in op.chain:
+                            link_dict = link.display if hasattr(link, 'display') else {}
+                            link_paw = link_dict.get('paw', getattr(link, 'paw', None))
+                            
+                            if 'ability' in link_dict and link_dict['ability']:
+                                ability_dict = link_dict['ability']
+                                technique_id = ability_dict.get('technique_id', None)
+                                
+                                if technique_id and link_paw:
+                                    technique_counts[technique_id] = technique_counts.get(technique_id, 0) + 1
+                                    
+                                    edge_key = f'{link_paw}:{technique_id}'
+                                    if edge_key not in agent_technique_edges:
+                                        agent_technique_edges[edge_key] = {
+                                            'agent': link_paw,
+                                            'technique': technique_id,
+                                            'count': 0,
+                                            'last_ts': None
+                                        }
+                                    
+                                    agent_technique_edges[edge_key]['count'] += 1
+                                    
+                                    link_finish = link_dict.get('finish')
+                                    if link_finish:
+                                        if isinstance(link_finish, str):
+                                            link_ts = link_finish if link_finish.endswith('Z') or '+' in link_finish else link_finish + 'Z'
+                                        else:
+                                            link_ts = link_finish.isoformat()
+                                        
+                                        if not agent_technique_edges[edge_key]['last_ts'] or link_ts > agent_technique_edges[edge_key]['last_ts']:
+                                            agent_technique_edges[edge_key]['last_ts'] = link_ts
+                
+                # Add top techniques as nodes
+                top_techniques = sorted(technique_counts.items(), key=lambda x: x[1], reverse=True)[:20]
+                for technique_id, count in top_techniques:
+                    graph['nodes'].append({
+                        'id': f'technique:{technique_id}',
+                        'type': 'technique',
+                        'label': technique_id,
+                        'subtitle': 'MITRE ATT&CK',
+                        'metrics': {
+                            'observed_count': count
+                        },
+                        'style': {
+                            'color': '#ff9800'
+                        }
+                    })
+                
+                # Add edges
+                edge_id = 0
+                for edge_key, edge_data in agent_technique_edges.items():
+                    if f"technique:{edge_data['technique']}" in [n['id'] for n in graph['nodes']]:
+                        edge_id += 1
+                        graph['edges'].append({
+                            'id': f'e{edge_id}',
+                            'source': f"agent:{edge_data['agent']}",
+                            'target': f"technique:{edge_data['technique']}",
+                            'type': 'observed',
+                            'weight': edge_data['count'],
+                            'label': f"{edge_data['count']} events",
+                            'meta': {
+                                'window': window_str,
+                                'last_ts': edge_data['last_ts']
+                            }
+                        })
+                
+                graph['legend'] = {
+                    'nodeTypes': ['agent', 'technique', 'operation', 'ability', 'tactic', 'host', 'group'],
+                    'edgeTypes': ['observed', 'belongs_to', 'executed_in', 'related_to']
+                }
+            
+            # Build insights (if requested)
+            insights = {'topTechniques': [], 'topAgents': [], 'alerts': []}
+            if include_insights:
+                # Top techniques
+                technique_counts = {}
+                for agent_data in agents_list:
+                    for tcode in agent_data['tcodes']:
+                        technique_counts[tcode] = technique_counts.get(tcode, 0) + 1
+                
+                insights['topTechniques'] = [
+                    {'technique': t, 'count': c}
+                    for t, c in sorted(technique_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+                ]
+                
+                # Top agents by risk
+                insights['topAgents'] = [
+                    {'paw': a['paw'], 'host': a['host'], 'risk': a['risk']['score']}
+                    for a in sorted(agents_list, key=lambda x: x['risk']['score'], reverse=True)[:5]
+                ]
+                
+                # Generate alerts
+                alert_id = 0
+                for agent_data in agents_list:
+                    if agent_data['risk']['level'] == 'high':
+                        alert_id += 1
+                        insights['alerts'].append({
+                            'id': f'a{alert_id}',
+                            'ts': generated_at.isoformat(),
+                            'severity': 'warning',
+                            'title': 'High-risk activity detected',
+                            'details': f"Agent {agent_data['host']} has risk score {agent_data['risk']['score']}",
+                            'agent_paw': agent_data['paw']
+                        })
+            
+            return web.json_response({
+                'generatedAt': generated_at.isoformat(),
+                'window': window_str,
+                'agentStats': agent_stats,
+                'agents': agents_list,
+                'timeline': timeline,
+                'graph': graph,
+                'insights': insights
+            })
+            
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+    
+    async def merlino_agents_intelligence_agent_detail(self, request: web.Request):
+        """
+        Agent Details - Deep drill-down for a specific agent.
+        """
+        try:
+            from datetime import datetime, timezone, timedelta
+            
+            paw = request.match_info.get('paw')
+            if not paw:
+                return web.json_response({'error': 'Missing paw parameter'}, status=400)
+            
+            params = request.rel_url.query
+            window_str = params.get('window', '24h')
+            include_timeline = params.get('includeTimeline', 'true').lower() == 'true'
+            timeline_limit = int(params.get('timelineLimit', 500))
+            include_graph = params.get('includeGraph', 'true').lower() == 'true'
+            
+            window_minutes = self._parse_window_string(window_str)
+            generated_at = datetime.now(timezone.utc)
+            window_start = generated_at - timedelta(minutes=window_minutes)
+            
+            # Find agent
+            agents = list(self._api_manager.find_objects('agents'))
+            agent = None
+            for a in agents:
+                if a.paw == paw:
+                    agent = a
+                    break
+            
+            if not agent:
+                return web.json_response({'error': f'Agent {paw} not found'}, status=404)
+            
+            # Get operations
+            operations = list(self._api_manager.find_objects(self.ram_key))
+            
+            # Build agent data
+            host = getattr(agent, 'host', 'unknown')
+            platform = getattr(agent, 'platform', 'unknown')
+            group = getattr(agent, 'group', '')
+            privilege = getattr(agent, 'privilege', 'User')
+            
+            last_seen = getattr(agent, 'last_seen', None)
+            last_seen_ts = None
+            if last_seen:
+                if isinstance(last_seen, str):
+                    last_seen_ts = last_seen if last_seen.endswith('Z') or '+' in last_seen else last_seen + 'Z'
+                else:
+                    last_seen_ts = last_seen.isoformat()
+            
+            # Collect tcodes and tactics
+            tcodes_set = set()
+            tactics_set = set()
+            
+            for op in operations:
+                if hasattr(op, 'chain') and op.chain:
+                    for link in op.chain:
+                        link_dict = link.display if hasattr(link, 'display') else {}
+                        link_paw = link_dict.get('paw', getattr(link, 'paw', None))
+                        
+                        if link_paw == paw:
+                            if 'ability' in link_dict and link_dict['ability']:
+                                ability_dict = link_dict['ability']
+                                if 'technique_id' in ability_dict:
+                                    tcodes_set.add(ability_dict['technique_id'])
+                                if 'tactic' in ability_dict:
+                                    tactics_set.add(ability_dict['tactic'])
+            
+            # Calculate risk
+            risk_score = 30
+            risk_reasons = []
+            if privilege in ['Elevated', 'Administrator']:
+                risk_score += 20
+                risk_reasons.append('Elevated privilege')
+            risk_score = min(risk_score, 100)
+            risk_level = 'low' if risk_score < 40 else ('medium' if risk_score < 70 else 'high')
+            
+            agent_data = {
+                'paw': paw,
+                'host': host,
+                'display_name': host,
+                'platform': platform,
+                'architecture': getattr(agent, 'architecture', 'unknown'),
+                'group': group,
+                'privilege': privilege,
+                'trusted': getattr(agent, 'trusted', True),
+                'first_seen': getattr(agent, 'created', generated_at).isoformat() if hasattr(getattr(agent, 'created', None), 'isoformat') else None,
+                'last_seen': last_seen_ts,
+                'tcodes': sorted(list(tcodes_set)),
+                'tactics': sorted(list(tactics_set)),
+                'risk': {
+                    'score': risk_score,
+                    'level': risk_level,
+                    'reasons': risk_reasons
+                }
+            }
+            
+            # Build timeline
+            timeline = []
+            if include_timeline:
+                for op in operations:
+                    op_id = op.id
+                    op_name = op.name
+                    
+                    if hasattr(op, 'chain') and op.chain:
+                        for link in op.chain:
+                            link_dict = link.display if hasattr(link, 'display') else {}
+                            link_paw = link_dict.get('paw', getattr(link, 'paw', None))
+                            
+                            if link_paw == paw:
+                                link_finish = link_dict.get('finish') or getattr(link, 'finish', None)
+                                
+                                if link_finish:
+                                    try:
+                                        if isinstance(link_finish, str):
+                                            link_dt = datetime.fromisoformat(link_finish.replace('Z', '+00:00'))
+                                            link_ts = link_finish if link_finish.endswith('Z') or '+' in link_finish else link_finish + 'Z'
+                                        else:
+                                            link_dt = link_finish
+                                            link_ts = link_finish.isoformat()
+                                        
+                                        if link_dt >= window_start:
+                                            link_status = link_dict.get('status', getattr(link, 'status', -1))
+                                            
+                                            ability_name = 'Unknown'
+                                            technique = None
+                                            tactic = None
+                                            
+                                            if 'ability' in link_dict and link_dict['ability']:
+                                                ability_dict = link_dict['ability']
+                                                ability_name = ability_dict.get('name', 'Unknown')
+                                                technique = ability_dict.get('technique_id', None)
+                                                tactic = ability_dict.get('tactic', None)
+                                            
+                                            status_str = 'success' if link_status == 0 else ('failed' if link_status in [1, 124] else 'running')
+                                            severity = 'warning' if link_status in [1, 124] else 'info'
+                                            
+                                            link_output = link_dict.get('output', '')
+                                            details = link_output[:200] if link_output else f'Status: {status_str}'
+                                            
+                                            timeline.append({
+                                                'ts': link_ts,
+                                                'type': 'ability_executed',
+                                                'severity': severity,
+                                                'operation_id': op_id,
+                                                'operation_name': op_name,
+                                                'ability_name': ability_name,
+                                                'status': status_str,
+                                                'technique': technique,
+                                                'tactic': tactic,
+                                                'details': details
+                                            })
+                                    except:
+                                        pass
+                
+                timeline.sort(key=lambda x: x.get('ts', ''), reverse=True)
+                timeline = timeline[:timeline_limit]
+            
+            # Build relationships
+            ops_set = {}
+            techniques_count = {}
+            
+            for op in operations:
+                if hasattr(op, 'chain') and op.chain:
+                    for link in op.chain:
+                        link_dict = link.display if hasattr(link, 'display') else {}
+                        link_paw = link_dict.get('paw', getattr(link, 'paw', None))
+                        
+                        if link_paw == paw:
+                            if op.id not in ops_set:
+                                link_finish = link_dict.get('finish')
+                                if link_finish:
+                                    if isinstance(link_finish, str):
+                                        last_ts = link_finish if link_finish.endswith('Z') or '+' in link_finish else link_finish + 'Z'
+                                    else:
+                                        last_ts = link_finish.isoformat()
+                                else:
+                                    last_ts = None
+                                
+                                ops_set[op.id] = {
+                                    'id': op.id,
+                                    'name': op.name,
+                                    'state': getattr(op, 'state', 'unknown'),
+                                    'last_ts': last_ts
+                                }
+                            
+                            if 'ability' in link_dict and link_dict['ability']:
+                                ability_dict = link_dict['ability']
+                                technique_id = ability_dict.get('technique_id', None)
+                                technique_name = ability_dict.get('technique_name', technique_id)
+                                
+                                if technique_id:
+                                    if technique_id not in techniques_count:
+                                        techniques_count[technique_id] = {
+                                            'technique': technique_id,
+                                            'name': technique_name,
+                                            'count': 0
+                                        }
+                                    techniques_count[technique_id]['count'] += 1
+            
+            relationships = {
+                'operations': list(ops_set.values()),
+                'techniques': sorted(list(techniques_count.values()), key=lambda x: x['count'], reverse=True)
+            }
+            
+            # Build graph (simplified for single agent)
+            graph = {'nodes': [], 'edges': [], 'legend': {'nodeTypes': [], 'edgeTypes': []}}
+            if include_graph:
+                # Agent node
+                graph['nodes'].append({
+                    'id': f'agent:{paw}',
+                    'type': 'agent',
+                    'label': host,
+                    'subtitle': f'{platform} | {group}',
+                    'metrics': {
+                        'last_seen': last_seen_ts,
+                        'risk': risk_score
+                    },
+                    'style': {
+                        'status': 'active',
+                        'color': '#4ec9b0'
+                    }
+                })
+                
+                # Technique nodes
+                for tech_data in relationships['techniques'][:10]:
+                    graph['nodes'].append({
+                        'id': f"technique:{tech_data['technique']}",
+                        'type': 'technique',
+                        'label': tech_data['technique'],
+                        'subtitle': tech_data['name'],
+                        'metrics': {
+                            'observed_count': tech_data['count']
+                        },
+                        'style': {
+                            'color': '#ff9800'
+                        }
+                    })
+                    
+                    graph['edges'].append({
+                        'id': f"e{tech_data['technique']}",
+                        'source': f'agent:{paw}',
+                        'target': f"technique:{tech_data['technique']}",
+                        'type': 'observed',
+                        'weight': tech_data['count'],
+                        'label': f"{tech_data['count']} events"
+                    })
+                
+                graph['legend'] = {
+                    'nodeTypes': ['agent', 'technique'],
+                    'edgeTypes': ['observed']
+                }
+            
+            return web.json_response({
+                'generatedAt': generated_at.isoformat(),
+                'window': window_str,
+                'agent': agent_data,
+                'timeline': timeline,
+                'relationships': relationships,
+                'graph': graph
+            })
+            
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+    
+    async def merlino_agents_intelligence_graph(self, request: web.Request):
+        """
+        Agents Intelligence Graph - Standalone graph endpoint (optional, returns same as overview).
+        """
+        try:
+            import json
+            # Delegate to overview and extract graph only
+            overview_response = await self.merlino_agents_intelligence_overview(request)
+            
+            if overview_response.status != 200:
+                return overview_response
+            
+            # Parse the response body
+            response_text = overview_response.body.decode('utf-8')
+            data = json.loads(response_text)
+            
+            return web.json_response({
+                'generatedAt': data.get('generatedAt'),
+                'window': data.get('window'),
+                'graph': data.get('graph', {'nodes': [], 'edges': [], 'legend': {}})
+            })
+            
+        except Exception as e:
+            import traceback
+            return web.json_response({'error': str(e), 'traceback': traceback.format_exc()}, status=500)
+    
+    def _parse_window_string(self, window_str):
+        """Parse window string (5m, 15m, 1h, 6h, 24h, 7d) to minutes."""
+        window_map = {
+            '5m': 5,
+            '15m': 15,
+            '1h': 60,
+            '6h': 360,
+            '24h': 1440,
+            '7d': 10080
+        }
+        return window_map.get(window_str, 15)
 

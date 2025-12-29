@@ -6,7 +6,6 @@ const $api = inject("$api");
 const tags = ref([]);
 const editingTag = ref(null);
 const newTag = ref({ name: "", value: "" });
-const showNewTagForm = ref(false);
 const searchQuery = ref("");
 
 // Maximum 40 tags allowed
@@ -27,7 +26,6 @@ async function loadTags() {
 
 async function createTag() {
     if (!newTag.value.name.trim()) {
-        alert("Tag name is required");
         return;
     }
     
@@ -39,7 +37,6 @@ async function createTag() {
     try {
         await $api.post("/api/v2/tags", newTag.value);
         newTag.value = { name: "", value: "" };
-        showNewTagForm.value = false;
         await loadTags();
     } catch (error) {
         console.error("Error creating tag:", error);
@@ -103,98 +100,96 @@ const tagsRemaining = computed(() => MAX_TAGS - tags.value.length);
                 span.tag.is-info.ml-3 {{ tags.length }} / {{ MAX_TAGS }}
         .level-right
             .level-item
-                .field.has-addons
+                .field
                     .control
                         input.input(
                             v-model="searchQuery" 
                             type="text" 
                             placeholder="Search tags..."
                         )
-                    .control
-                        button.button.is-primary(
-                            @click="showNewTagForm = !showNewTagForm"
-                            :disabled="tags.length >= MAX_TAGS"
-                        )
-                            span.icon
-                                font-awesome-icon(icon="fas fa-plus")
-                            span New Tag
 
-hr
+    hr
 
-.box(v-if="showNewTagForm")
-    h4.title.is-5 Create New Tag
-    .columns
-        .column.is-4
-            .field
-                label.label Tag Name
-                .control
-                    input.input(
-                        v-model="newTag.name" 
-                        type="text" 
-                        placeholder="e.g., environment"
-                    )
-        .column.is-6
-            .field
-                label.label Tag Value
-                .control
-                    input.input(
-                        v-model="newTag.value" 
-                        type="text" 
-                        placeholder="e.g., production"
-                    )
-        .column.is-2
-            .field
-                label.label &nbsp;
-                .control
-                    button.button.is-success.is-fullwidth(@click="createTag") Create
-                    button.button.is-light.is-fullwidth.mt-2(@click="showNewTagForm = false") Cancel
-
-.box(v-if="tagsRemaining <= 5 && tagsRemaining > 0")
-    .notification.is-warning
+    .notification.is-warning(v-if="tagsRemaining <= 5 && tagsRemaining > 0")
         strong Warning: 
         | Only {{ tagsRemaining }} tag slots remaining (max {{ MAX_TAGS }})
 
-.box(v-if="tags.length === 0")
-    .notification.is-info
+    .notification.is-info(v-if="tags.length === 0")
         | No tags defined yet. Tags can be used to categorize and label agents and operations.
 
-.box(v-else)
-    table.table.is-fullwidth.is-striped.is-hoverable
-        thead
-            tr
-                th(style="min-width: 200px") Tag Name
-                th(style="min-width: 300px") Tag Value
-                th(style="width: 150px") Created
-                th(style="width: 120px; text-align: center") Actions
-        tbody
-            tr(v-for="tag in filteredTags" :key="tag.name")
-                td
-                    span.tag.is-medium.is-primary {{ tag.name }}
-                td
-                    template(v-if="editingTag && editingTag.name === tag.name")
-                        input.input(v-model="editingTag.value" type="text")
-                    template(v-else)
-                        | {{ tag.value }}
-                td
-                    small {{ new Date(tag.created).toLocaleString() }}
-                td(style="text-align: center")
-                    template(v-if="editingTag && editingTag.name === tag.name")
-                        button.button.is-small.is-success.mr-1(@click="updateTag(editingTag)")
-                            span.icon
-                                font-awesome-icon(icon="fas fa-check")
-                        button.button.is-small.is-light(@click="cancelEdit")
-                            span.icon
-                                font-awesome-icon(icon="fas fa-times")
-                    template(v-else)
-                        button.button.is-small.is-info.mr-1(@click="startEdit(tag)")
-                            span.icon
-                                font-awesome-icon(icon="fas fa-edit")
-                        button.button.is-small.is-danger(@click="deleteTag(tag.name)")
-                            span.icon
-                                font-awesome-icon(icon="fas fa-trash")
+    .box(v-if="filteredTags.length > 0")
+        .table-container(style="max-height: 600px; overflow-y: auto;")
+            table.table.is-fullwidth.is-hoverable(style="background: transparent;")
+                tbody
+                    tr(v-for="tag in filteredTags" :key="tag.name" style="border-bottom: 1px solid #dbdbdb;")
+                        td(style="width: 30%; padding: 20px; text-align: right; vertical-align: middle; font-weight: 500;")
+                            | {{ tag.name }}
+                        td(style="width: 50%; padding: 20px; vertical-align: middle;")
+                            template(v-if="editingTag && editingTag.name === tag.name")
+                                input.input(v-model="editingTag.value" type="text" style="max-width: 500px;")
+                            template(v-else)
+                                | {{ tag.value || '(empty)' }}
+                        td(style="width: 20%; padding: 20px; text-align: center; vertical-align: middle;")
+                            template(v-if="editingTag && editingTag.name === tag.name")
+                                button.button.is-small.is-success.mr-2(
+                                    @click="updateTag(editingTag)"
+                                    title="Save"
+                                )
+                                    span.icon
+                                        font-awesome-icon(icon="fas fa-check")
+                                button.button.is-small.is-light(
+                                    @click="cancelEdit"
+                                    title="Cancel"
+                                )
+                                    span.icon
+                                        font-awesome-icon(icon="fas fa-times")
+                            template(v-else)
+                                button.button.is-small.is-info.mr-2(
+                                    @click="startEdit(tag)"
+                                    title="Edit"
+                                    style="border-radius: 4px;"
+                                )
+                                    span.icon
+                                        font-awesome-icon(icon="fas fa-edit")
+                                button.button.is-small.is-danger(
+                                    @click="deleteTag(tag.name)"
+                                    title="Delete"
+                                    style="border-radius: 4px;"
+                                )
+                                    span.icon
+                                        font-awesome-icon(icon="fas fa-trash")
+                    
+                    // New tag row (always at bottom)
+                    tr(v-if="tags.length < MAX_TAGS" style="border-bottom: 1px solid #dbdbdb; background: #f9f9f9;")
+                        td(style="width: 30%; padding: 20px; text-align: right; vertical-align: middle;")
+                            input.input(
+                                v-model="newTag.name"
+                                type="text"
+                                placeholder="new_tag_name"
+                                style="max-width: 300px;"
+                                @keyup.enter="createTag"
+                            )
+                        td(style="width: 50%; padding: 20px; vertical-align: middle;")
+                            input.input(
+                                v-model="newTag.value"
+                                type="text"
+                                placeholder="tag value"
+                                style="max-width: 500px;"
+                                @keyup.enter="createTag"
+                            )
+                        td(style="width: 20%; padding: 20px; text-align: center; vertical-align: middle;")
+                            button.button.is-small.is-success(
+                                @click="createTag"
+                                :disabled="!newTag.name.trim()"
+                                title="Create Tag"
+                                style="border-radius: 4px;"
+                            )
+                                span.icon
+                                    font-awesome-icon(icon="fas fa-plus")
+                                span Create
 
-    .notification.is-light.mt-4(v-if="filteredTags.length === 0 && searchQuery")
-        | No tags match search query "{{ searchQuery }}"
+        .notification.is-light.mt-4(v-if="filteredTags.length === 0 && searchQuery")
+            | No tags match search query "{{ searchQuery }}"
 </template>
 
 <style scoped>
