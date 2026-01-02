@@ -42,3 +42,8 @@ htmlcov/
 *,cover
 _*/
 caldera.log
+
+# Distribution packages (private - not for git)
+install-package/
+*.tar.gz
+morgana-arsenal-*.zip

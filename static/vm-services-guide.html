@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morgana VM - Services Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #8892b0;
+            font-size: 1.1rem;
+        }
+        
+        .back-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        h2 {
+            color: #64ffda;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(100, 255, 218, 0.3);
+            font-size: 1.5rem;
+        }
+        
+        h3 {
+            color: #ffc107;
+            margin: 20px 0 15px 0;
+            font-size: 1.2rem;
+        }
+        
+        h4 {
+            color: #e94560;
+            margin: 15px 0 10px 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        th {
+            background: rgba(100, 255, 218, 0.1);
+            color: #64ffda;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        code {
+            background: rgba(0,0,0,0.4);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #64ffda;
+            font-size: 0.9rem;
+        }
+        
+        pre {
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border-left: 3px solid #64ffda;
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+            display: block;
+            white-space: pre;
+        }
+        
+        .comment {
+            color: #6a9955;
+        }
+        
+        ul, ol {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+        
+        li {
+            margin: 8px 0;
+        }
+        
+        .highlight {
+            background: rgba(255,193,7,0.1);
+            border: 1px solid rgba(255,193,7,0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .highlight strong {
+            color: #ffc107;
+        }
+        
+        hr {
+            border: none;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin: 30px 0;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 40px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: #8892b0;
+        }
+        
+        .toc {
+            background: rgba(100, 255, 218, 0.05);
+            border: 1px solid rgba(100, 255, 218, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .toc h3 {
+            color: #64ffda;
+            margin-top: 0;
+        }
+        
+        .toc ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .toc li {
+            margin: 8px 0;
+        }
+        
+        .toc a {
+            color: #8892b0;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .toc a:hover {
+            color: #64ffda;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .section {
+                padding: 15px;
+            }
+            
+            table {
+                font-size: 0.85rem;
+            }
+            
+            th, td {
+                padding: 8px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Morgana VM Services Guide</h1>
+            <p class="subtitle">Complete documentation for managing services on this Ubuntu VM</p>
+            <a href="launcher.html" class="back-btn">Back to Launcher</a>
+        </header>
+        
+        <!-- Table of Contents -->
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#credentials">Access Credentials</a></li>
+                <li><a href="#overview">Services Overview</a></li>
+                <li><a href="#morgana">1. Morgana Arsenal (C2 Framework)</a></li>
+                <li><a href="#misp">2. MISP (Threat Intelligence Platform)</a></li>
+                <li><a href="#nginx">3. Nginx (Reverse Proxy)</a></li>
+                <li><a href="#database">4. Database Services</a></li>
+                <li><a href="#autostart">Auto-Start Configuration</a></li>
+                <li><a href="#troubleshooting">Quick Troubleshooting</a></li>
+                <li><a href="#ports">Network Ports Summary</a></li>
+                <li><a href="#systemd">Systemd Service Files</a></li>
+            </ul>
+        </div>
+        
+        <!-- Access Credentials -->
+        <div class="section" id="credentials">
+            <h2>Access Credentials</h2>
+            <table>
+                <tr>
+                    <th>System</th>
+                    <th>Username</th>
+                    <th>Password</th>
+                </tr>
+                <tr>
+                    <td><strong>Ubuntu VM (SSH/Console)</strong></td>
+                    <td><code>morgana</code></td>
+                    <td><code>morgana</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Morgana Arsenal (Web UI)</strong></td>
+                    <td><code>morgana</code></td>
+                    <td><code>morgana</code></td>
+                </tr>
+                <tr>
+                    <td><strong>MISP (Web UI)</strong></td>
+                    <td><code>admin@admin.test</code></td>
+                    <td><code>admin</code></td>
+                </tr>
+            </table>
+        </div>
+        
+        <!-- Services Overview -->
+        <div class="section" id="overview">
+            <h2>Services Overview</h2>
+            <table>
+                <tr>
+                    <th>Service</th>
+                    <th>Description</th>
+                    <th>Port</th>
+                    <th>Auto-Start</th>
+                </tr>
+                <tr>
+                    <td><strong>Nginx</strong></td>
+                    <td>Reverse proxy with SSL</td>
+                    <td>443, 8443</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Morgana Arsenal</strong></td>
+                    <td>C2 Framework (Caldera fork)</td>
+                    <td>8888 (internal)</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>MISP</strong></td>
+                    <td>Threat Intelligence Platform</td>
+                    <td>8080 (internal)</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>MISP Workers</strong></td>
+                    <td>Background job processors</td>
+                    <td>N/A</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>MISP Modules</strong></td>
+                    <td>Enrichment/Import/Export modules</td>
+                    <td>6666 (internal)</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>MySQL</strong></td>
+                    <td>Database server</td>
+                    <td>3306</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Redis</strong></td>
+                    <td>Cache/Queue server</td>
+                    <td>6379</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>PHP-FPM 8.3</strong></td>
+                    <td>PHP processor for MISP</td>
+                    <td>N/A</td>
+                    <td>Yes</td>
+                </tr>
+            </table>
+        </div>
+        
+        <!-- Morgana Arsenal -->
+        <div class="section" id="morgana">
+            <h2>1. Morgana Arsenal (C2 Framework)</h2>
+            
+            <h3>Description</h3>
+            <p>Morgana Arsenal is a professional Command & Control framework derived from MITRE Caldera v5.3.0. It provides red team simulation capabilities with custom Merlino agent support.</p>
+            
+            <h3>Locations</h3>
+            <table>
+                <tr>
+                    <th>Component</th>
+                    <th>Path</th>
+                </tr>
+                <tr>
+                    <td><strong>Application</strong></td>
+                    <td><code>/home/morgana/morgana-arsenal/</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Main Script</strong></td>
+                    <td><code>/home/morgana/morgana-arsenal/server.py</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Virtual Environment</strong></td>
+                    <td><code>/home/morgana/morgana-arsenal/venv/</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Configuration</strong></td>
+                    <td><code>/home/morgana/morgana-arsenal/conf/default.yml</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Data/Payloads</strong></td>
+                    <td><code>/home/morgana/morgana-arsenal/data/</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Plugins</strong></td>
+                    <td><code>/home/morgana/morgana-arsenal/plugins/</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Frontend (Magma)</strong></td>
+                    <td><code>/home/morgana/morgana-arsenal/plugins/magma/</code></td>
+                </tr>
+            </table>
+            
+            <h3>Logs</h3>
+            <table>
+                <tr>
+                    <th>Log</th>
+                    <th>Path</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><strong>Debug Log</strong></td>
+                    <td><code>/home/morgana/morgana-arsenal/caldera-debug.log</code></td>
+                    <td>Detailed debug output</td>
+                </tr>
+                <tr>
+                    <td><strong>Live Log</strong></td>
+                    <td><code>/home/morgana/morgana-arsenal/caldera-live.log</code></td>
+                    <td>Operational events</td>
+                </tr>
+                <tr>
+                    <td><strong>Systemd Journal</strong></td>
+                    <td><code>journalctl -u morgana-arsenal</code></td>
+                    <td>Service logs</td>
+                </tr>
+            </table>
+            
+            <h3>Access URLs</h3>
+            <ul>
+                <li><strong>Web UI:</strong> https://192.168.124.133 (via Nginx)</li>
+                <li><strong>Direct:</strong> http://localhost:8888 (internal only)</li>
+                <li><strong>Credentials:</strong> morgana / morgana (configure in <code>conf/default.yml</code>)</li>
+            </ul>
+            
+            <h3>Service Management</h3>
+            <pre><code><span class="comment"># Status</span>
+sudo systemctl status morgana-arsenal
+
+<span class="comment"># Start/Stop/Restart</span>
+sudo systemctl start morgana-arsenal
+sudo systemctl stop morgana-arsenal
+sudo systemctl restart morgana-arsenal
+
+<span class="comment"># View logs</span>
+journalctl -u morgana-arsenal -f
+tail -f /home/morgana/morgana-arsenal/caldera-debug.log
+
+<span class="comment"># Manual start (for debugging)</span>
+cd /home/morgana/morgana-arsenal
+./venv/bin/python3 server.py --insecure --log DEBUG</code></pre>
+        </div>
+        
+        <!-- MISP -->
+        <div class="section" id="misp">
+            <h2>2. MISP (Threat Intelligence Platform)</h2>
+            
+            <h3>Description</h3>
+            <p>MISP (Malware Information Sharing Platform) is an open-source threat intelligence platform for sharing, storing, and correlating Indicators of Compromise (IOCs).</p>
+            
+            <h3>Locations</h3>
+            <table>
+                <tr>
+                    <th>Component</th>
+                    <th>Path</th>
+                </tr>
+                <tr>
+                    <td><strong>Application</strong></td>
+                    <td><code>/var/www/MISP/</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Configuration</strong></td>
+                    <td><code>/var/www/MISP/app/Config/</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Database Config</strong></td>
+                    <td><code>/var/www/MISP/app/Config/database.php</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Workers</strong></td>
+                    <td><code>/var/www/MISP/app/Console/worker/</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Uploads</strong></td>
+                    <td><code>/var/www/MISP/app/files/</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Temp Files</strong></td>
+                    <td><code>/var/www/MISP/app/tmp/</code></td>
+                </tr>
+            </table>
+            
+            <h3>Logs</h3>
+            <table>
+                <tr>
+                    <th>Log</th>
+                    <th>Path</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><strong>Error Log</strong></td>
+                    <td><code>/var/www/MISP/app/tmp/logs/error.log</code></td>
+                    <td>Application errors</td>
+                </tr>
+                <tr>
+                    <td><strong>Debug Log</strong></td>
+                    <td><code>/var/www/MISP/app/tmp/logs/debug.log</code></td>
+                    <td>Debug information</td>
+                </tr>
+                <tr>
+                    <td><strong>Exec Log</strong></td>
+                    <td><code>/var/www/MISP/app/tmp/logs/exec-errors.log</code></td>
+                    <td>Execution errors</td>
+                </tr>
+                <tr>
+                    <td><strong>Workers Journal</strong></td>
+                    <td><code>journalctl -u misp-workers</code></td>
+                    <td>Worker service logs</td>
+                </tr>
+                <tr>
+                    <td><strong>PHP-FPM Log</strong></td>
+                    <td><code>/var/log/php8.3-fpm.log</code></td>
+                    <td>PHP errors</td>
+                </tr>
+                <tr>
+                    <td><strong>Nginx Access</strong></td>
+                    <td><code>/var/log/nginx/misp-access.log</code></td>
+                    <td>HTTP access log</td>
+                </tr>
+                <tr>
+                    <td><strong>Nginx Error</strong></td>
+                    <td><code>/var/log/nginx/misp-error.log</code></td>
+                    <td>HTTP errors</td>
+                </tr>
+            </table>
+            
+            <h3>Access URLs</h3>
+            <ul>
+                <li><strong>HTTPS:</strong> https://192.168.124.133:8443 (via Nginx)</li>
+                <li><strong>HTTP:</strong> http://localhost:8080 (internal only)</li>
+                <li><strong>Credentials:</strong> admin@admin.test / admin</li>
+                <li><strong>API Key:</strong> <code>3B1Vnm9Il6Gaj3LRoS3qeRtwT8uHLoqWOK6z5Wjm</code></li>
+            </ul>
+            
+            <h3>Service Management</h3>
+            <pre><code><span class="comment"># MISP Workers Status</span>
+sudo systemctl status misp-workers
+
+<span class="comment"># Start/Stop/Restart Workers</span>
+sudo systemctl start misp-workers
+sudo systemctl stop misp-workers
+sudo systemctl restart misp-workers
+
+<span class="comment"># View worker logs</span>
+journalctl -u misp-workers -f
+
+<span class="comment"># PHP-FPM (required for MISP web)</span>
+sudo systemctl status php8.3-fpm
+sudo systemctl restart php8.3-fpm
+
+<span class="comment"># View MISP application logs</span>
+tail -f /var/www/MISP/app/tmp/logs/error.log
+tail -f /var/www/MISP/app/tmp/logs/debug.log
+
+<span class="comment"># Manual worker start (for debugging)</span>
+cd /var/www/MISP/app/Console/worker
+sudo -u www-data ./start.sh</code></pre>
+
+            <h3>MISP Modules</h3>
+            <pre><code><span class="comment"># Status</span>
+sudo systemctl status misp-modules
+
+<span class="comment"># Start/Stop/Restart</span>
+sudo systemctl start misp-modules
+sudo systemctl stop misp-modules
+sudo systemctl restart misp-modules
+
+<span class="comment"># View logs</span>
+journalctl -u misp-modules -f
+
+<span class="comment"># Manual start (for debugging)</span>
+sudo -u www-data /usr/local/bin/misp-modules -l 127.0.0.1</code></pre>
+        </div>
+        
+        <!-- Nginx -->
+        <div class="section" id="nginx">
+            <h2>3. Nginx (Reverse Proxy)</h2>
+            
+            <h3>Description</h3>
+            <p>Nginx serves as the SSL/TLS termination point and reverse proxy for both Morgana Arsenal and MISP.</p>
+            
+            <h3>Locations</h3>
+            <table>
+                <tr>
+                    <th>Component</th>
+                    <th>Path</th>
+                </tr>
+                <tr>
+                    <td><strong>Main Config</strong></td>
+                    <td><code>/etc/nginx/nginx.conf</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Sites Available</strong></td>
+                    <td><code>/etc/nginx/sites-available/</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Sites Enabled</strong></td>
+                    <td><code>/etc/nginx/sites-enabled/</code></td>
+                </tr>
+                <tr>
+                    <td><strong>SSL Certificates</strong></td>
+                    <td><code>/etc/nginx/ssl/</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Morgana Config</strong></td>
+                    <td><code>/etc/nginx/sites-available/caldera</code></td>
+                </tr>
+                <tr>
+                    <td><strong>MISP HTTPS Config</strong></td>
+                    <td><code>/etc/nginx/sites-available/misp-https.conf</code></td>
+                </tr>
+            </table>
+            
+            <h3>SSL Certificates</h3>
+            <table>
+                <tr>
+                    <th>File</th>
+                    <th>Path</th>
+                </tr>
+                <tr>
+                    <td><strong>Certificate</strong></td>
+                    <td><code>/etc/nginx/ssl/caldera.crt</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Private Key</strong></td>
+                    <td><code>/etc/nginx/ssl/caldera.key</code></td>
+                </tr>
+            </table>
+            
+            <h3>Logs</h3>
+            <table>
+                <tr>
+                    <th>Log</th>
+                    <th>Path</th>
+                </tr>
+                <tr>
+                    <td><strong>Access Log</strong></td>
+                    <td><code>/var/log/nginx/access.log</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Error Log</strong></td>
+                    <td><code>/var/log/nginx/error.log</code></td>
+                </tr>
+                <tr>
+                    <td><strong>MISP Access</strong></td>
+                    <td><code>/var/log/nginx/misp-access.log</code></td>
+                </tr>
+                <tr>
+                    <td><strong>MISP Error</strong></td>
+                    <td><code>/var/log/nginx/misp-error.log</code></td>
+                </tr>
+            </table>
+            
+            <h3>Service Management</h3>
+            <pre><code><span class="comment"># Status</span>
+sudo systemctl status nginx
+
+<span class="comment"># Start/Stop/Restart</span>
+sudo systemctl start nginx
+sudo systemctl stop nginx
+sudo systemctl restart nginx
+
+<span class="comment"># Test configuration (before restart)</span>
+sudo nginx -t
+
+<span class="comment"># Reload (no downtime)</span>
+sudo systemctl reload nginx
+
+<span class="comment"># View logs</span>
+tail -f /var/log/nginx/error.log
+tail -f /var/log/nginx/access.log</code></pre>
+        </div>
+        
+        <!-- Database Services -->
+        <div class="section" id="database">
+            <h2>4. Database Services</h2>
+            
+            <h3>MySQL</h3>
+            <pre><code><span class="comment"># Status</span>
+sudo systemctl status mysql
+
+<span class="comment"># Start/Stop/Restart</span>
+sudo systemctl start mysql
+sudo systemctl stop mysql
+sudo systemctl restart mysql
+
+<span class="comment"># Logs</span>
+tail -f /var/log/mysql/error.log
+
+<span class="comment"># Connect to MISP database</span>
+mysql -u misp -p misp</code></pre>
+
+            <h3>Redis</h3>
+            <pre><code><span class="comment"># Status</span>
+sudo systemctl status redis-server
+
+<span class="comment"># Start/Stop/Restart</span>
+sudo systemctl start redis-server
+sudo systemctl stop redis-server
+sudo systemctl restart redis-server
+
+<span class="comment"># Logs</span>
+journalctl -u redis-server -f
+
+<span class="comment"># Test connection</span>
+redis-cli ping</code></pre>
+        </div>
+        
+        <!-- Auto-Start Configuration -->
+        <div class="section" id="autostart">
+            <h2>Auto-Start Configuration</h2>
+            <p>All services are configured to start automatically at boot via systemd.</p>
+            
+            <h3>Verify Auto-Start Status</h3>
+            <pre><code><span class="comment"># Check which services are enabled</span>
+systemctl is-enabled nginx morgana-arsenal misp-workers misp-modules php8.3-fpm mysql redis-server</code></pre>
+
+            <h3>Enable/Disable Auto-Start</h3>
+            <pre><code><span class="comment"># Enable at boot</span>
+sudo systemctl enable morgana-arsenal
+sudo systemctl enable misp-workers
+sudo systemctl enable misp-modules
+
+<span class="comment"># Disable at boot</span>
+sudo systemctl disable morgana-arsenal
+sudo systemctl disable misp-workers
+sudo systemctl disable misp-modules</code></pre>
+
+            <h3>Boot Order</h3>
+            <p>The services start in this order (defined in systemd unit files):</p>
+            <ol>
+                <li><strong>mysql</strong> (database)</li>
+                <li><strong>redis-server</strong> (cache)</li>
+                <li><strong>php8.3-fpm</strong> (PHP processor)</li>
+                <li><strong>nginx</strong> (web server)</li>
+                <li><strong>morgana-arsenal</strong> (C2 framework, after nginx)</li>
+                <li><strong>misp-modules</strong> (enrichment modules, after redis)</li>
+                <li><strong>misp-workers</strong> (after mysql and redis)</li>
+            </ol>
+        </div>
+        
+        <!-- Troubleshooting -->
+        <div class="section" id="troubleshooting">
+            <h2>Quick Troubleshooting</h2>
+            
+            <h3>Check All Services Status</h3>
+            <pre><code>sudo systemctl status nginx morgana-arsenal misp-workers misp-modules php8.3-fpm mysql redis-server --no-pager</code></pre>
+
+            <h3>Restart Everything</h3>
+            <pre><code>sudo systemctl restart mysql redis-server php8.3-fpm nginx morgana-arsenal misp-modules misp-workers</code></pre>
+
+            <h3>Common Issues</h3>
+            
+            <h4>Morgana Arsenal 502 Bad Gateway</h4>
+            <pre><code><span class="comment"># Check if Python server is running</span>
+ps aux | grep server.py
+<span class="comment"># Restart service</span>
+sudo systemctl restart morgana-arsenal
+<span class="comment"># Check logs</span>
+journalctl -u morgana-arsenal -n 50</code></pre>
+
+            <h4>MISP Not Loading</h4>
+            <pre><code><span class="comment"># Check PHP-FPM</span>
+sudo systemctl status php8.3-fpm
+<span class="comment"># Check Nginx MISP config</span>
+sudo nginx -t
+<span class="comment"># Check MISP logs</span>
+tail -20 /var/www/MISP/app/tmp/logs/error.log</code></pre>
+
+            <h4>Port Already in Use</h4>
+            <pre><code><span class="comment"># Check what's using a port</span>
+sudo lsof -i :8888
+sudo lsof -i :8080
+<span class="comment"># Kill process manually if needed</span>
+sudo kill -9 &lt;PID&gt;</code></pre>
+        </div>
+        
+        <!-- Network Ports -->
+        <div class="section" id="ports">
+            <h2>Network Ports Summary</h2>
+            <table>
+                <tr>
+                    <th>Port</th>
+                    <th>Protocol</th>
+                    <th>Service</th>
+                    <th>Access</th>
+                </tr>
+                <tr>
+                    <td>22</td>
+                    <td>TCP</td>
+                    <td>SSH</td>
+                    <td>External</td>
+                </tr>
+                <tr>
+                    <td>80</td>
+                    <td>TCP</td>
+                    <td>HTTP (redirect)</td>
+                    <td>External</td>
+                </tr>
+                <tr>
+                    <td>443</td>
+                    <td>TCP</td>
+                    <td>HTTPS (Morgana)</td>
+                    <td>External</td>
+                </tr>
+                <tr>
+                    <td>3306</td>
+                    <td>TCP</td>
+                    <td>MySQL</td>
+                    <td>Internal</td>
+                </tr>
+                <tr>
+                    <td>6379</td>
+                    <td>TCP</td>
+                    <td>Redis</td>
+                    <td>Internal</td>
+                </tr>
+                <tr>
+                    <td>6666</td>
+                    <td>TCP</td>
+                    <td>MISP Modules</td>
+                    <td>Internal</td>
+                </tr>
+                <tr>
+                    <td>8080</td>
+                    <td>TCP</td>
+                    <td>MISP HTTP</td>
+                    <td>Internal</td>
+                </tr>
+                <tr>
+                    <td>8443</td>
+                    <td>TCP</td>
+                    <td>MISP HTTPS</td>
+                    <td>External</td>
+                </tr>
+                <tr>
+                    <td>8888</td>
+                    <td>TCP</td>
+                    <td>Morgana HTTP</td>
+                    <td>Internal</td>
+                </tr>
+            </table>
+            
+            <h3>Firewall Status</h3>
+            <pre><code>sudo ufw status</code></pre>
+        </div>
+        
+        <!-- Systemd Service Files -->
+        <div class="section" id="systemd">
+            <h2>Systemd Service Files</h2>
+            <table>
+                <tr>
+                    <th>Service</th>
+                    <th>File</th>
+                </tr>
+                <tr>
+                    <td>Morgana Arsenal</td>
+                    <td><code>/etc/systemd/system/morgana-arsenal.service</code></td>
+                </tr>
+                <tr>
+                    <td>MISP Workers</td>
+                    <td><code>/etc/systemd/system/misp-workers.service</code></td>
+                </tr>
+                <tr>
+                    <td>MISP Modules</td>
+                    <td><code>/etc/systemd/system/misp-modules.service</code></td>
+                </tr>
+                <tr>
+                    <td>Nginx</td>
+                    <td><code>/lib/systemd/system/nginx.service</code></td>
+                </tr>
+                <tr>
+                    <td>MySQL</td>
+                    <td><code>/lib/systemd/system/mysql.service</code></td>
+                </tr>
+                <tr>
+                    <td>Redis</td>
+                    <td><code>/lib/systemd/system/redis-server.service</code></td>
+                </tr>
+                <tr>
+                    <td>PHP-FPM</td>
+                    <td><code>/lib/systemd/system/php8.3-fpm.service</code></td>
+                </tr>
+            </table>
+            
+            <h3>After Editing Service Files</h3>
+            <pre><code>sudo systemctl daemon-reload
+sudo systemctl restart &lt;service-name&gt;</code></pre>
+        </div>
+        
+        <footer>
+            <p><strong>Last Updated:</strong> December 31, 2025</p>
+            <p><strong>VM IP:</strong> 192.168.124.133</p>
+            <p><strong>Maintainer:</strong> Morgana (@x3m-ai)</p>
+        </footer>
+    </div>
+</body>
+</html>

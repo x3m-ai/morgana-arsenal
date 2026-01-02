@@ -112,6 +112,33 @@ export const useAdversaryStore = defineStore("adversaryStore", {
         console.error("Error deleting adversary", error);
       }
     },
+    async deleteAllAdversaries($api) {
+      try {
+        const adversariesToDelete = [...this.adversaries];
+        let deletedCount = 0;
+        let errorCount = 0;
+        
+        for (const adversary of adversariesToDelete) {
+          try {
+            await $api.delete(`/api/v2/adversaries/${adversary.adversary_id}`);
+            deletedCount++;
+          } catch (err) {
+            console.error(`Error deleting adversary ${adversary.name}:`, err);
+            errorCount++;
+          }
+        }
+        
+        // Refresh the list
+        this.selectedAdversary = {};
+        this.selectedAdversaryAbilities = [];
+        await this.getAdversaries($api);
+        
+        return { deleted: deletedCount, errors: errorCount };
+      } catch (error) {
+        console.error("Error deleting all adversaries", error);
+        throw error;
+      }
+    },
     updateSelectedAdversaryAbilities() {
       if (!this.selectedAdversary.atomic_ordering) {
         this.selectedAdversaryAbilities = [];

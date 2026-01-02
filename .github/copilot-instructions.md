@@ -573,6 +573,100 @@ python3 server.py --insecure --log DEBUG
 8. **Colored Action Buttons**: Clear visual indicators for operations
 9. **Apache License Compliance**: NOTICE file documents all modifications
 
+## VM Installation & Distribution
+
+### Installation Package
+
+The project includes a complete installation package at `install-package/` containing:
+
+```
+install-package/
+├── VM_COMPLETE_INSTALLATION_GUIDE.md   # Complete installation guide
+├── README.md                            # Package README with quick install
+├── desktop/                             # Desktop shortcuts (.desktop files)
+├── html/                                # Launcher HTML pages
+├── nginx/                               # All 4 nginx configurations
+├── scripts/                             # Installation scripts
+│   ├── install.sh                       # Main automated installer
+│   └── generate-ssl.sh                  # SSL certificate generator
+├── ssl/                                 # SSL certificates (crt + key)
+└── systemd/                             # Systemd service files
+```
+
+### Building Distribution Archives
+
+Use the `build-distribution.sh` script to create/update distribution packages:
+
+```bash
+# Build with default version (1.0)
+./build-distribution.sh
+
+# Build with specific version
+./build-distribution.sh 1.1
+```
+
+This script:
+1. Updates `install-package/` with latest files (HTML, configs, certs)
+2. Creates `morgana-arsenal-install-package-v{VERSION}.zip` (configs only)
+3. Creates `morgana-arsenal-complete-v{VERSION}.tar.gz` (full distribution)
+4. Copies everything to Desktop
+
+### Distribution Files
+
+| File | Contents | Size |
+|------|----------|------|
+| `morgana-arsenal-complete-v{X}.tar.gz` | Full source + install-package | ~520MB |
+| `morgana-arsenal-install-package-v{X}.zip` | Configs only (for existing installs) | ~100KB |
+
+### Fresh Installation on New VM
+
+```bash
+# 1. Extract complete archive
+tar -xzvf morgana-arsenal-complete-v1.0.tar.gz -C /home/morgana/
+
+# 2. Create Python virtual environment
+cd /home/morgana/morgana-arsenal
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# 3. Run automated installer (installs nginx, ssl, systemd, desktop)
+sudo ./install-package/scripts/install.sh
+
+# 4. Start services
+sudo systemctl start morgana-arsenal
+sudo systemctl start misp-modules
+```
+
+### Service Ports
+
+| Port | Protocol | Service | Access |
+|------|----------|---------|--------|
+| 80 | HTTP | Launcher page | http://192.168.124.133 |
+| 443 | HTTPS | Morgana Arsenal | https://192.168.124.133 |
+| 8443 | HTTPS | MISP | https://192.168.124.133:8443 |
+| 8888 | HTTP | Morgana backend | localhost only |
+| 8080 | HTTP | MISP backend | localhost only |
+| 6666 | HTTP | MISP Modules | localhost only |
+
+### MISP Modules
+
+MISP Modules are installed separately:
+
+```bash
+# Install
+sudo pip3 install misp-modules --break-system-packages --ignore-installed typing-extensions
+
+# Start manually
+sudo -u www-data misp-modules -l 127.0.0.1 &
+
+# Or use systemd service (included in install-package)
+sudo systemctl start misp-modules
+
+# Verify
+curl http://127.0.0.1:6666/modules
+```
+
 ## Future Agent Context
 
 When working on this project in the future, review:
@@ -580,7 +674,8 @@ When working on this project in the future, review:
 2. `/home/morgana/caldera/caldera-instructions.md` for original Caldera documentation
 3. `NOTICE` file for modification history
 4. `README.md` for quick start guide
-5. Recent git commits for latest changes: `git log --oneline -20`
+5. `install-package/VM_COMPLETE_INSTALLATION_GUIDE.md` for full VM setup
+6. Recent git commits for latest changes: `git log --oneline -20`
 
 ## Contact & Support
 
@@ -590,6 +685,6 @@ When working on this project in the future, review:
 
 ---
 
-**Last Updated**: December 21, 2025
+**Last Updated**: January 2, 2026
 **Version**: 1.0
 **Maintainer**: Morgana (@x3m-ai)

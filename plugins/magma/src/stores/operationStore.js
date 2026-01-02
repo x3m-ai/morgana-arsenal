@@ -55,6 +55,33 @@ export const useOperationStore = defineStore("operationStore", {
         console.error("Error deleting operation", error);
       }
     },
+    async deleteAllOperations($api) {
+      try {
+        const operationIds = Object.keys(this.operations);
+        let deletedCount = 0;
+        let errorCount = 0;
+        
+        for (const opId of operationIds) {
+          try {
+            await $api.delete(`/api/v2/operations/${opId}`);
+            delete this.operations[opId];
+            deletedCount++;
+          } catch (err) {
+            console.error(`Error deleting operation ${opId}:`, err);
+            errorCount++;
+          }
+        }
+        
+        // Reset selection and refresh
+        this.selectedOperationID = "";
+        await this.getOperations($api);
+        
+        return { deleted: deletedCount, errors: errorCount };
+      } catch (error) {
+        console.error("Error deleting all operations", error);
+        throw error;
+      }
+    },
     async updateOperationChain($api) {
       try {
         const response = await $api.get(

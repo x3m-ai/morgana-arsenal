@@ -1,6 +1,7 @@
 <script setup>
 import { inject, reactive, ref, onMounted, computed } from "vue";
 import { storeToRefs } from "pinia";
+import { toast } from "bulma-toast";
 
 import { useAdversaryStore } from "@/stores/adversaryStore";
 import { useAbilityStore } from "@/stores/abilityStore";
@@ -21,6 +22,51 @@ const objectiveStore = useObjectiveStore();
 
 let adversarySearchQuery = ref("");
 let showOnlyEmpty = ref(false);
+let showDeleteAllModal = ref(false);
+let isDeleting = ref(false);
+
+// Delete all adversaries with confirmation
+async function confirmDeleteAllAdversaries() {
+    if (adversaries.value.length === 0) {
+        toast({
+            message: "No adversaries to delete",
+            type: "is-warning",
+            dismissible: true,
+            pauseOnHover: true,
+            duration: 3000,
+            position: "bottom-right",
+        });
+        return;
+    }
+    showDeleteAllModal.value = true;
+}
+
+async function executeDeleteAllAdversaries() {
+    isDeleting.value = true;
+    try {
+        const result = await adversaryStore.deleteAllAdversaries($api);
+        showDeleteAllModal.value = false;
+        toast({
+            message: `Deleted ${result.deleted} adversaries${result.errors > 0 ? ` (${result.errors} errors)` : ''}`,
+            type: result.errors > 0 ? "is-warning" : "is-success",
+            dismissible: true,
+            pauseOnHover: true,
+            duration: 3000,
+            position: "bottom-right",
+        });
+    } catch (error) {
+        toast({
+            message: "Error deleting adversaries: " + error.message,
+            type: "is-danger",
+            dismissible: true,
+            pauseOnHover: true,
+            duration: 5000,
+            position: "bottom-right",
+        });
+    } finally {
+        isDeleting.value = false;
+    }
+}
 
 // Compute TCodes (all technique IDs) for each adversary
 const adversariesWithTCodes = computed(() => {
@@ -155,6 +201,10 @@ hr
                     span.icon
                         font-awesome-icon(icon="fas fa-file-import") 
                     span Import
+                button.button.is-danger.is-small(type="button" @click="confirmDeleteAllAdversaries" :disabled="adversaries.length === 0")
+                    span.icon
+                        font-awesome-icon(icon="fas fa-trash")
+                    span Delete All
     
     .table-container(style="max-height: 400px; overflow-y: auto; border: 1px solid #dbdbdb; border-radius: 4px;")
         table.table.is-fullwidth.is-hoverable.is-striped(style="margin-bottom: 0;")
@@ -191,6 +241,33 @@ hr
 
 //- Adversary details table
 DetailsTable(v-if="selectedAdversary.adversary_id")
+
+//- Delete All Confirmation Modal
+.modal(:class="{ 'is-active': showDeleteAllModal }")
+    .modal-background(@click="showDeleteAllModal = false")
+    .modal-card
+        header.modal-card-head.has-background-danger
+            p.modal-card-title.has-text-white
+                span.icon.mr-2
+                    font-awesome-icon(icon="fas fa-exclamation-triangle")
+                span Delete All Adversaries
+            button.delete(aria-label="close" @click="showDeleteAllModal = false")
+        section.modal-card-body
+            .content
+                p.has-text-weight-bold.is-size-5 Are you sure you want to delete ALL adversaries?
+                p This action will permanently delete 
+                    strong.has-text-danger {{ adversaries.length }} adversary profiles
+                    |  and cannot be undone.
+                .notification.is-warning.is-light.mt-4
+                    span.icon
+                        font-awesome-icon(icon="fas fa-info-circle")
+                    span  This will NOT delete the abilities associated with these adversaries.
+        footer.modal-card-foot
+            button.button.is-danger(:class="{ 'is-loading': isDeleting }" @click="executeDeleteAllAdversaries" :disabled="isDeleting")
+                span.icon
+                    font-awesome-icon(icon="fas fa-trash")
+                span Yes, Delete All
+            button.button(@click="showDeleteAllModal = false" :disabled="isDeleting") Cancel
 
 //- Modals
 ImportModal

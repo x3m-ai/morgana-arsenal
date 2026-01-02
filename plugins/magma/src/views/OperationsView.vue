@@ -61,6 +61,52 @@ const showAdversaryModal = ref(false);
 const selectedOperationForAdversary = ref(null);
 const showEditModal = ref(false);
 const selectedOperationForEdit = ref(null);
+const showDeleteAllOpsModal = ref(false);
+const isDeletingOps = ref(false);
+
+// Delete all operations with confirmation
+async function confirmDeleteAllOperations() {
+    const opCount = Object.keys(operationStore.operations).length;
+    if (opCount === 0) {
+        toast({
+            message: "No operations to delete",
+            type: "is-warning",
+            dismissible: true,
+            pauseOnHover: true,
+            duration: 3000,
+            position: "bottom-right",
+        });
+        return;
+    }
+    showDeleteAllOpsModal.value = true;
+}
+
+async function executeDeleteAllOperations() {
+    isDeletingOps.value = true;
+    try {
+        const result = await operationStore.deleteAllOperations($api);
+        showDeleteAllOpsModal.value = false;
+        toast({
+            message: `Deleted ${result.deleted} operations${result.errors > 0 ? ` (${result.errors} errors)` : ''}`,
+            type: result.errors > 0 ? "is-warning" : "is-success",
+            dismissible: true,
+            pauseOnHover: true,
+            duration: 3000,
+            position: "bottom-right",
+        });
+    } catch (error) {
+        toast({
+            message: "Error deleting operations: " + error.message,
+            type: "is-danger",
+            dismissible: true,
+            pauseOnHover: true,
+            duration: 5000,
+            position: "bottom-right",
+        });
+    } finally {
+        isDeletingOps.value = false;
+    }
+}
 
 const operationAssignments = computed(() => {
   return JSON.parse(localStorage.getItem('operation_assignments') || '{}');
@@ -527,6 +573,10 @@ hr.mt-2
             span.icon
                 font-awesome-icon(icon="fas fa-plus")
             span New Operation
+        button.button.is-danger.is-small.ml-2(@click="confirmDeleteAllOperations" type="button" :disabled="Object.keys(operationStore.operations).length === 0")
+            span.icon
+                font-awesome-icon(icon="fas fa-trash")
+            span Delete All
     
     .table-container(style="max-height: 400px; overflow-y: auto; border: 1px solid #dbdbdb; border-radius: 4px;")
         table.table.is-fullwidth.is-hoverable.is-striped(style="margin-bottom: 0;")
@@ -785,6 +835,33 @@ AdversaryDetailsModal(
     v-if="showAdversaryModal && selectedOperationForAdversary"
     :operation="selectedOperationForAdversary"
     @close="showAdversaryModal = false; selectedOperationForAdversary = null")
+
+//- Delete All Operations Confirmation Modal
+.modal(:class="{ 'is-active': showDeleteAllOpsModal }")
+    .modal-background(@click="showDeleteAllOpsModal = false")
+    .modal-card
+        header.modal-card-head.has-background-danger
+            p.modal-card-title.has-text-white
+                span.icon.mr-2
+                    font-awesome-icon(icon="fas fa-exclamation-triangle")
+                span Delete All Operations
+            button.delete(aria-label="close" @click="showDeleteAllOpsModal = false")
+        section.modal-card-body
+            .content
+                p.has-text-weight-bold.is-size-5 Are you sure you want to delete ALL operations?
+                p This action will permanently delete 
+                    strong.has-text-danger {{ Object.keys(operationStore.operations).length }} operations
+                    |  including all their links, results, and history.
+                .notification.is-danger.is-light.mt-4
+                    span.icon
+                        font-awesome-icon(icon="fas fa-exclamation-circle")
+                    span  This action is IRREVERSIBLE. All operation data will be lost permanently.
+        footer.modal-card-foot
+            button.button.is-danger(:class="{ 'is-loading': isDeletingOps }" @click="executeDeleteAllOperations" :disabled="isDeletingOps")
+                span.icon
+                    font-awesome-icon(icon="fas fa-trash")
+                span Yes, Delete All
+            button.button(@click="showDeleteAllOpsModal = false" :disabled="isDeletingOps") Cancel
 </template>
 
 <style>
