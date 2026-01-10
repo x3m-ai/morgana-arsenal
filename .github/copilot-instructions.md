@@ -10,7 +10,7 @@ Ecco qui sotto in inglese su cosa lavoriamo insieme e le regole piu' importanti 
 
 **Morgana Arsenal** is a professional Command & Control (C2) framework derived from MITRE Caldera v5.3.0. This project is a proprietary enhancement with significant modifications to the original codebase.
 
-- **Repository**: https://github.com/x3m-ai/morgana-arsenal (private)
+- **Repository**: https://github.com/x3m-ai/morgana-arsenal (public)
 - **License**: Apache 2.0 (derivative work - see NOTICE file)
 - **Base Documentation**: Original Caldera instructions at `/home/morgana/caldera/caldera-instructions.md`
 - **Version**: 1.0 (Initial Release - December 21, 2025)
@@ -618,7 +618,46 @@ This script:
 | `morgana-arsenal-complete-v{X}.tar.gz` | Full source + install-package | ~520MB |
 | `morgana-arsenal-install-package-v{X}.zip` | Configs only (for existing installs) | ~100KB |
 
-### Fresh Installation on New VM
+### Installation Scripts
+
+The repository includes automated installation scripts for different scenarios:
+
+| Script | Purpose | Use Case |
+|--------|---------|----------|
+| `install-morgana-misp.sh` | **Main script** - Full installation or update | Fresh Ubuntu or existing Morgana |
+| `update-and-install-misp.sh` | Update Morgana + install MISP only | Existing Morgana installation |
+| `install-morgana.sh` | Install Morgana only (no MISP) | Morgana-only deployment |
+
+#### One-liner Installation (AWS/Ubuntu)
+
+```bash
+# Full installation (Morgana + MISP) - works on fresh Ubuntu or existing install
+curl -sL https://raw.githubusercontent.com/x3m-ai/morgana-arsenal/main/install-morgana-misp.sh | sudo bash
+
+# With parameters
+curl -O https://raw.githubusercontent.com/x3m-ai/morgana-arsenal/main/install-morgana-misp.sh
+sudo bash install-morgana-misp.sh --user ubuntu --ip 3.x.x.x
+```
+
+#### Script Features
+
+**`install-morgana-misp.sh`** (recommended):
+- Auto-detects if Morgana exists: fresh install or update
+- Auto-detects user (`ubuntu` or `morgana`)
+- Auto-detects IP (AWS metadata, ipinfo.io, or local)
+- Installs all dependencies (Python, PHP, MariaDB, Redis, Nginx)
+- Generates self-signed SSL certificate (10 years validity)
+- Configures 4 Nginx sites (launcher:80, morgana:443, misp:8080, misp-https:8443)
+- Creates systemd services for Morgana and MISP Modules
+- Creates launcher HTML page
+
+**`update-and-install-misp.sh`**:
+- Requires existing Morgana Arsenal installation
+- Updates Morgana from public repo (preserves local.yml config)
+- Installs MISP with all dependencies
+- Configures Nginx and systemd
+
+### Fresh Installation on New VM (Manual)
 
 ```bash
 # 1. Extract complete archive
@@ -679,12 +718,12 @@ When working on this project in the future, review:
 
 ## Contact & Support
 
-- **Repository**: https://github.com/x3m-ai/morgana-arsenal (private)
+- **Repository**: https://github.com/x3m-ai/morgana-arsenal (public)
 - **Base Project**: MITRE Caldera (https://github.com/mitre/caldera)
 - **License**: Apache 2.0 (see LICENSE and NOTICE files)
 
 ---
 
-**Last Updated**: January 2, 2026
+**Last Updated**: January 10, 2026
 **Version**: 1.0
 **Maintainer**: Morgana (@x3m-ai)
