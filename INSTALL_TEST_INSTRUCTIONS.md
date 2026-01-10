@@ -1,4 +1,29 @@
 # Morgana Arsenal + MISP Installation Test
+# last
+## ✅ Status: WORKING (Tested January 10, 2026)
+
+All components installed and verified working on Ubuntu 24.04 with PHP 8.3.
+
+---
+
+## About Morgana Arsenal
+
+**Morgana Arsenal** is a **fork of MITRE Caldera** - the open-source adversary emulation platform. It extends Caldera with additional features and plugins for red team operations and security testing.
+
+- **Repository**: https://github.com/x3m-ai/morgana-arsenal.git
+- **Based on**: [MITRE Caldera](https://github.com/mitre/caldera)
+- **Language**: Python (backend) + Vue.js (frontend)
+
+### Key Differences from Caldera
+
+| Feature | Caldera | Morgana Arsenal |
+|---------|---------|-----------------|
+| Plugins | Standard | Extended with Merlino plugin |
+| Deployment | Manual | Automated installer with MISP integration |
+| DNS | Not included | Local DNS (*.merlino.local) |
+| SSL | Not included | Auto-generated certificates |
+
+---
 
 ## Your Task
 
@@ -8,7 +33,7 @@ You need to download and run the installation script for Morgana Arsenal + MISP,
 
 The script `install-morgana-misp.sh` performs a complete installation of:
 
-1. **Morgana Arsenal** - A C2 (Command & Control) framework based on MITRE Caldera
+1. **Morgana Arsenal** - A C2 (Command & Control) framework (fork of MITRE Caldera)
 2. **MISP** - Malware Information Sharing Platform (Threat Intelligence)
 3. **Local DNS** - dnsmasq for `*.merlino.local` domain resolution
 4. **SSL Certificates** - Self-signed certificates with proper SANs for local domains
@@ -204,6 +229,18 @@ Access URLs (via DNS):
 
 ## Troubleshooting
 
+### Fixed Issues (already resolved in script)
+
+The following issues were identified during testing and have been fixed in the installation script:
+
+1. **IP Detection**: Script now prefers local/private IP for LAN DNS instead of public IP
+2. **MISP Branch**: Uses branch `2.5` (compatible with PHP 8.3) instead of old `2.4`
+3. **Missing `bootstrap.php`**: Now automatically copied from `bootstrap.default.php`
+4. **Database credentials**: Properly replaces placeholder `'db login'` and `'db password'`
+5. **Morgana `conf/agents.yml`**: Created automatically if missing
+6. **Morgana `conf/payloads.yml`**: Created automatically if missing
+7. **Morgana log directory**: Creates `/home/$USER/caldera/` for debug logs
+
 ### If dnsmasq fails to start
 
 ```bash
@@ -247,5 +284,34 @@ Please run all verification steps and report:
 4. Can access Morgana web UI? (yes/no)
 5. Can access MISP web UI? (yes/no)
 6. Any errors encountered
+
+---
+
+## Test Results (January 10, 2026)
+
+### Services Status
+| Service | Status |
+|---------|--------|
+| dnsmasq | ✅ Running |
+| nginx | ✅ Running |
+| morgana-arsenal | ✅ Running |
+| misp-modules | ✅ Running |
+| mariadb | ✅ Running |
+| redis-server | ✅ Running |
+| php8.3-fpm | ✅ Running |
+
+### URL Access Test
+| URL | Status |
+|-----|--------|
+| `http://launcher.merlino.local` | ✅ 200 OK |
+| `https://morgana.merlino.local` | ✅ 200 OK |
+| `https://misp.merlino.local:8443` | ✅ 302 → Login |
+
+### DNS Resolution
+- `morgana.merlino.local` → 192.168.124.131 ✅
+- `misp.merlino.local` → 192.168.124.131 ✅
+- `launcher.merlino.local` → 192.168.124.131 ✅
+
+**All tests passed!**
 
 Thank you!

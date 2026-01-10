@@ -8,7 +8,7 @@
 #
 # Usage: curl -sL https://raw.githubusercontent.com/x3m-ai/morgana-arsenal/main/install-morgana-misp.sh | sudo bash
 #    or: sudo ./install-morgana-misp.sh [--user ubuntu] [--ip 1.2.3.4]
-#
+# last
 
 set -e
 
@@ -116,17 +116,17 @@ fi
 
 # Detect server IP if not specified
 if [ -z "$SERVER_IP" ]; then
-    # Try AWS metadata first
-    SERVER_IP=$(curl -s --connect-timeout 2 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || true)
+    # Prefer private/local IP for LAN DNS (most common use case)
+    SERVER_IP=$(hostname -I | awk '{print $1}')
     
-    # Try external IP service
+    # If no local IP, try AWS metadata
     if [ -z "$SERVER_IP" ]; then
-        SERVER_IP=$(curl -s --connect-timeout 5 https://ipinfo.io/ip 2>/dev/null || true)
+        SERVER_IP=$(curl -s --connect-timeout 2 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || true)
     fi
     
-    # Fallback to local IP
+    # Last resort: external IP service
     if [ -z "$SERVER_IP" ]; then
-        SERVER_IP=$(hostname -I | awk '{print $1}')
+        SERVER_IP=$(curl -s --connect-timeout 5 https://ipinfo.io/ip 2>/dev/null || true)
     fi
 fi
 
@@ -224,6 +224,41 @@ EOF
         chown ${MORGANA_USER}:${MORGANA_USER} conf/local.yml
     fi
     
+    # Create agents.yml if not exists (required by Caldera)
+    if [ ! -f "conf/agents.yml" ]; then
+        log_info "Creating agents.yml configuration..."
+        if [ -f "plugins/merlino/conf/agents.yml" ]; then
+            cp plugins/merlino/conf/agents.yml conf/agents.yml
+        else
+            cat > conf/agents.yml << EOF
+bootstrap_abilities:
+- 43b3754c-def4-4699-a673-1d85648fda6a
+deployments:
+- merlino-1234-5678-90ab-cdef-merlino1
+implant_name: svchost
+sleep_max: 60
+sleep_min: 30
+untrusted_timer: 999999999
+watchdog: 999999999
+EOF
+        fi
+        chown ${MORGANA_USER}:${MORGANA_USER} conf/agents.yml
+    fi
+    
+    # Create payloads.yml if not exists (required by Caldera)
+    if [ ! -f "conf/payloads.yml" ]; then
+        log_info "Creating payloads.yml configuration..."
+        cat > conf/payloads.yml << EOF
+special_payloads: {}
+standard_payloads: {}
+EOF
+        chown ${MORGANA_USER}:${MORGANA_USER} conf/payloads.yml
+    fi
+    
+    # Create caldera log directory (server.py expects this path)
+    mkdir -p ${MORGANA_HOME}/caldera
+    chown ${MORGANA_USER}:${MORGANA_USER} ${MORGANA_HOME}/caldera
+    
     log_info "Morgana Arsenal installed"
     
 else
@@ -260,6 +295,41 @@ else
         sudo -u ${MORGANA_USER} python3 -m venv venv
     fi
     sudo -u ${MORGANA_USER} bash -c "source venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt"
+    
+    # Ensure agents.yml exists after update (required by Caldera)
+    if [ ! -f "conf/agents.yml" ]; then
+        log_info "Creating agents.yml configuration..."
+        if [ -f "plugins/merlino/conf/agents.yml" ]; then
+            cp plugins/merlino/conf/agents.yml conf/agents.yml
+        else
+            cat > conf/agents.yml << EOF
+bootstrap_abilities:
+- 43b3754c-def4-4699-a673-1d85648fda6a
+deployments:
+- merlino-1234-5678-90ab-cdef-merlino1
+implant_name: svchost
+sleep_max: 60
+sleep_min: 30
+untrusted_timer: 999999999
+watchdog: 999999999
+EOF
+        fi
+        chown ${MORGANA_USER}:${MORGANA_USER} conf/agents.yml
+    fi
+    
+    # Ensure payloads.yml exists after update (required by Caldera)
+    if [ ! -f "conf/payloads.yml" ]; then
+        log_info "Creating payloads.yml configuration..."
+        cat > conf/payloads.yml << EOF
+special_payloads: {}
+standard_payloads: {}
+EOF
+        chown ${MORGANA_USER}:${MORGANA_USER} conf/payloads.yml
+    fi
+    
+    # Ensure caldera log directory exists
+    mkdir -p ${MORGANA_HOME}/caldera
+    chown ${MORGANA_USER}:${MORGANA_USER} ${MORGANA_HOME}/caldera
     
     log_info "Morgana Arsenal updated"
 fi
@@ -655,15 +725,18 @@ MISP_DIR="/var/www/MISP"
 if [ -d "${MISP_DIR}" ]; then
     log_info "MISP directory exists, updating..."
     cd ${MISP_DIR}
-    sudo -u www-data git fetch origin 2>/dev/null || true
-    sudo -u www-data git pull origin 2.4 2>/dev/null || sudo -u www-data git pull origin main 2>/dev/null || true
+    git config --global --add safe.directory ${MISP_DIR} 2>/dev/null || true
+    sudo -u www-data git fetch origin 2>/dev/null || git fetch origin 2>/dev/null || true
+    sudo -u www-data git checkout 2.5 2>/dev/null || git checkout 2.5 2>/dev/null || true
+    sudo -u www-data git pull origin 2.5 2>/dev/null || git pull origin 2.5 2>/dev/null || true
 else
     log_info "Cloning MISP..."
     mkdir -p /var/www
     git clone ${MISP_REPO} ${MISP_DIR}
     chown -R www-data:www-data ${MISP_DIR}
     cd ${MISP_DIR}
-    sudo -u www-data git checkout 2.4 2>/dev/null || sudo -u www-data git checkout main 2>/dev/null || true
+    git config --global --add safe.directory ${MISP_DIR} 2>/dev/null || true
+    sudo -u www-data git checkout 2.5 2>/dev/null || git checkout 2.5 2>/dev/null || true
 fi
 
 # Update submodules
@@ -726,18 +799,23 @@ log_section "Step 9: Configuring MISP"
 
 cd ${MISP_DIR}/app/Config
 
-# Create config files
-for conf in database core config; do
+# Create config files (including bootstrap.php which is required)
+for conf in database core config bootstrap; do
     if [ ! -f "${conf}.php" ] && [ -f "${conf}.default.php" ]; then
         cp ${conf}.default.php ${conf}.php
         chown www-data:www-data ${conf}.php
+        chmod 770 ${conf}.php
         log_info "Created ${conf}.php"
     fi
 done
 
-# Update database config
+# Update database config with correct credentials
 if [ -f "database.php" ]; then
+    # Replace placeholder credentials with actual ones
+    sed -i "s/'login' => 'db login'/'login' => 'misp'/" database.php 2>/dev/null || true
+    sed -i "s/'password' => 'db password'/'password' => 'misp_password'/" database.php 2>/dev/null || true
     sed -i "s/'password' => ''/'password' => 'misp_password'/" database.php 2>/dev/null || true
+    log_info "Database credentials configured"
 fi
 
 # Set permissions
