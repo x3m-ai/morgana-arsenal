@@ -1,8 +1,8 @@
 # Morgana Arsenal + MISP Installation Test
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Last Updated:** January 11, 2026  
-**Script Version Required:** 1.1.0+
+**Script Version Required:** 1.2.0+
 
 ## Status: WORKING (Tested January 10, 2026)
 

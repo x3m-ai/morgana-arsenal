@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Morgana Arsenal + MISP - Complete Installation Script
-# Version: 1.1.0
+# Version: 1.2.0
 # Date: 2026-01-11
 #
 # For Ubuntu 22.04/24.04 (AWS, local VM, or bare metal)
@@ -15,6 +15,7 @@
 # Log file: morgana-install.log (in the same directory as the script)
 #
 # Changelog:
+#   1.2.0 (2026-01-11) - Fix: Disable Apache2 (conflicts with Nginx), fix DNS order
 #   1.1.0 (2026-01-11) - Added detailed logging, launcher from static/, log in script dir
 #   1.0.0 (2026-01-10) - Initial release with dnsmasq, SSL, MISP integration
 #
@@ -299,6 +300,19 @@ apt-get install -y \
     php-redis php-gd php-gnupg php-intl php-bcmath \
     php-apcu php-bz2 2>/dev/null || true
 
+# IMPORTANT: Stop and disable Apache2 if it was installed as a dependency
+# (libapache2-mod-php installs Apache2 which conflicts with Nginx on port 80)
+log_substep "Disabling Apache2 (conflicts with Nginx on port 80)..."
+if systemctl is-active --quiet apache2 2>/dev/null; then
+    log_debug "Apache2 is running, stopping it..."
+    systemctl stop apache2 2>/dev/null || true
+fi
+if systemctl is-enabled --quiet apache2 2>/dev/null; then
+    log_debug "Apache2 is enabled, disabling it..."
+    systemctl disable apache2 2>/dev/null || true
+fi
+log_debug "Apache2 disabled (Nginx will handle all HTTP/HTTPS traffic)"
+
 log_substep "Detecting PHP version..."
 # Detect PHP version
 PHP_VERSION=$(php -r "echo PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION;" 2>/dev/null || echo "8.1")
@@ -564,13 +578,6 @@ DNSStubListener=no
 EOF
     log_debug "Created systemd-resolved config to disable DNSStubListener"
     
-    # Point resolv.conf to dnsmasq
-    log_substep "Updating /etc/resolv.conf..."
-    rm -f /etc/resolv.conf
-    echo "nameserver 127.0.0.1" > /etc/resolv.conf
-    echo "nameserver 8.8.8.8" >> /etc/resolv.conf
-    log_debug "Updated /etc/resolv.conf to use 127.0.0.1 and 8.8.8.8"
-    
     log_cmd "systemctl restart systemd-resolved"
     systemctl restart systemd-resolved
     log_debug "systemd-resolved restarted"
@@ -645,6 +652,28 @@ systemctl enable dnsmasq
 log_cmd "systemctl restart dnsmasq"
 systemctl restart dnsmasq
 log_debug "dnsmasq service restarted"
+
+# Wait for dnsmasq to be fully ready
+sleep 2
+
+# Verify dnsmasq is running before updating resolv.conf
+if systemctl is-active --quiet dnsmasq; then
+    log_debug "dnsmasq is running, now safe to update resolv.conf"
+    
+    # Update resolv.conf to use dnsmasq with fallback to public DNS
+    log_substep "Updating /etc/resolv.conf to use local DNS..."
+    rm -f /etc/resolv.conf
+    cat > /etc/resolv.conf << EOF
+# Local DNS via dnsmasq for *.merlino.local
+nameserver 127.0.0.1
+# Fallback to Google DNS
+nameserver 8.8.8.8
+EOF
+    log_debug "Updated /etc/resolv.conf to use 127.0.0.1 with 8.8.8.8 fallback"
+else
+    log_warn "dnsmasq is not running, keeping original resolv.conf"
+    log_debug "DNS will work via system default, local domains via /etc/hosts"
+fi
 
 # Verify DNS is working
 log_substep "Verifying DNS resolution..."
