@@ -229,6 +229,35 @@ Access URLs (via DNS):
 
 ## Troubleshooting
 
+### Installation Log File
+
+**IMPORTANT**: The installation script now creates a detailed log file at:
+
+```
+/var/log/morgana-install.log
+```
+
+This log contains:
+- Timestamps for every step and substep
+- Commands being executed (`[CMD]` prefix)
+- Debug information (`[DEBUG]` prefix)  
+- Warnings and errors with line numbers
+
+**If installation fails**, check the log:
+```bash
+# View entire log
+cat /var/log/morgana-install.log
+
+# View last 100 lines
+tail -100 /var/log/morgana-install.log
+
+# Search for errors
+grep -i "error\|fail\|warn" /var/log/morgana-install.log
+
+# Watch log in real-time during installation (in another terminal)
+tail -f /var/log/morgana-install.log
+```
+
 ### Fixed Issues (already resolved in script)
 
 The following issues were identified during testing and have been fixed in the installation script:
