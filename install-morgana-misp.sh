@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Morgana Arsenal + MISP - Complete Installation Script
-# Version: 1.3.1
+# Version: 1.4.1
 # Date: 2026-01-11
 #
 # For Ubuntu 22.04/24.04 (AWS, local VM, or bare metal)
@@ -15,6 +15,8 @@
 # Log file: morgana-install.log (in the same directory as the script)
 #
 # Changelog:
+#   1.4.1 (2026-01-11) - Added CORS headers for MISP (port 8443) for Merlino Excel Add-in
+#   1.4.0 (2026-01-11) - Added CORS headers for Morgana (port 443) for Merlino Excel Add-in
 #   1.3.1 (2026-01-11) - Fix: Composer install using direct cd instead of subshell to fix variable scope
 #   1.3.0 (2026-01-11) - Fix: Nginx config closure (caldera-proxy), launcher.conf CA cert location,
 #                        robust Composer install with cache dir, PHP-FPM restart after Composer,
@@ -832,13 +834,17 @@ log_substep "Removing default nginx site..."
 rm -f /etc/nginx/sites-enabled/default
 log_debug "Removed /etc/nginx/sites-enabled/default"
 
-log_substep "Creating Morgana Arsenal nginx config (port 443)..."
-# Morgana Arsenal HTTPS (port 443)
-cat > /etc/nginx/sites-available/caldera-proxy << EOF
+log_substep "Creating Morgana Arsenal nginx config (port 443 with CORS)..."
+# Morgana Arsenal HTTPS (port 443) with CORS for Merlino Excel Add-in
+cat > /etc/nginx/sites-available/caldera-proxy << 'NGINXEOF'
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
+NGINXEOF
+cat >> /etc/nginx/sites-available/caldera-proxy << EOF
     server_name ${MORGANA_DOMAIN} ${SERVER_IP} localhost;
+EOF
+cat >> /etc/nginx/sites-available/caldera-proxy << 'NGINXEOF'
 
     ssl_certificate /etc/nginx/ssl/caldera.crt;
     ssl_certificate_key /etc/nginx/ssl/caldera.key;
@@ -848,14 +854,49 @@ server {
     client_max_body_size 50M;
 
     location / {
+        # CORS Headers for Merlino Excel Add-in (https://merlino-addin.x3m.ai)
+        set $cors_origin "";
+        set $cors_cred "";
+        
+        # Allow specific origins (production and development)
+        if ($http_origin ~* "^https://(merlino-addin\.x3m\.ai|localhost:3000|127\.0\.0\.1:3000)$") {
+            set $cors_origin $http_origin;
+            set $cors_cred "true";
+        }
+        
+        # For other origins, allow all (can be restricted in production)
+        if ($cors_origin = "") {
+            set $cors_origin "*";
+            set $cors_cred "false";
+        }
+
+        add_header 'Access-Control-Allow-Origin' $cors_origin always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, PATCH, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'KEY, Content-Type, Authorization, X-Requested-With, Accept, Origin' always;
+        add_header 'Access-Control-Allow-Credentials' $cors_cred always;
+        add_header 'Access-Control-Max-Age' 86400 always;
+
+        # Handle preflight OPTIONS requests
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' $cors_origin always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, PATCH, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'KEY, Content-Type, Authorization, X-Requested-With, Accept, Origin' always;
+            add_header 'Access-Control-Allow-Credentials' $cors_cred always;
+            add_header 'Access-Control-Max-Age' 86400 always;
+            add_header 'Content-Type' 'text/plain charset=UTF-8';
+            add_header 'Content-Length' 0;
+            return 204;
+        }
+
+        # Proxy to Morgana/Caldera
         proxy_pass http://127.0.0.1:8888;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
         proxy_connect_timeout 300;
         proxy_send_timeout 300;
         proxy_read_timeout 300;
@@ -864,8 +905,8 @@ server {
     access_log /var/log/nginx/morgana-access.log;
     error_log /var/log/nginx/morgana-error.log warn;
 }
-EOF
-log_debug "Created /etc/nginx/sites-available/caldera-proxy"
+NGINXEOF
+log_debug "Created /etc/nginx/sites-available/caldera-proxy with CORS"
 
 log_substep "Creating launcher nginx config (port 80)..."
 # Launcher page (port 80)
@@ -1328,12 +1369,16 @@ server {
 }
 EOF
 
-# MISP HTTPS (port 8443)
-cat > /etc/nginx/sites-available/misp-https.conf << EOF
+# MISP HTTPS (port 8443) with CORS for Merlino Excel Add-in
+cat > /etc/nginx/sites-available/misp-https.conf << 'MISPEOF'
 server {
     listen 8443 ssl http2;
     listen [::]:8443 ssl http2;
+MISPEOF
+cat >> /etc/nginx/sites-available/misp-https.conf << EOF
     server_name ${MISP_DOMAIN} ${SERVER_IP} localhost;
+EOF
+cat >> /etc/nginx/sites-available/misp-https.conf << 'MISPEOF'
     
     ssl_certificate /etc/nginx/ssl/caldera.crt;
     ssl_certificate_key /etc/nginx/ssl/caldera.key;
@@ -1344,20 +1389,55 @@ server {
     index index.php;
     
     client_max_body_size 50M;
+
+    # CORS Headers for Merlino Excel Add-in
+    set $cors_origin "";
+    set $cors_cred "";
+    
+    # Allow specific origins (production and development)
+    if ($http_origin ~* "^https://(merlino-addin\.x3m\.ai|localhost:3000|127\.0\.0\.1:3000)$") {
+        set $cors_origin $http_origin;
+        set $cors_cred "true";
+    }
+    
+    # For other origins, allow all
+    if ($cors_origin = "") {
+        set $cors_origin "*";
+        set $cors_cred "false";
+    }
     
     location / {
-        add_header 'Access-Control-Allow-Origin' '*' always;
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS' always;
-        add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization, Accept' always;
-        
-        if (\$request_method = 'OPTIONS') {
+        add_header 'Access-Control-Allow-Origin' $cors_origin always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, PATCH, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type, Accept, Origin, X-Requested-With' always;
+        add_header 'Access-Control-Allow-Credentials' $cors_cred always;
+        add_header 'Access-Control-Max-Age' 86400 always;
+
+        # Handle preflight OPTIONS requests
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' $cors_origin always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, PATCH, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type, Accept, Origin, X-Requested-With' always;
+            add_header 'Access-Control-Allow-Credentials' $cors_cred always;
+            add_header 'Access-Control-Max-Age' 86400 always;
+            add_header 'Content-Type' 'text/plain charset=UTF-8';
+            add_header 'Content-Length' 0;
             return 204;
         }
         
-        try_files \$uri \$uri/ /index.php?\$args;
+        try_files $uri $uri/ /index.php?$args;
     }
+MISPEOF
+cat >> /etc/nginx/sites-available/misp-https.conf << EOF
     
     location ~ \.php\$ {
+        # CORS headers also for PHP responses
+        add_header 'Access-Control-Allow-Origin' \$cors_origin always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, PATCH, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type, Accept, Origin, X-Requested-With' always;
+        add_header 'Access-Control-Allow-Credentials' \$cors_cred always;
+        add_header 'Access-Control-Max-Age' 86400 always;
+
         include snippets/fastcgi-php.conf;
         fastcgi_pass unix:/var/run/php/php${PHP_VERSION}-fpm.sock;
         fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
@@ -1369,7 +1449,7 @@ server {
     error_log /var/log/nginx/misp-error.log warn;
 }
 EOF
-log_debug "Created /etc/nginx/sites-available/misp-https.conf"
+log_debug "Created /etc/nginx/sites-available/misp-https.conf with CORS"
 
 # Enable MISP sites
 log_substep "Enabling MISP nginx sites..."
