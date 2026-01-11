@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Morgana Arsenal + MISP - Complete Installation Script
-# Version: 1.2.0
+# Version: 1.3.1
 # Date: 2026-01-11
 #
 # For Ubuntu 22.04/24.04 (AWS, local VM, or bare metal)
@@ -15,6 +15,10 @@
 # Log file: morgana-install.log (in the same directory as the script)
 #
 # Changelog:
+#   1.3.1 (2026-01-11) - Fix: Composer install using direct cd instead of subshell to fix variable scope
+#   1.3.0 (2026-01-11) - Fix: Nginx config closure (caldera-proxy), launcher.conf CA cert location,
+#                        robust Composer install with cache dir, PHP-FPM restart after Composer,
+#                        nginx config validation before restart
 #   1.2.0 (2026-01-11) - Fix: Disable Apache2 (conflicts with Nginx), fix DNS order
 #   1.1.0 (2026-01-11) - Added detailed logging, launcher from static/, log in script dir
 #   1.0.0 (2026-01-10) - Initial release with dnsmasq, SSL, MISP integration
@@ -244,6 +248,17 @@ fi
 
 log_info "Server IP: ${SERVER_IP}"
 log_debug "Server IP detection complete"
+
+# Detect gateway IP for DNS forwarding
+log_substep "Detecting gateway IP for DNS forwarding..."
+GATEWAY_IP=$(ip route | grep default | awk '{print $3}' | head -1)
+if [ -z "$GATEWAY_IP" ]; then
+    GATEWAY_IP="8.8.8.8"
+    log_warn "Could not detect gateway, falling back to 8.8.8.8"
+else
+    log_info "Gateway IP: ${GATEWAY_IP}"
+fi
+log_debug "Gateway will be used as upstream DNS"
 
 # ============================================
 # Detect Installation Mode
@@ -600,9 +615,9 @@ listen-address=${SERVER_IP}
 # Don't read /etc/resolv.conf (we'll specify upstream DNS)
 no-resolv
 
-# Upstream DNS servers
+# Upstream DNS servers (use local gateway for forwarding)
+server=${GATEWAY_IP}
 server=8.8.8.8
-server=8.8.4.4
 
 # Local domain configuration
 local=/${LOCAL_DOMAIN}/
@@ -666,10 +681,10 @@ if systemctl is-active --quiet dnsmasq; then
     cat > /etc/resolv.conf << EOF
 # Local DNS via dnsmasq for *.merlino.local
 nameserver 127.0.0.1
-# Fallback to Google DNS
-nameserver 8.8.8.8
+# Fallback to gateway
+nameserver ${GATEWAY_IP}
 EOF
-    log_debug "Updated /etc/resolv.conf to use 127.0.0.1 with 8.8.8.8 fallback"
+    log_debug "Updated /etc/resolv.conf to use 127.0.0.1 with ${GATEWAY_IP} fallback"
 else
     log_warn "dnsmasq is not running, keeping original resolv.conf"
     log_debug "DNS will work via system default, local domains via /etc/hosts"
@@ -847,6 +862,9 @@ server {
     }
 
     access_log /var/log/nginx/morgana-access.log;
+    error_log /var/log/nginx/morgana-error.log warn;
+}
+EOF
 log_debug "Created /etc/nginx/sites-available/caldera-proxy"
 
 log_substep "Creating launcher nginx config (port 80)..."
@@ -862,6 +880,12 @@ server {
 
     location / {
         try_files \$uri \$uri/ =404;
+    }
+
+    # CA Certificate download
+    location /merlino-ca.crt {
+        alias /var/www/html/merlino-ca.crt;
+        add_header Content-Type application/x-x509-ca-cert;
     }
 }
 EOF
@@ -1087,20 +1111,47 @@ log_debug "MISP Python dependencies installed"
 # Composer dependencies
 log_substep "Installing Composer dependencies..."
 cd ${MISP_DIR}/app
-if [ ! -f "composer.phar" ] && ! command -v composer &> /dev/null; then
-    log_info "Installing Composer..."
-    log_cmd "curl -sS https://getcomposer.org/installer | php"
-    curl -sS https://getcomposer.org/installer | php
-    mv composer.phar /usr/local/bin/composer
+
+# Ensure Composer is installed globally
+if ! command -v composer &> /dev/null; then
+    log_info "Installing Composer globally..."
+    EXPECTED_CHECKSUM="$(php -r 'copy("https://composer.github.io/installer.sig", "php://stdout");')"
+    php -r "copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');"
+    ACTUAL_CHECKSUM="$(php -r "echo hash_file('sha384', '/tmp/composer-setup.php');")"
+    if [ "$EXPECTED_CHECKSUM" != "$ACTUAL_CHECKSUM" ]; then
+        log_warn "Composer installer checksum mismatch, trying anyway..."
+    fi
+    php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+    rm -f /tmp/composer-setup.php
     chmod +x /usr/local/bin/composer
-    log_debug "Composer installed"
+    log_debug "Composer installed to /usr/local/bin/composer"
 fi
 
+# Install dependencies with proper permissions
 if [ -f "composer.json" ]; then
-    log_cmd "composer install --no-dev"
-    sudo -u www-data composer install --no-dev 2>/dev/null || \
-    sudo -u www-data php composer.phar install --no-dev 2>/dev/null || true
-    log_debug "Composer dependencies installed"
+    log_info "Running composer install for MISP..."
+    # Create cache directory for www-data
+    mkdir -p /var/www/.cache/composer
+    chown -R www-data:www-data /var/www/.cache
+    
+    # Run composer as root with COMPOSER_ALLOW_SUPERUSER and proper cache dir
+    # Note: Running as www-data often fails due to permission issues, running as root is safe for install
+    log_cmd "composer install --no-dev --no-interaction"
+    cd "${MISP_DIR}/app"
+    COMPOSER_ALLOW_SUPERUSER=1 COMPOSER_HOME=/var/www/.cache/composer /usr/local/bin/composer install --no-dev --no-interaction 2>&1 || true
+    cd "${MISP_DIR}"
+    
+    # Verify autoload.php was created
+    if [ -f "${MISP_DIR}/app/Vendor/autoload.php" ]; then
+        log_info "Composer dependencies installed successfully"
+        log_debug "autoload.php verified at ${MISP_DIR}/app/Vendor/autoload.php"
+    else
+        log_warn "autoload.php not found - MISP may not work correctly"
+        log_warn "You may need to run: cd /var/www/MISP/app && sudo composer install --no-dev"
+    fi
+    
+    # Fix ownership after composer
+    chown -R www-data:www-data ${MISP_DIR}/app/Vendor 2>/dev/null || true
 fi
 
 log_info "MISP installed/updated"
@@ -1354,6 +1405,22 @@ log_substep "Restarting PHP-FPM..."
 log_cmd "systemctl restart php${PHP_VERSION}-fpm"
 systemctl restart php${PHP_VERSION}-fpm
 log_debug "PHP-FPM restarted"
+
+log_substep "Testing nginx configuration before restart..."
+if ! nginx -t 2>&1; then
+    log_error "Nginx configuration test failed!"
+    log_substep "Checking for common issues..."
+    # Check if all required files exist
+    for conf in caldera-proxy launcher.conf misp.conf misp-https.conf; do
+        if [ -f "/etc/nginx/sites-available/$conf" ]; then
+            log_debug "$conf exists"
+        else
+            log_warn "$conf missing from sites-available"
+        fi
+    done
+    # Show nginx error for debugging
+    nginx -t 2>&1 | head -10
+fi
 
 log_substep "Restarting nginx..."
 log_cmd "systemctl restart nginx"

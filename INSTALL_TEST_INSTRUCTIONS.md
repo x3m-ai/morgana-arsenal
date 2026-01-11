@@ -1,10 +1,10 @@
 # Morgana Arsenal + MISP Installation Test
 
-**Version:** 1.2.0  
+**Version:** 1.3.1  
 **Last Updated:** January 11, 2026  
-**Script Version Required:** 1.2.0+
+**Script Version Required:** 1.3.1+
 
-## Status: WORKING (Tested January 10, 2026)
+## Status: WORKING (Tested January 11, 2026)
 
 All components installed and verified working on Ubuntu 24.04 with PHP 8.3.
 
@@ -270,6 +270,21 @@ tail -f ./morgana-install.log
 
 The following issues were identified during testing and have been fixed in the installation script:
 
+**v1.3.1 Fixes:**
+1. **Composer install subshell**: Fixed `${MISP_DIR}` variable not available in bash subshell - now uses direct `cd` instead of subshell with `COMPOSER_ALLOW_SUPERUSER=1`
+
+**v1.3.0 Fixes:**
+1. **Nginx caldera-proxy config**: Fixed missing `error_log` and closing `}` in heredoc - this was causing nginx to fail with "unknown directive log_debug" error
+2. **launcher.conf CA cert**: Added proper location block for `/merlino-ca.crt` with Content-Type header
+3. **Composer installation**: Robust installation with proper cache directory for www-data user, verified autoload.php creation
+4. **PHP-FPM restart**: Added restart after Composer install to reload new dependencies
+5. **Nginx config validation**: Added `nginx -t` test before restart with diagnostic output on failure
+
+**v1.2.0 Fixes:**
+1. **Apache2 conflict**: Disabled Apache2 (installed as PHP dependency) which conflicts with Nginx on port 80
+2. **DNS gateway detection**: Uses local gateway IP for upstream DNS instead of hardcoded 8.8.8.8
+
+**v1.1.0 Fixes:**
 1. **IP Detection**: Script now prefers local/private IP for LAN DNS instead of public IP
 2. **MISP Branch**: Uses branch `2.5` (compatible with PHP 8.3) instead of old `2.4`
 3. **Missing `bootstrap.php`**: Now automatically copied from `bootstrap.default.php`
@@ -324,7 +339,7 @@ Please run all verification steps and report:
 
 ---
 
-## Test Results (January 10, 2026)
+## Test Results (January 11, 2026)
 
 ### Services Status
 | Service | Status |
