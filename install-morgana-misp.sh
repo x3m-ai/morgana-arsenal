@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Morgana Arsenal + MISP - Complete Installation Script
-# Version: 1.4.1
+# Version: 1.4.2
 # Date: 2026-01-11
 #
 # For Ubuntu 22.04/24.04 (AWS, local VM, or bare metal)
@@ -15,6 +15,7 @@
 # Log file: morgana-install.log (in the same directory as the script)
 #
 # Changelog:
+#   1.4.2 (2026-01-11) - Fix: Installation summary now always displays in terminal (set +e before final echo)
 #   1.4.1 (2026-01-11) - Added CORS headers for MISP (port 8443) for Merlino Excel Add-in
 #   1.4.0 (2026-01-11) - Added CORS headers for Morgana (port 443) for Merlino Excel Add-in
 #   1.3.1 (2026-01-11) - Fix: Composer install using direct cd instead of subshell to fix variable scope
@@ -1584,8 +1585,25 @@ log_debug "Step 13 completed successfully"
 log_section "Installation Complete!"
 
 log_info "All installation steps completed successfully"
-log_debug "Total installation time: $(($(date +%s) - $(date -d "$(head -3 ${LOG_FILE} 2>/dev/null | tail -1 | grep -oP '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}')" +%s 2>/dev/null || echo 0))) seconds (approximate)"
+
+# Calculate installation time (safely, without exiting on error)
+INSTALL_DURATION="unknown"
+{
+    END_TIME=$(date +%s)
+    START_TIME_STR=$(head -3 "${LOG_FILE}" 2>/dev/null | tail -1 | grep -oP '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}' || echo "")
+    if [ -n "$START_TIME_STR" ]; then
+        START_TIME=$(date -d "$START_TIME_STR" +%s 2>/dev/null || echo "0")
+        if [ "$START_TIME" -gt 0 ]; then
+            INSTALL_DURATION="$((END_TIME - START_TIME)) seconds"
+        fi
+    fi
+} || true
+
+log_debug "Total installation time: ${INSTALL_DURATION}"
 log_debug "Log file saved to: ${LOG_FILE}"
+
+# Disable set -e to ensure summary is always printed
+set +e
 
 echo -e "
 ${GREEN}${BOLD}Morgana Arsenal + MISP installed successfully!${NC}
