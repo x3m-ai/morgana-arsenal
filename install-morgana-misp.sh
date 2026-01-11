@@ -48,8 +48,12 @@ chmod 644 "$LOG_FILE"
 # Redirect all output to both terminal and log file
 exec > >(tee -a "$LOG_FILE") 2>&1
 
+# Script version
+SCRIPT_VERSION="1.4.2"
+
 echo "============================================"
-echo "MORGANA ARSENAL + MISP INSTALLATION LOG"
+echo "MORGANA ARSENAL + MISP INSTALLATION"
+echo "Version: ${SCRIPT_VERSION}"
 echo "Started: $INSTALL_START_TIME"
 echo "============================================"
 echo ""
