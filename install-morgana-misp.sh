@@ -9,7 +9,7 @@
 # Usage: curl -sL https://raw.githubusercontent.com/x3m-ai/morgana-arsenal/main/install-morgana-misp.sh | sudo bash
 #    or: sudo ./install-morgana-misp.sh [--user ubuntu] [--ip 1.2.3.4]
 #
-# Log file: /var/log/morgana-install.log
+# Log file: morgana-install.log (in the same directory as the script)
 #
 
 set -e
@@ -17,7 +17,13 @@ set -e
 # ============================================
 # Logging Setup - ALL OUTPUT TO FILE AND TERMINAL
 # ============================================
-LOG_FILE="/var/log/morgana-install.log"
+# Get the directory where the script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+# If script is piped via curl, use current working directory
+if [ "$SCRIPT_DIR" = "/" ] || [ ! -w "$SCRIPT_DIR" ]; then
+    SCRIPT_DIR="$(pwd)"
+fi
+LOG_FILE="${SCRIPT_DIR}/morgana-install.log"
 INSTALL_START_TIME=$(date '+%Y-%m-%d %H:%M:%S')
 
 # Create log file and set permissions

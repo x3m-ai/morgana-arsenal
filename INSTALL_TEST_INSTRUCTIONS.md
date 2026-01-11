@@ -231,11 +231,15 @@ Access URLs (via DNS):
 
 ### Installation Log File
 
-**IMPORTANT**: The installation script now creates a detailed log file at:
+**IMPORTANT**: The installation script creates a detailed log file in the **same directory where the script is executed**:
 
 ```
-/var/log/morgana-install.log
+./morgana-install.log
 ```
+
+For example:
+- If you run `sudo bash install-morgana-misp.sh` from `/home/ubuntu/`, the log will be at `/home/ubuntu/morgana-install.log`
+- If you run via curl from `/tmp/`, the log will be at `/tmp/morgana-install.log`
 
 This log contains:
 - Timestamps for every step and substep
@@ -245,17 +249,17 @@ This log contains:
 
 **If installation fails**, check the log:
 ```bash
-# View entire log
-cat /var/log/morgana-install.log
+# View entire log (adjust path based on where you ran the script)
+cat ./morgana-install.log
 
 # View last 100 lines
-tail -100 /var/log/morgana-install.log
+tail -100 ./morgana-install.log
 
 # Search for errors
-grep -i "error\|fail\|warn" /var/log/morgana-install.log
+grep -i "error\|fail\|warn" ./morgana-install.log
 
 # Watch log in real-time during installation (in another terminal)
-tail -f /var/log/morgana-install.log
+tail -f ./morgana-install.log
 ```
 
 ### Fixed Issues (already resolved in script)
