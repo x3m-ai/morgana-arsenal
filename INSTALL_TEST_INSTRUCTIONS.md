@@ -1,6 +1,10 @@
 # Morgana Arsenal + MISP Installation Test
-# last
-## ✅ Status: WORKING (Tested January 10, 2026)
+
+**Version:** 1.1.0  
+**Last Updated:** January 11, 2026  
+**Script Version Required:** 1.1.0+
+
+## Status: WORKING (Tested January 10, 2026)
 
 All components installed and verified working on Ubuntu 24.04 with PHP 8.3.
 

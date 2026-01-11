@@ -1,6 +1,9 @@
 #!/bin/bash
 #
 # Morgana Arsenal + MISP - Complete Installation Script
+# Version: 1.1.0
+# Date: 2026-01-11
+#
 # For Ubuntu 22.04/24.04 (AWS, local VM, or bare metal)
 #
 # - If Morgana Arsenal not found: Full installation from scratch
@@ -10,6 +13,10 @@
 #    or: sudo ./install-morgana-misp.sh [--user ubuntu] [--ip 1.2.3.4]
 #
 # Log file: morgana-install.log (in the same directory as the script)
+#
+# Changelog:
+#   1.1.0 (2026-01-11) - Added detailed logging, launcher from static/, log in script dir
+#   1.0.0 (2026-01-10) - Initial release with dnsmasq, SSL, MISP integration
 #
 
 set -e
