@@ -83,14 +83,19 @@ export const useAdversaryStore = defineStore("adversaryStore", {
           `/api/v2/adversaries/${this.selectedAdversary.adversary_id}`,
           reqBody
         );
-	    if (response.status != 200) {
+        if (response.status != 200) {
           throw new Error(`Non-200 HTTP response code from /api/v2/adversaries/${this.selectedAdversary.adversary_id}: ${response.status}`);
-	    }
-        const index = this.adversaries.findIndex(
-          (adversary) =>
-            adversary.adversary_id === this.selectedAdversary.adversary_id
+        }
+        // Refresh the entire adversaries list to ensure UI is in sync
+        await this.getAdversaries($api);
+        // Re-select the adversary with updated data
+        const updatedAdversary = this.adversaries.find(
+          (adv) => adv.adversary_id === response.data.adversary_id
         );
-        this.adversaries[index] = response.data;
+        if (updatedAdversary) {
+          this.selectedAdversary = updatedAdversary;
+          this.updateSelectedAdversaryAbilities();
+        }
         return response.data;
       } catch (error) {
         console.error("Error saving adversary", error);
@@ -98,18 +103,18 @@ export const useAdversaryStore = defineStore("adversaryStore", {
     },
     async deleteAdversary($api) {
       try {
-        const response = await $api.delete(
+        await $api.delete(
           `/api/v2/adversaries/${this.selectedAdversary.adversary_id}`
         );
-        const index = this.adversaries.findIndex(
-          (adversary) =>
-            adversary.adversary_id === this.selectedAdversary.adversary_id
-        );
+        // Clear selection first
         this.selectedAdversary = {};
         this.selectedAdversaryAbilities = [];
-        this.adversaries.splice(index, 1);
+        // Refresh the entire list to ensure UI is in sync
+        await this.getAdversaries($api);
+        return true;
       } catch (error) {
         console.error("Error deleting adversary", error);
+        return false;
       }
     },
     async deleteAllAdversaries($api) {

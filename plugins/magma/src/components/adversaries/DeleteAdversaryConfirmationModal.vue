@@ -9,6 +9,11 @@ const $api = inject("$api");
 const adversaryStore = useAdversaryStore();
 const coreDisplayStore = useCoreDisplayStore();
 const { modals } = storeToRefs(coreDisplayStore);
+
+async function handleDelete() {
+    await adversaryStore.deleteAdversary($api);
+    modals.value.adversaries.showDeleteConfirm = false;
+}
 </script>
 
 <template lang="pug">
@@ -24,7 +29,7 @@ const { modals } = storeToRefs(coreDisplayStore);
 
         footer.modal-card-foot.is-flex.is-justify-content-flex-end 
             button.button(@click="modals.adversaries.showDeleteConfirm = false") Cancel
-            button.button.is-danger(@click="adversaryStore.deleteAdversary($api) && (modals.adversaries.showDeleteConfirm = false)")
+            button.button.is-danger(@click="handleDelete")
                 span.icon
                     font-awesome-icon(icon="fas fa-trash")
                 span Delete
