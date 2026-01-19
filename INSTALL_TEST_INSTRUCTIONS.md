@@ -1,12 +1,13 @@
 # Morgana Arsenal + MISP Installation Test
 
-**Version:** 1.3.1  
+**Version:** 1.4.1  
 **Last Updated:** January 11, 2026  
-**Script Version Required:** 1.3.1+
+**Script Version Required:** 1.4.1+
 
 ## Status: WORKING (Tested January 11, 2026)
 
 All components installed and verified working on Ubuntu 24.04 with PHP 8.3.
+CORS configured for Merlino Excel Add-in integration (both Morgana and MISP).
 
 ---
 
@@ -204,6 +205,60 @@ Should return health status.
 
 ---
 
+## Merlino Excel Add-in Integration
+
+The installation includes CORS configuration for **Merlino Excel Add-in** (`https://merlino-addin.x3m.ai`).
+
+### Windows Client Setup
+
+1. **Download CA Certificate:**
+   ```
+   http://<SERVER_IP>/merlino-ca.crt
+   ```
+
+2. **Install Certificate on Windows:**
+   - Double-click `merlino-ca.crt`
+   - Click "Install Certificate..."
+   - Select "Local Machine" → Next
+   - Select "Place all certificates in the following store"
+   - Click "Browse" → select "Trusted Root Certification Authorities"
+   - Click Next → Finish
+
+3. **Configure hosts file** (`C:\Windows\System32\drivers\etc\hosts`):
+   ```
+   <SERVER_IP> morgana.merlino.local misp.merlino.local launcher.merlino.local
+   ```
+
+4. **Configure Merlino Settings:**
+   | Setting | Value |
+   |---------|-------|
+   | Caldera URL | `https://morgana.merlino.local` |
+   | Caldera API Key | `ADMIN123` |
+   | MISP URL | `https://misp.merlino.local:8443` |
+   | MISP API Key | (get from MISP web UI) |
+
+### CORS Verification
+
+Test from the server:
+```bash
+# Morgana CORS
+curl -ksI -X OPTIONS -H "Origin: https://merlino-addin.x3m.ai" \
+  https://127.0.0.1/api/v2/abilities | grep -i access-control
+
+# MISP CORS
+curl -ksI -X OPTIONS -H "Origin: https://merlino-addin.x3m.ai" \
+  https://127.0.0.1:8443/servers/getVersion | grep -i access-control
+```
+
+Expected headers:
+```
+access-control-allow-origin: https://merlino-addin.x3m.ai
+access-control-allow-methods: GET, POST, PUT, DELETE, PATCH, OPTIONS
+access-control-allow-credentials: true
+```
+
+---
+
 ## Expected Final Output
 
 At the end of installation, you should see:
@@ -269,6 +324,12 @@ tail -f ./morgana-install.log
 ### Fixed Issues (already resolved in script)
 
 The following issues were identified during testing and have been fixed in the installation script:
+
+**v1.4.1 Fixes:**
+1. **CORS for MISP**: Added CORS headers for MISP (port 8443) to allow Merlino Excel Add-in to call MISP API
+
+**v1.4.0 Fixes:**
+1. **CORS for Morgana**: Added CORS headers for Morgana (port 443) to allow Merlino Excel Add-in (`https://merlino-addin.x3m.ai`) to call Morgana API. Supports preflight OPTIONS requests with proper headers.
 
 **v1.3.1 Fixes:**
 1. **Composer install subshell**: Fixed `${MISP_DIR}` variable not available in bash subshell - now uses direct `cd` instead of subshell with `COMPOSER_ALLOW_SUPERUSER=1`

@@ -1,0 +1,147 @@
+14:28:14 Loop iteration - paw=tuewxg
+14:28:14 [BEACON] Beacon with PAW: tuewxg (full profile)
+14:28:14 JSON: {"platform":"windows","server":"https://192.168.124.133","group":"red","host":"W11-MERLINO-01","contact":"HTTP","architecture":"x64","executors":["cmd","psh","pwsh"],"privilege":"User","username":"ninoc","location":"C:\\Users\\ninoc\\Desktop\\merlino\\Merlino.exe","pid":"17064","ppid":"0","exe_name":"Merlino.exe","paw":"tuewxg"}
+14:28:14 POST https://192.168.124.133/beacon?paw=tuewxg
+14:28:14 Sending B64: eyJwbGF0Zm9ybSI6IndpbmRvd3MiLCJzZXJ2ZXIiOiJodHRwczovLzE5Mi4xNjguMTI0LjEzMyIsImdyb3VwIjoicmVkIiwiaG9z...
+14:28:14 Response B64: eyJwYXciOiAidHVld3hnIiwgInNsZWVwIjogNTEsICJ3YXRjaGRvZyI6IDk5OTk5OTk5OSwgImluc3RydWN0aW9ucyI6ICJbXSJ9...
+14:28:14 [BEACON] Received response, length: 75
+14:28:14 [BEACON] Response preview: {"paw": "tuewxg", "sleep": 51, "watchdog": 999999999, "instructions": "[]"}
+14:28:14 Decoded: paw = tuewxg
+14:28:14 Decoded: sleep = 51
+14:28:14 Decoded: watchdog = 999999999
+14:28:14 Decoded: instructions = []
+14:28:14 [BEACON] Decoded 4 fields from response
+14:28:14 [BEACON] Field: paw = tuewxg
+14:28:14 [BEACON] Field: sleep = 51
+14:28:14 [BEACON] Field: watchdog = 999999999
+14:28:14 [BEACON] Field: instructions = []
+14:28:14 [BEACON] PAW confirmed: tuewxg
+14:28:14 Sleep updated: 51
+14:28:14 [BEACON] Instructions field length: 2
+14:28:14 [BEACON] No instructions to execute (empty or [])
+14:29:05 Loop iteration - paw=tuewxg
+14:29:05 [BEACON] Beacon with PAW: tuewxg (full profile)
+14:29:05 JSON: {"platform":"windows","server":"https://192.168.124.133","group":"red","host":"W11-MERLINO-01","contact":"HTTP","architecture":"x64","executors":["cmd","psh","pwsh"],"privilege":"User","username":"ninoc","location":"C:\\Users\\ninoc\\Desktop\\merlino\\Merlino.exe","pid":"17064","ppid":"0","exe_name":"Merlino.exe","paw":"tuewxg"}
+14:29:05 POST https://192.168.124.133/beacon?paw=tuewxg
+14:29:05 Sending B64: eyJwbGF0Zm9ybSI6IndpbmRvd3MiLCJzZXJ2ZXIiOiJodHRwczovLzE5Mi4xNjguMTI0LjEzMyIsImdyb3VwIjoicmVkIiwiaG9z...
+14:29:05 Response B64: eyJwYXciOiAidHVld3hnIiwgInNsZWVwIjogNTAsICJ3YXRjaGRvZyI6IDk5OTk5OTk5OSwgImluc3RydWN0aW9ucyI6ICJbXSJ9...
+14:29:05 [BEACON] Received response, length: 75
+14:29:05 [BEACON] Response preview: {"paw": "tuewxg", "sleep": 50, "watchdog": 999999999, "instructions": "[]"}
+14:29:05 Decoded: paw = tuewxg
+14:29:05 Decoded: sleep = 50
+14:29:05 Decoded: watchdog = 999999999
+14:29:05 Decoded: instructions = []
+14:29:05 [BEACON] Decoded 4 fields from response
+14:29:05 [BEACON] Field: paw = tuewxg
+14:29:05 [BEACON] Field: sleep = 50
+14:29:05 [BEACON] Field: watchdog = 999999999
+14:29:05 [BEACON] Field: instructions = []
+14:29:05 [BEACON] PAW confirmed: tuewxg
+14:29:05 Sleep updated: 50
+14:29:05 [BEACON] Instructions field length: 2
+14:29:05 [BEACON] No instructions to execute (empty or [])
+14:29:55 Loop iteration - paw=tuewxg
+14:29:55 [BEACON] Beacon with PAW: tuewxg (full profile)
+14:29:55 JSON: {"platform":"windows","server":"https://192.168.124.133","group":"red","host":"W11-MERLINO-01","contact":"HTTP","architecture":"x64","executors":["cmd","psh","pwsh"],"privilege":"User","username":"ninoc","location":"C:\\Users\\ninoc\\Desktop\\merlino\\Merlino.exe","pid":"17064","ppid":"0","exe_name":"Merlino.exe","paw":"tuewxg"}
+14:29:55 POST https://192.168.124.133/beacon?paw=tuewxg
+14:29:55 Sending B64: eyJwbGF0Zm9ybSI6IndpbmRvd3MiLCJzZXJ2ZXIiOiJodHRwczovLzE5Mi4xNjguMTI0LjEzMyIsImdyb3VwIjoicmVkIiwiaG9z...
+14:29:55 Response B64: eyJwYXciOiAidHVld3hnIiwgInNsZWVwIjogNDYsICJ3YXRjaGRvZyI6IDk5OTk5OTk5OSwgImluc3RydWN0aW9ucyI6ICJbXSJ9...
+14:29:55 [BEACON] Received response, length: 75
+14:29:55 [BEACON] Response preview: {"paw": "tuewxg", "sleep": 46, "watchdog": 999999999, "instructions": "[]"}
+14:29:55 Decoded: paw = tuewxg
+14:29:55 Decoded: sleep = 46
+14:29:55 Decoded: watchdog = 999999999
+14:29:55 Decoded: instructions = []
+14:29:55 [BEACON] Decoded 4 fields from response
+14:29:55 [BEACON] Field: paw = tuewxg
+14:29:55 [BEACON] Field: sleep = 46
+14:29:55 [BEACON] Field: watchdog = 999999999
+14:29:55 [BEACON] Field: instructions = []
+14:29:55 [BEACON] PAW confirmed: tuewxg
+14:29:55 Sleep updated: 46
+14:29:55 [BEACON] Instructions field length: 2
+14:29:55 [BEACON] No instructions to execute (empty or [])
+14:30:41 Loop iteration - paw=tuewxg
+14:30:41 [BEACON] Beacon with PAW: tuewxg (full profile)
+14:30:41 JSON: {"platform":"windows","server":"https://192.168.124.133","group":"red","host":"W11-MERLINO-01","contact":"HTTP","architecture":"x64","executors":["cmd","psh","pwsh"],"privilege":"User","username":"ninoc","location":"C:\\Users\\ninoc\\Desktop\\merlino\\Merlino.exe","pid":"17064","ppid":"0","exe_name":"Merlino.exe","paw":"tuewxg"}
+14:30:41 POST https://192.168.124.133/beacon?paw=tuewxg
+14:30:41 Sending B64: eyJwbGF0Zm9ybSI6IndpbmRvd3MiLCJzZXJ2ZXIiOiJodHRwczovLzE5Mi4xNjguMTI0LjEzMyIsImdyb3VwIjoicmVkIiwiaG9z...
+14:30:41 Response B64: eyJwYXciOiAidHVld3hnIiwgInNsZWVwIjogMzgsICJ3YXRjaGRvZyI6IDk5OTk5OTk5OSwgImluc3RydWN0aW9ucyI6ICJbXSJ9...
+14:30:41 [BEACON] Received response, length: 75
+14:30:41 [BEACON] Response preview: {"paw": "tuewxg", "sleep": 38, "watchdog": 999999999, "instructions": "[]"}
+14:30:41 Decoded: paw = tuewxg
+14:30:41 Decoded: sleep = 38
+14:30:41 Decoded: watchdog = 999999999
+14:30:41 Decoded: instructions = []
+14:30:41 [BEACON] Decoded 4 fields from response
+14:30:41 [BEACON] Field: paw = tuewxg
+14:30:41 [BEACON] Field: sleep = 38
+14:30:41 [BEACON] Field: watchdog = 999999999
+14:30:41 [BEACON] Field: instructions = []
+14:30:41 [BEACON] PAW confirmed: tuewxg
+14:30:41 Sleep updated: 38
+14:30:41 [BEACON] Instructions field length: 2
+14:30:41 [BEACON] No instructions to execute (empty or [])
+14:31:19 Loop iteration - paw=tuewxg
+14:31:19 [BEACON] Beacon with PAW: tuewxg (full profile)
+14:31:19 JSON: {"platform":"windows","server":"https://192.168.124.133","group":"red","host":"W11-MERLINO-01","contact":"HTTP","architecture":"x64","executors":["cmd","psh","pwsh"],"privilege":"User","username":"ninoc","location":"C:\\Users\\ninoc\\Desktop\\merlino\\Merlino.exe","pid":"17064","ppid":"0","exe_name":"Merlino.exe","paw":"tuewxg"}
+14:31:19 POST https://192.168.124.133/beacon?paw=tuewxg
+14:31:19 Sending B64: eyJwbGF0Zm9ybSI6IndpbmRvd3MiLCJzZXJ2ZXIiOiJodHRwczovLzE5Mi4xNjguMTI0LjEzMyIsImdyb3VwIjoicmVkIiwiaG9z...
+14:31:19 Response B64: eyJwYXciOiAidHVld3hnIiwgInNsZWVwIjogNTMsICJ3YXRjaGRvZyI6IDk5OTk5OTk5OSwgImluc3RydWN0aW9ucyI6ICJbXSJ9...
+14:31:19 [BEACON] Received response, length: 75
+14:31:19 [BEACON] Response preview: {"paw": "tuewxg", "sleep": 53, "watchdog": 999999999, "instructions": "[]"}
+14:31:19 Decoded: paw = tuewxg
+14:31:19 Decoded: sleep = 53
+14:31:19 Decoded: watchdog = 999999999
+14:31:19 Decoded: instructions = []
+14:31:19 [BEACON] Decoded 4 fields from response
+14:31:19 [BEACON] Field: paw = tuewxg
+14:31:19 [BEACON] Field: sleep = 53
+14:31:19 [BEACON] Field: watchdog = 999999999
+14:31:19 [BEACON] Field: instructions = []
+14:31:19 [BEACON] PAW confirmed: tuewxg
+14:31:19 Sleep updated: 53
+14:31:19 [BEACON] Instructions field length: 2
+14:31:19 [BEACON] No instructions to execute (empty or [])
+14:32:12 Loop iteration - paw=tuewxg
+14:32:12 [BEACON] Beacon with PAW: tuewxg (full profile)
+14:32:12 JSON: {"platform":"windows","server":"https://192.168.124.133","group":"red","host":"W11-MERLINO-01","contact":"HTTP","architecture":"x64","executors":["cmd","psh","pwsh"],"privilege":"User","username":"ninoc","location":"C:\\Users\\ninoc\\Desktop\\merlino\\Merlino.exe","pid":"17064","ppid":"0","exe_name":"Merlino.exe","paw":"tuewxg"}
+14:32:12 POST https://192.168.124.133/beacon?paw=tuewxg
+14:32:12 Sending B64: eyJwbGF0Zm9ybSI6IndpbmRvd3MiLCJzZXJ2ZXIiOiJodHRwczovLzE5Mi4xNjguMTI0LjEzMyIsImdyb3VwIjoicmVkIiwiaG9z...
+14:32:12 Response B64: eyJwYXciOiAidHVld3hnIiwgInNsZWVwIjogMzYsICJ3YXRjaGRvZyI6IDk5OTk5OTk5OSwgImluc3RydWN0aW9ucyI6ICJbXSJ9...
+14:32:12 [BEACON] Received response, length: 75
+14:32:12 [BEACON] Response preview: {"paw": "tuewxg", "sleep": 36, "watchdog": 999999999, "instructions": "[]"}
+14:32:12 Decoded: paw = tuewxg
+14:32:12 Decoded: sleep = 36
+14:32:12 Decoded: watchdog = 999999999
+14:32:12 Decoded: instructions = []
+14:32:12 [BEACON] Decoded 4 fields from response
+14:32:12 [BEACON] Field: paw = tuewxg
+14:32:12 [BEACON] Field: sleep = 36
+14:32:12 [BEACON] Field: watchdog = 999999999
+14:32:12 [BEACON] Field: instructions = []
+14:32:12 [BEACON] PAW confirmed: tuewxg
+14:32:12 Sleep updated: 36
+14:32:12 [BEACON] Instructions field length: 2
+14:32:12 [BEACON] No instructions to execute (empty or [])
+14:32:48 Loop iteration - paw=tuewxg
+14:32:48 [BEACON] Beacon with PAW: tuewxg (full profile)
+14:32:48 JSON: {"platform":"windows","server":"https://192.168.124.133","group":"red","host":"W11-MERLINO-01","contact":"HTTP","architecture":"x64","executors":["cmd","psh","pwsh"],"privilege":"User","username":"ninoc","location":"C:\\Users\\ninoc\\Desktop\\merlino\\Merlino.exe","pid":"17064","ppid":"0","exe_name":"Merlino.exe","paw":"tuewxg"}
+14:32:48 POST https://192.168.124.133/beacon?paw=tuewxg
+14:32:48 Sending B64: eyJwbGF0Zm9ybSI6IndpbmRvd3MiLCJzZXJ2ZXIiOiJodHRwczovLzE5Mi4xNjguMTI0LjEzMyIsImdyb3VwIjoicmVkIiwiaG9z...
+14:32:48 Response B64: eyJwYXciOiAidHVld3hnIiwgInNsZWVwIjogNDMsICJ3YXRjaGRvZyI6IDk5OTk5OTk5OSwgImluc3RydWN0aW9ucyI6ICJbXSJ9...
+14:32:48 [BEACON] Received response, length: 75
+14:32:48 [BEACON] Response preview: {"paw": "tuewxg", "sleep": 43, "watchdog": 999999999, "instructions": "[]"}
+14:32:48 Decoded: paw = tuewxg
+14:32:48 Decoded: sleep = 43
+14:32:48 Decoded: watchdog = 999999999
+14:32:48 Decoded: instructions = []
+14:32:48 [BEACON] Decoded 4 fields from response
+14:32:48 [BEACON] Field: paw = tuewxg
+14:32:48 [BEACON] Field: sleep = 43
+14:32:48 [BEACON] Field: watchdog = 999999999
+14:32:48 [BEACON] Field: instructions = []
+14:32:48 [BEACON] PAW confirmed: tuewxg
+14:32:48 Sleep updated: 43
+14:32:48 [BEACON] Instructions field length: 2
+14:32:48 [BEACON] No instructions to execute (empty or [])

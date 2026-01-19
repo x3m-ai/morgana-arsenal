@@ -109,11 +109,13 @@ class FileSvc(FileServiceInterface, BaseService):
             self.log.debug('Exception uploading file: %s' % e)
 
     async def find_file_path(self, name, location=''):
-        for plugin in await self.data_svc.locate('plugins', match=dict(enabled=True)):
-            for subd in ['', 'data']:
-                file_path = await self.walk_file_path(os.path.join('plugins', plugin.name, subd, location), name)
-                if file_path:
-                    return plugin.name, file_path
+        plugins = await self.data_svc.locate('plugins', match=dict(enabled=True))
+        if plugins:
+            for plugin in plugins:
+                for subd in ['', 'data']:
+                    file_path = await self.walk_file_path(os.path.join('plugins', plugin.name, subd, location), name)
+                    if file_path:
+                        return plugin.name, file_path
         file_path = await self.walk_file_path(os.path.join('data', location), name)
         if file_path:
             return None, file_path

@@ -419,6 +419,67 @@ function openEditModal(operation) {
   showEditModal.value = true;
 }
 
+// Force all paused links in operation to EXECUTE status
+async function forceExecutePausedLinks(operation) {
+  if (!operation || !operation.chain) return;
+  
+  // Find all paused links (status=-1)
+  const pausedLinks = operation.chain.filter(link => link.status === -1);
+  
+  if (pausedLinks.length === 0) {
+    toast({
+      message: `No paused links to execute in operation "${operation.name}"`,
+      type: "is-info",
+      dismissible: true,
+      pauseOnHover: true,
+      duration: 3000,
+      position: "bottom-right",
+    });
+    return;
+  }
+  
+  try {
+    let successCount = 0;
+    let errorCount = 0;
+    
+    // Force each paused link to EXECUTE status (-3)
+    for (const link of pausedLinks) {
+      try {
+        await $api.patch(`/api/v2/operations/${operation.id}/links/${link.id}`, {
+          status: -3  // EXECUTE
+        });
+        successCount++;
+      } catch (error) {
+        console.error(`Failed to force execute link ${link.id}:`, error);
+        errorCount++;
+      }
+    }
+    
+    if (successCount > 0) {
+      // Refresh operation to show updated links
+      await operationStore.getOperations($api);
+      
+      toast({
+        message: `Forced ${successCount} paused link(s) to EXECUTE${errorCount > 0 ? ` (${errorCount} errors)` : ''}`,
+        type: errorCount > 0 ? "is-warning" : "is-success",
+        dismissible: true,
+        pauseOnHover: true,
+        duration: 4000,
+        position: "bottom-right",
+      });
+    }
+  } catch (error) {
+    toast({
+      message: `Error forcing links: ${error.message}`,
+      type: "is-danger",
+      dismissible: true,
+      pauseOnHover: true,
+      duration: 4000,
+      position: "bottom-right",
+    });
+  }
+}
+
 async function updateOperationComments(operation) {
   try {
     await $api.patch(`/api/v2/operations/${operation.id}`, {
@@ -627,6 +688,10 @@ hr.mt-2
                                 font-awesome-icon(icon="pencil-alt" style="color: white;")
                         button.button.is-small.is-link(@click.stop="openAdversaryModal(op)" title="Show Adversary")
                             span Adversary
+                        button.button.is-small.is-primary(v-if="op.chain && op.chain.some(l => l.status === -1)" @click.stop="forceExecutePausedLinks(op)" title="Force execute paused links")
+                            span.icon.is-small
+                                font-awesome-icon(icon="fas fa-bolt" style="color: white;")
+                            span.is-hidden-mobile Execute
                         button.button.is-small.is-info(@click.stop="operationStore.selectedOperationID = op.id; selectOperation();" title="View Details")
                             span.icon.is-small
                                 font-awesome-icon(icon="fas fa-search" style="color: white;")

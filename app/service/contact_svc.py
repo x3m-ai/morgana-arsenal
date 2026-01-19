@@ -63,6 +63,9 @@ class ContactService(ContactServiceInterface, BaseService):
         for agent in await self.get_service('data_svc').locate('agents', dict(paw=kwargs.get('paw', None))):
             self.log.debug('[HEARTBEAT] Found existing agent %s' % agent.paw)
             await agent.heartbeat_modification(**kwargs)
+            # Ensure agent is added to all matching operations (fixes empty group matching)
+            self.log.debug('[HEARTBEAT] Refreshing agent %s in operations (group=%s)' % (agent.paw, agent.group))
+            await self._add_agent_to_operation(agent)
             self.log.debug('[HEARTBEAT] Incoming %s beacon from %s - %d results attached' % (agent.contact, agent.paw, len(results)))
             for result in results:
                 self.log.debug('[RESULT] Received result for link %s from agent %s via contact %s (status=%s, pid=%s)' % (result['id'], agent.paw, agent.contact, result.get('status', '?'), result.get('pid', '?')))
@@ -178,12 +181,16 @@ class ContactService(ContactServiceInterface, BaseService):
 
     async def _get_instructions(self, agent):
         ops = await self.get_service('data_svc').locate('operations', match=dict(finish=None))
+        self.log.debug('[GET_INSTRUCTIONS] Agent %s: checking %d operations' % (agent.paw, len(ops)))
         instructions = []
         for link in [c for op in ops for c in op.chain
                      if c.paw == agent.paw and not c.collect and c.status == c.states['EXECUTE']]:
+            self.log.debug('[GET_INSTRUCTIONS] Found EXECUTE link for agent %s: ability=%s, command=%s' % (agent.paw, link.ability.name, link.command[:50]))
             instructions.append(self._convert_link_to_instruction(link))
         for link in [s_link for s_link in agent.links if not s_link.collect]:
+            self.log.debug('[GET_INSTRUCTIONS] Found agent link for %s: ability=%s' % (agent.paw, link.ability.name if hasattr(link, 'ability') else 'unknown'))
             instructions.append(self._convert_link_to_instruction(link))
+        self.log.debug('[GET_INSTRUCTIONS] Agent %s: returning %d instructions' % (agent.paw, len(instructions)))
         return instructions
 
     @staticmethod
@@ -211,6 +218,13 @@ class ContactService(ContactServiceInterface, BaseService):
         new agents), and during those link executions, new agents may arise
         which the planner needs to be aware of.
         """
-        for op in await self.get_service('data_svc').locate('operations', match=dict(finish=None)):
-            if op.group == agent.group or not op.group:
+        ops = await self.get_service('data_svc').locate('operations', match=dict(finish=None))
+        self.log.debug('[ADD_AGENT] Agent %s (group=%s): checking %d operations' % (agent.paw, agent.group, len(ops)))
+        for op in ops:
+            # Match if groups are equal OR operation has empty group (matches all) OR agent has empty group (special case)
+            self.log.debug('[ADD_AGENT] Op %s (group="%s"): matching with agent %s (group=%s)' % (op.name, op.group, agent.paw, agent.group))
+            if op.group == agent.group or op.group == "" or agent.group == "":
+                self.log.debug('[ADD_AGENT] MATCH! Adding agent %s to operation %s' % (agent.paw, op.name))
                 await op.update_operation_agents(self.get_services())
+            else:
+                self.log.debug('[ADD_AGENT] NO MATCH for agent %s in operation %s' % (agent.paw, op.name))

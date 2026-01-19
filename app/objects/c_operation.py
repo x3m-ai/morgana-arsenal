@@ -278,6 +278,10 @@ class Operation(FirstClassObjectInterface, BaseObject):
         return False
 
     def link_status(self):
+        # If operation is RUNNING, always use EXECUTE status for new links (super reliable)
+        # Otherwise use EXECUTE for autonomous, PAUSE for manual
+        if self.state == self.states['RUNNING']:
+            return -3  # EXECUTE
         return -3 if self.autonomous else -1
 
     def add_ignored_link(self, link_id):
@@ -355,21 +359,28 @@ class Operation(FirstClassObjectInterface, BaseObject):
                 if not step.can_ignore()]
 
     async def cede_control_to_planner(self, services):
+        logging.debug('[CEDE_PLANNER] Loading planner for operation %s' % self.name)
         planner = await self._get_planning_module(services)
+        logging.debug('[CEDE_PLANNER] Executing planner for operation %s' % self.name)
         await planner.execute()
+        logging.debug('[CEDE_PLANNER] Waiting for operation %s to be closeable' % self.name)
         while not await self.is_closeable():
             await asyncio.sleep(10)
+        logging.debug('[CEDE_PLANNER] Operation %s is closeable, closing' % self.name)
         await self.close(services)
 
     async def run(self, services):
+        logging.debug('[OPERATION_RUN] Starting operation %s (ID: %s, state: %s)' % (self.name, self.id, self.state))
         await self._init_source()
         data_svc = services.get('data_svc')
         await self._load_objective(data_svc)
         try:
+            logging.debug('[OPERATION_RUN] Ceding control to planner for operation %s' % self.name)
             await self.cede_control_to_planner(services)
+            logging.debug('[OPERATION_RUN] Planner completed for operation %s, writing event logs' % self.name)
             await self.write_event_logs_to_disk(services.get('file_svc'), data_svc, output=True)
         except Exception as e:
-            logging.error(e, exc_info=True)
+            logging.error('[OPERATION_RUN] Error in operation %s: %s' % (self.name, str(e)), exc_info=True)
 
     async def write_event_logs_to_disk(self, file_svc, data_svc, output=False):
         event_logs = await self.event_logs(file_svc, data_svc, output=output)
@@ -461,7 +472,11 @@ class Operation(FirstClassObjectInterface, BaseObject):
         await services.get('rest_svc').persist_source(dict(access=[self.access]), data)
 
     async def update_operation_agents(self, services):
+        old_count = len(self.agents)
         self.agents = await services.get('rest_svc').construct_agents_for_group(self.group)
+        new_count = len(self.agents)
+        # Log via contact_svc instead since operation doesn't have self.log
+        services.get('contact_svc').log.debug('[UPDATE_AGENTS] Operation %s: %d -> %d agents (group="%s")' % (self.name, old_count, new_count, self.group))
 
     async def _unfinished_links_for_agent(self, paw):
         return [link for link in self.chain if link.paw == paw and not link.finish and not link.can_ignore()]
