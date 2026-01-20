@@ -42,6 +42,7 @@ class AgentFieldsSchema(ma.Schema):
     available_contacts = ma.fields.List(ma.fields.String(), allow_none=True)
     host_ip_addrs = ma.fields.List(ma.fields.String(), allow_none=True)
     tags = ma.fields.Dict(keys=ma.fields.String(), values=ma.fields.String(), load_default=dict)
+    orphan = ma.fields.Boolean(dump_only=True)
 
     display_name = ma.fields.String(dump_only=True)
     created = ma.fields.DateTime(format=BaseObject.TIME_FORMAT, dump_only=True)
@@ -102,7 +103,15 @@ class Agent(FirstClassObjectInterface, BaseObject):
                  proxy_receivers=None, proxy_chain=None, origin_link_id='', deadman_enabled=False,
                  available_contacts=None, host_ip_addrs=None, upstream_dest=None, pending_contact=None, tags=None):
         super().__init__()
-        self.paw = paw if paw else self.generate_name(size=6)
+        # If PAW is missing or empty, mark agent as orphan and generate temporary PAW
+        if not paw:
+            self.orphan = True
+            self.paw = 'ORPHAN-' + self.generate_name(size=6)
+            self.log = self.create_logger('agent')
+            self.log.warning('[ORPHAN AGENT] Received beacon without PAW - created orphan agent: %s (host=%s)' % (self.paw, host))
+        else:
+            self.orphan = False
+            self.paw = paw
         self.host = host
         self.username = username
         self.group = group

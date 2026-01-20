@@ -54,7 +54,7 @@ class OperationSchema(ma.Schema):
     visibility = ma.fields.Integer()
     objective = ma.fields.Nested(ObjectiveSchema())
     use_learning_parsers = ma.fields.Boolean()
-    group = ma.fields.String(load_default='')
+    group = ma.fields.String(load_default='red')  # Default group is always 'red'
     source = ma.fields.Nested(SourceSchema())
     comments = ma.fields.String(load_default='')
     tags = ma.fields.Dict(keys=ma.fields.String(), values=ma.fields.String(), load_default=dict)
@@ -65,6 +65,9 @@ class OperationSchema(ma.Schema):
         data.pop('start', None)
         data.pop('chain', None)
         data.pop('objective', None)
+        # Force group to 'red' if empty or not provided
+        if not data.get('group'):
+            data['group'] = 'red'
         return data
 
     @ma.post_load
@@ -134,7 +137,7 @@ class Operation(FirstClassObjectInterface, BaseObject):
         )
 
     def __init__(self, name, adversary=None, agents=None, id='', jitter='2/8', source=None, planner=None,
-                 state='running', autonomous=True, obfuscator='plain-text', group=None, auto_close=True, visibility=50,
+                 state='running', autonomous=True, obfuscator='plain-text', group='red', auto_close=True, visibility=50,
                  access=None, use_learning_parsers=True, comments='', tags=None):
         super().__init__()
         self.id = str(id) if id else str(uuid.uuid4())

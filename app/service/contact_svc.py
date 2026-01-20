@@ -81,7 +81,7 @@ class ContactService(ContactServiceInterface, BaseService):
             instructions = await self._get_instructions(agent)
             self.log.debug('[HEARTBEAT] Agent %s ready for instructions, returning %d' % (agent.paw, len(instructions)))
             return agent, instructions
-        self.log.debug('[HEARTBEAT] Creating NEW agent - platform=%s, host=%s, executors=%s' % (kwargs.get('platform'), kwargs.get('host'), kwargs.get('executors')))
+        self.log.debug('[HEARTBEAT] Creating NEW agent - platform=%s, host=%s, paw_from_agent=%s' % (kwargs.get('platform'), kwargs.get('host'), kwargs.get('paw')))
         agent = await self.get_service('data_svc').store(
             Agent.load(dict(sleep_min=self.get_config(name='agents', prop='sleep_min'),
                             sleep_max=self.get_config(name='agents', prop='sleep_max'),
@@ -89,7 +89,7 @@ class ContactService(ContactServiceInterface, BaseService):
                             **kwargs))
         )
         await self._add_agent_to_operation(agent)
-        self.log.debug('[HEARTBEAT] First time %s beacon from %s (NEW PAW ASSIGNED)' % (agent.contact, agent.paw))
+        self.log.debug('[HEARTBEAT] First time %s beacon from %s (paw_from_kwargs=%s, agent.paw=%s)' % (agent.contact, agent.paw, kwargs.get('paw'), agent.paw))
         data_svc = self.get_service('data_svc')
         await agent.bootstrap(data_svc)
         if agent.deadman_enabled:

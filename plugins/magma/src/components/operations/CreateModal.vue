@@ -33,7 +33,7 @@ let operationDescription = ref("");
 let operationComments = ref("");
 let selectedAdversary = ref("");
 let selectedSource = ref("")
-let selectedGroup = ref("");
+let selectedGroup = ref("red");  // Default group is always 'red'
 let selectedObfuscator = ref({ name: "plain-text" });
 let selectedPlanner = ref();
 let isAuto = ref(true);
@@ -128,7 +128,7 @@ async function getPlanners() {
 
 async function createOperation() {
     operationName.value = sanitizeInput(operationName.value);
-    selectedGroup.value = sanitizeInput(selectedGroup.value);
+    // Group is always 'red' - no sanitization needed
 
     if (!validateInput(operationName.value, "string")) {
         validation.value.name = "Name cannot be empty or invalid";
@@ -156,7 +156,7 @@ async function createOperation() {
         source: { id: sanitizeInput(selectedSource.value.id) },
         planner: { id: sanitizeInput(selectedPlanner.value.id) },
         adversary: { adversary_id: sanitizeInput(selectedAdversary.value.adversary_id) },
-        group: sanitizeInput(selectedGroup.value),
+        group: "red",  // Always use 'red' group
         tags: operationTags.value,
     };
     try {
@@ -229,12 +229,7 @@ async function createOperation() {
                             select(v-model="selectedSource")
                                 option(disabled selected value="") Choose a Fact Source 
                                 option(v-for="source in sources" :key="source.id" :value="source") {{ `${source.name}` }}
-            .field.is-horizontal 
-                .field-label.is-normal 
-                    label.label Group
-                .field-body
-                    button.button(:class="{ 'is-primary': selectedGroup === '' }" @click="selectedGroup = ''") All groups
-                    button.button.mx-2(v-for="group in agentStore.agentGroups" :key="group" :class="{ 'is-primary': selectedGroup === group }", @click="selectedGroup = group") {{`${group}`}}
+            //- Group selector removed - all operations use 'red' group by default
             .field.is-horizontal
                 .field-label.is-normal 
                     label.label Planner 

@@ -74,6 +74,8 @@ hr
             span.mr-4.has-text-warning 
                 span.has-text-weight-bold.mr-3 {{ agents.filter((a) => getAgentStatus(a) === 'dead').length }} dead
                 span.has-text-weight-bold {{ agents.filter((a) => !a.trusted).length }} untrusted
+            span.mr-4.has-text-danger(v-if="agents.filter((a) => a.orphan).length")
+                span.has-text-weight-bold {{ agents.filter((a) => a.orphan).length }} orphan
     .column.is-4.is-flex.is-justify-content-end
         .dropdown.is-right.is-hoverable
             .dropdown-trigger 
@@ -102,8 +104,10 @@ table.table.is-striped.is-hoverable.is-fullwidth(v-if="agents.length")
             th last seen
             th
     tbody
-        tr(v-for="(agent, index) in agents" :key="agent.paw" @click="selectedAgent = agent; modals.agents.showDetails = true")
-            td {{ agent.paw }}
+        tr(v-for="(agent, index) in agents" :key="agent.paw" @click="selectedAgent = agent; modals.agents.showDetails = true" :class="{ 'has-background-danger-light': agent.orphan }")
+            td 
+                span {{ agent.paw }}
+                span.tag.is-danger.is-light.ml-2(v-if="agent.orphan") ORPHAN
             td {{ agent.host }}
             td {{ agent.group }}
             td {{ agent.platform }}

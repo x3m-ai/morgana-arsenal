@@ -3,14 +3,7 @@
 - id: merlino-1234-5678-90ab-cdef-merlino1
   name: Merlino
   description: |
-    Merlino is a fully stealth C# agent designed for professional red team operations.
-    It features complete AMSI/ETW bypass and is not detected by Windows Defender.
-    The agent is extremely reliable and lightweight (16KB).
-    
-    DISCLAIMER: This tool is intended for creating targeted, behavior-focused attack 
-    simulations in authorized security assessments only. The author assumes no 
-    responsibility for any malicious use of this agent. Unauthorized use is strictly 
-    prohibited and may violate applicable laws.
+    Merlino is a fully stealth agent designed for professional red team operations.
   tactic: command-and-control
   technique:
     attack_id: T1105
@@ -23,8 +16,8 @@
     linux:
       sh:
         command: |
-          echo "Use sandcat agent"
+          Use Sandcat agent
     darwin:
       sh:
         command: |
-          echo "Use sandcat agent"
+          Use Sandcat agent
