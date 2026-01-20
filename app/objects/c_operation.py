@@ -65,9 +65,6 @@ class OperationSchema(ma.Schema):
         data.pop('start', None)
         data.pop('chain', None)
         data.pop('objective', None)
-        # Force group to 'red' if empty or not provided
-        if not data.get('group'):
-            data['group'] = 'red'
         return data
 
     @ma.post_load
@@ -176,6 +173,7 @@ class Operation(FirstClassObjectInterface, BaseObject):
         existing.update('state', self.state)
         existing.update('autonomous', self.autonomous)
         existing.update('obfuscator', self.obfuscator)
+        existing.update('group', self.group)
         return existing
 
     def set_start_details(self):

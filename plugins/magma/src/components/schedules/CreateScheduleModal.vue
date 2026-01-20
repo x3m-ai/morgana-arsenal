@@ -1,5 +1,5 @@
 <script setup>
-import { ref, inject, onMounted, watch } from "vue";
+import { ref, inject, onMounted, watch, computed } from "vue";
 import { storeToRefs } from "pinia";
 import { toast } from "bulma-toast";
 
@@ -27,7 +27,7 @@ let schedule = ref("");
 let taskName = ref("");
 let selectedAdversary = ref({});
 let selectedSource = ref({});
-let selectedGroup = ref("");
+let selectedGroup = ref("red");
 let selectedObfuscator = ref({ name: "plain-text" });
 let selectedPlanner = ref();
 let isAuto = ref(true);
@@ -40,6 +40,12 @@ let visibility = ref(51);
 let validation = ref({
   schedule: "",
   name: "",
+});
+
+// Available groups with 'red' always included
+const availableGroups = computed(() => {
+    const groups = new Set(['red', ...agentStore.agentGroups]);
+    return Array.from(groups).sort();
 });
 
 onMounted(async () => {
@@ -94,7 +100,7 @@ function resetFields() {
     selectedAdversary.value = "";
     selectedSource.value =
       sources.value.find((source) => source.name === "basic") || null;
-    selectedGroup.value = "";
+    selectedGroup.value = "red";
     selectedPlanner.value = coreStore.planners[0] || null;
     selectedObfuscator.value = { name: "plain-text" };
     isDefParser.value = true;
@@ -280,8 +286,7 @@ async function callApi() {
         .field-label.is-normal
           label.label Group
         .field-body
-          button.button(:class="{ 'is-primary': selectedGroup === '' }" @click="selectedGroup = ''") All groups
-          button.button.mx-2(v-for="group in agentStore.agentGroups" :key="group" :class="{ 'is-primary': selectedGroup === group }", @click="selectedGroup = group") {{`${group}`}}
+          button.button.mx-2(v-for="group in availableGroups" :key="group" :class="{ 'is-primary': selectedGroup === group }", @click="selectedGroup = group") {{`${group}`}}
       .field.is-horizontal
         .field-label.is-normal
           label.label Planner

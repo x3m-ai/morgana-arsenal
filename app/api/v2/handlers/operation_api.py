@@ -269,7 +269,7 @@ class OperationApi(BaseObjectApi):
     @aiohttp_apispec.docs(tags=['operations'],
                           summary='Update fields within an operation',
                           description='Update one Caldera operation in memory based on the operation id (String '
-                                      'UUID). The `state`, `autonomous` and `obfuscator` fields in the operation '
+                                      'UUID). The `state`, `autonomous`, `obfuscator` and `group` fields in the operation '
                                       'object may be edited in the request body using the `OperationSchema`.',
                           parameters=[{
                               'in': 'path',
@@ -278,7 +278,7 @@ class OperationApi(BaseObjectApi):
                               'required': 'true',
                               'description': 'UUID of the Operation object to be retrieved.'
                           }])
-    @aiohttp_apispec.request_schema(OperationSchema(partial=True, only=['state', 'autonomous', 'obfuscator']))
+    @aiohttp_apispec.request_schema(OperationSchema(partial=True, only=['state', 'autonomous', 'obfuscator', 'group']))
     @aiohttp_apispec.response_schema(OperationSchema(partial=True),
                                      description='The response is the updated operation, including user modifications.')
     async def update_operation(self, request: web.Request):

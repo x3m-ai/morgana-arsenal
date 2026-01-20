@@ -52,6 +52,12 @@ let validation = ref({
     name: "",
 });
 
+// Available groups with 'red' always included
+const availableGroups = computed(() => {
+    const groups = new Set(['red', ...agentStore.agentGroups]);
+    return Array.from(groups).sort();
+});
+
 // Check for duplicate operation name (excluding current operation)
 const isDuplicateName = computed(() => {
     if (!operationName.value) return false;
@@ -93,7 +99,8 @@ function loadOperationData() {
     operationName.value = props.operation.name || "";
     operationDescription.value = props.operation.description || "";
     operationComments.value = props.operation.comments || "";
-    selectedGroup.value = props.operation.group || "";
+    // Force group to 'red' if not set or empty
+    selectedGroup.value = (props.operation.group && props.operation.group !== '') ? props.operation.group : "red";
     isAuto.value = props.operation.autonomous === 1 || props.operation.autonomous === true;
     isDefParser.value = props.operation.use_learning_parsers !== false;
     isAutoClose.value = props.operation.auto_close === true;
@@ -269,8 +276,7 @@ async function closeModal() {
                 .field-label.is-normal 
                     label.label Group
                 .field-body
-                    button.button(:class="{ 'is-primary': selectedGroup === '' }" @click="selectedGroup = ''") All groups
-                    button.button.mx-2(v-for="group in agentStore.agentGroups" :key="group" :class="{ 'is-primary': selectedGroup === group }", @click="selectedGroup = group") {{`${group}`}}
+                    button.button.mx-2(v-for="group in availableGroups" :key="group" :class="{ 'is-primary': selectedGroup === group }", @click="selectedGroup = group") {{`${group}`}}
             .field.is-horizontal
                 .field-label.is-normal 
                     label.label Planner 

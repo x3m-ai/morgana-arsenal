@@ -283,14 +283,16 @@ class RestService(RestServiceInterface, BaseService):
             self.set_config('main', data.get('prop'), data.get('value'))
         return self.get_config()
 
-    async def update_operation(self, op_id, state=None, autonomous=None, obfuscator=None):
+    async def update_operation(self, op_id, state=None, autonomous=None, obfuscator=None, group=None, 
+                               name=None, description=None, comments=None, jitter=None, visibility=None,
+                               use_learning_parsers=None, auto_close=None, adversary=None, source=None, planner=None):
         async def validate(op):
             try:
                 if not len(op):
                     raise web.HTTPNotFound
                 elif await op[0].is_finished():
                     raise web.HTTPBadRequest(body='This operation has already finished.')
-                elif state not in op[0].states.values():
+                elif state and state not in op[0].states.values():
                     raise web.HTTPBadRequest(body='state must be one of {}'.format(op[0].states.values()))
             except Exception as e:
                 self.log.error(repr(e))
@@ -301,12 +303,42 @@ class RestService(RestServiceInterface, BaseService):
             if state == operation[0].states['FINISHED']:
                 operation[0].finish = self.get_current_timestamp()
             self.log.debug('Changing operation=%s state to %s' % (op_id, state))
-        if autonomous:
+        if autonomous is not None:
             operation[0].autonomous = 0 if operation[0].autonomous else 1
             self.log.debug('Toggled operation=%s autonomous to %s' % (op_id, bool(operation[0].autonomous)))
         if obfuscator:
             operation[0].obfuscator = obfuscator
             self.log.debug('Updated operation=%s obfuscator to %s' % (op_id, operation[0].obfuscator))
+        if group:
+            operation[0].group = group if group else 'red'
+            self.log.debug('Updated operation=%s group to %s' % (op_id, operation[0].group))
+        if name:
+            operation[0].name = name
+            self.log.debug('Updated operation=%s name to %s' % (op_id, operation[0].name))
+        if description is not None:
+            operation[0].description = description
+        if comments is not None:
+            operation[0].comments = comments
+        if jitter:
+            operation[0].jitter = jitter
+        if visibility is not None:
+            operation[0].visibility = visibility
+        if use_learning_parsers is not None:
+            operation[0].use_learning_parsers = use_learning_parsers
+        if auto_close is not None:
+            operation[0].auto_close = auto_close
+        if adversary:
+            adv = await self.get_service('data_svc').locate('adversaries', match=dict(adversary_id=adversary.get('adversary_id')))
+            if adv:
+                operation[0].adversary = adv[0]
+        if source:
+            src = await self.get_service('data_svc').locate('sources', match=dict(id=source.get('id')))
+            if src:
+                operation[0].source = src[0]
+        if planner:
+            pln = await self.get_service('data_svc').locate('planners', match=dict(id=planner.get('id')))
+            if pln:
+                operation[0].planner = pln[0]
         # Save state in background without blocking
         self.loop.create_task(self.get_service('data_svc').save_state())
 
