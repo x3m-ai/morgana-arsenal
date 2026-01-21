@@ -45,7 +45,6 @@ function promptToEnablePlugin(pluginName) {
             font-awesome-icon(:icon="userSettings.collapseNavigation ? 'fas fa-angles-right' : 'fas fa-angles-left'")
     #logo(v-if="!userSettings.collapseNavigation")
         img(src="/src/assets/img/morgana-arsenal-logo.png" alt="Morgana Arsenal Logo" @click="router.push('/')")
-        .version-text Version 1.3.0.0
     #logo-collapsed(v-if="userSettings.collapseNavigation")
         img(src="/src/assets/img/caldera-logo-mtn.png" alt="Caldera Logo" @click="router.push('/')")
     #user-info(v-if="!userSettings.collapseNavigation")
@@ -182,12 +181,6 @@ PluginModal
   max-height: 150px;
   cursor: pointer;
   padding: 1.5em 3em;
-}
-#logo .version-text {
-  color: #888;
-  font-size: 0.75rem;
-  margin-top: -1em;
-  padding-bottom: 0.5em;
 }
 #logo-collapsed > img {
   width: auto;

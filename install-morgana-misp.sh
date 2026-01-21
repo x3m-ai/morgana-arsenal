@@ -1,13 +1,13 @@
 #!/bin/bash
 #
 # Morgana Arsenal + MISP - Complete Installation Script
-# Version: 1.5.0
+# Version: 1.6.0
 # Date: 2026-01-21
 #
 # For Ubuntu 22.04/24.04 (AWS, local VM, or bare metal)
 #
 # - If Morgana Arsenal not found: Full installation from scratch
-# - If Morgana Arsenal exists: Update and install MISP
+# - If Morgana Arsenal exists: Update code, plugins, UI without losing data
 #
 # Usage: curl -sL https://raw.githubusercontent.com/x3m-ai/morgana-arsenal/main/install-morgana-misp.sh | sudo bash
 #    or: sudo ./install-morgana-misp.sh [--user ubuntu] [--ip 1.2.3.4]
@@ -15,6 +15,9 @@
 # Log file: morgana-install.log (in the same directory as the script)
 #
 # Changelog:
+#   1.6.0 (2026-01-21) - UPDATE mode: preserves data, updates local.yml plugins, rebuilds frontend
+#                        Added update_local_yml_plugins() function for smart plugin updates
+#                        Frontend always rebuilt during UPDATE to apply UI changes
 #   1.5.0 (2026-01-21) - Fix: Enable ALL plugins in local.yml (atomic, access, manx, response, etc.)
 #                        This fixes the missing abilities issue (187 -> 1882)
 #   1.4.2 (2026-01-11) - Fix: Installation summary now always displays in terminal (set +e before final echo)
@@ -51,7 +54,7 @@ chmod 644 "$LOG_FILE"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 # Script version
-SCRIPT_VERSION="1.5.0"
+SCRIPT_VERSION="1.6.0"
 
 echo "============================================"
 echo "MORGANA ARSENAL + MISP INSTALLATION"
@@ -120,6 +123,76 @@ log_section() {
 log_substep() {
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     echo -e "[$timestamp][SUBSTEP] >> $1"
+}
+
+# Function to update plugins in local.yml without overwriting other settings
+update_local_yml_plugins() {
+    local config_file="$1"
+    local required_plugins="magma stockpile atomic sandcat merlino access manx response training gameboard compass debrief emu fieldmanual human"
+    
+    if [ ! -f "$config_file" ]; then
+        log_debug "Config file not found: $config_file"
+        return 1
+    fi
+    
+    log_substep "Checking plugins in local.yml..."
+    
+    # Check which plugins are missing
+    local missing_plugins=""
+    for plugin in $required_plugins; do
+        if ! grep -q "^\s*-\s*$plugin\s*$" "$config_file"; then
+            missing_plugins="$missing_plugins $plugin"
+        fi
+    done
+    
+    if [ -z "$missing_plugins" ]; then
+        log_debug "All required plugins already present in local.yml"
+        return 0
+    fi
+    
+    log_info "Adding missing plugins to local.yml:$missing_plugins"
+    
+    # Create backup
+    cp "$config_file" "${config_file}.pre-update"
+    
+    # Find the plugins section and add missing plugins
+    # Use Python for reliable YAML manipulation
+    python3 << PYEOF
+import yaml
+import sys
+
+config_file = "$config_file"
+required_plugins = "$required_plugins".split()
+
+try:
+    with open(config_file, 'r') as f:
+        config = yaml.safe_load(f)
+    
+    if config is None:
+        config = {}
+    
+    if 'plugins' not in config:
+        config['plugins'] = []
+    
+    # Add missing plugins
+    current_plugins = config['plugins'] if config['plugins'] else []
+    for plugin in required_plugins:
+        if plugin not in current_plugins:
+            current_plugins.append(plugin)
+            print(f"  Added plugin: {plugin}")
+    
+    config['plugins'] = current_plugins
+    
+    with open(config_file, 'w') as f:
+        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+    
+    print(f"Updated {config_file} with {len(current_plugins)} plugins")
+except Exception as e:
+    print(f"Error updating local.yml: {e}", file=sys.stderr)
+    sys.exit(1)
+PYEOF
+    
+    return $?
 }
 
 # Error handler
@@ -503,11 +576,49 @@ else
     sudo -u ${MORGANA_USER} git pull origin main 2>/dev/null || true
     log_debug "Git update completed"
     
-    # Restore config
+    # Restore config and update plugins
     if [ -f "conf/local.yml.backup" ]; then
         log_substep "Restoring conf/local.yml from backup..."
         cp conf/local.yml.backup conf/local.yml
         log_info "Restored conf/local.yml"
+        
+        # Update plugins in local.yml (add any new plugins without removing existing config)
+        log_substep "Updating plugins in local.yml..."
+        update_local_yml_plugins "conf/local.yml"
+    else
+        # No backup exists, create fresh local.yml with all plugins
+        log_substep "Creating new conf/local.yml with all plugins..."
+        cat > conf/local.yml << EOF
+# Morgana Arsenal Local Configuration
+host: 0.0.0.0
+port: 8888
+
+users:
+  admin:
+    password: admin
+
+plugins:
+  - magma
+  - stockpile
+  - atomic
+  - sandcat
+  - merlino
+  - access
+  - manx
+  - response
+  - training
+  - gameboard
+  - compass
+  - debrief
+  - emu
+  - fieldmanual
+  - human
+
+logging:
+  level: DEBUG
+EOF
+        chown ${MORGANA_USER}:${MORGANA_USER} conf/local.yml
+        log_info "Created new conf/local.yml"
     fi
     
     # Update venv
@@ -565,32 +676,46 @@ fi
 
 log_debug "Step 2 completed successfully"
 
-# Build Magma frontend if needed
-log_substep "Checking if Magma frontend needs building..."
-if [ -d "${MORGANA_DIR}/plugins/magma" ] && [ ! -d "${MORGANA_DIR}/plugins/magma/dist" ]; then
-    log_info "Building Magma frontend..."
-    log_debug "Magma directory exists but dist/ not found"
-    cd ${MORGANA_DIR}/plugins/magma
-    if command -v npm &> /dev/null; then
-        log_debug "npm found, proceeding with build"
-        log_cmd "npm install"
-        sudo -u ${MORGANA_USER} npm install
-        log_cmd "npm run build"
-        sudo -u ${MORGANA_USER} npm run build
-    else
-        log_warn "npm not found, installing Node.js..."
-        log_cmd "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -"
-        curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-        log_cmd "apt-get install -y nodejs"
-        apt-get install -y nodejs
-        log_cmd "npm install"
-        sudo -u ${MORGANA_USER} npm install
-        log_cmd "npm run build"
-        sudo -u ${MORGANA_USER} npm run build
+# Build Magma frontend
+# During UPDATE: always rebuild to get latest UI changes
+# During INSTALL: build only if dist/ doesn't exist
+log_substep "Checking Magma frontend..."
+if [ -d "${MORGANA_DIR}/plugins/magma" ]; then
+    SHOULD_BUILD=false
+    
+    if [ ! -d "${MORGANA_DIR}/plugins/magma/dist" ]; then
+        log_info "Magma dist/ not found - building frontend..."
+        SHOULD_BUILD=true
+    elif [ "$MORGANA_EXISTS" = true ]; then
+        log_info "UPDATE mode - rebuilding Magma frontend to apply UI changes..."
+        SHOULD_BUILD=true
     fi
-    log_debug "Magma frontend build completed"
+    
+    if [ "$SHOULD_BUILD" = true ]; then
+        cd ${MORGANA_DIR}/plugins/magma
+        if command -v npm &> /dev/null; then
+            log_debug "npm found, proceeding with build"
+            log_cmd "npm install"
+            sudo -u ${MORGANA_USER} npm install
+            log_cmd "npm run build"
+            sudo -u ${MORGANA_USER} npm run build
+        else
+            log_warn "npm not found, installing Node.js..."
+            log_cmd "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -"
+            curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+            log_cmd "apt-get install -y nodejs"
+            apt-get install -y nodejs
+            log_cmd "npm install"
+            sudo -u ${MORGANA_USER} npm install
+            log_cmd "npm run build"
+            sudo -u ${MORGANA_USER} npm run build
+        fi
+        log_debug "Magma frontend build completed"
+    else
+        log_debug "Magma frontend already built (fresh install)"
+    fi
 else
-    log_debug "Magma frontend already built or directory not found"
+    log_debug "Magma plugin directory not found"
 fi
 
 # ============================================
