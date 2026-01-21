@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Morgana Arsenal + MISP - Complete Installation Script
-# Version: 1.6.0
+# Version: 1.6.1
 # Date: 2026-01-21
 #
 # For Ubuntu 22.04/24.04 (AWS, local VM, or bare metal)
@@ -15,6 +15,8 @@
 # Log file: morgana-install.log (in the same directory as the script)
 #
 # Changelog:
+#   1.6.1 (2026-01-21) - Fix: Use 'systemctl restart' instead of 'start' for morgana-arsenal
+#                        This ensures updated code is loaded after UPDATE
 #   1.6.0 (2026-01-21) - UPDATE mode: preserves data, updates local.yml plugins, rebuilds frontend
 #                        Added update_local_yml_plugins() function for smart plugin updates
 #                        Frontend always rebuilt during UPDATE to apply UI changes
@@ -54,7 +56,7 @@ chmod 644 "$LOG_FILE"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 # Script version
-SCRIPT_VERSION="1.6.0"
+SCRIPT_VERSION="1.7"
 
 echo "============================================"
 echo "MORGANA ARSENAL + MISP INSTALLATION"
@@ -1650,10 +1652,10 @@ log_cmd "systemctl restart nginx"
 systemctl restart nginx
 log_debug "nginx restarted"
 
-log_substep "Starting Morgana Arsenal..."
-log_cmd "systemctl start morgana-arsenal"
-systemctl start morgana-arsenal
-log_debug "morgana-arsenal started"
+log_substep "Restarting Morgana Arsenal..."
+log_cmd "systemctl restart morgana-arsenal"
+systemctl restart morgana-arsenal
+log_debug "morgana-arsenal restarted"
 
 log_substep "Starting MISP Modules..."
 log_cmd "systemctl start misp-modules"
