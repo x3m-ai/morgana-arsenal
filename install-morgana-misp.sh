@@ -1,8 +1,8 @@
 #!/bin/bash
 #
 # Morgana Arsenal + MISP - Complete Installation Script
-# Version: 1.4.2
-# Date: 2026-01-11
+# Version: 1.5.0
+# Date: 2026-01-21
 #
 # For Ubuntu 22.04/24.04 (AWS, local VM, or bare metal)
 #
@@ -15,6 +15,8 @@
 # Log file: morgana-install.log (in the same directory as the script)
 #
 # Changelog:
+#   1.5.0 (2026-01-21) - Fix: Enable ALL plugins in local.yml (atomic, access, manx, response, etc.)
+#                        This fixes the missing abilities issue (187 -> 1882)
 #   1.4.2 (2026-01-11) - Fix: Installation summary now always displays in terminal (set +e before final echo)
 #   1.4.1 (2026-01-11) - Added CORS headers for MISP (port 8443) for Merlino Excel Add-in
 #   1.4.0 (2026-01-11) - Added CORS headers for Morgana (port 443) for Merlino Excel Add-in
@@ -49,7 +51,7 @@ chmod 644 "$LOG_FILE"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 # Script version
-SCRIPT_VERSION="1.4.2"
+SCRIPT_VERSION="1.5.0"
 
 echo "============================================"
 echo "MORGANA ARSENAL + MISP INSTALLATION"
@@ -394,8 +396,19 @@ users:
 plugins:
   - magma
   - stockpile
+  - atomic
   - sandcat
   - merlino
+  - access
+  - manx
+  - response
+  - training
+  - gameboard
+  - compass
+  - debrief
+  - emu
+  - fieldmanual
+  - human
 
 logging:
   level: DEBUG
