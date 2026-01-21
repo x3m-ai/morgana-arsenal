@@ -170,6 +170,11 @@ class Operation(FirstClassObjectInterface, BaseObject):
         if not existing:
             ram['operations'].append(self)
             return self.retrieve(ram['operations'], self.unique)
+        
+        # Set start time when transitioning from paused to running
+        if existing.state != 'running' and self.state == 'running' and not existing.start:
+            existing.set_start_details()
+        
         existing.update('state', self.state)
         existing.update('autonomous', self.autonomous)
         existing.update('obfuscator', self.obfuscator)

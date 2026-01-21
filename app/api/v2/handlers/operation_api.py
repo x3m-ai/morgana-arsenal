@@ -1,5 +1,6 @@
 import json
 import aiohttp_apispec
+import marshmallow as ma
 
 from aiohttp import web
 
@@ -10,6 +11,29 @@ from app.api.v2.schemas.base_schemas import BaseGetAllQuerySchema, BaseGetOneQue
 from app.api.v2.schemas.link_result_schema import LinkResultSchema
 from app.objects.c_operation import Operation, OperationSchema, OperationSchemaAlt, OperationOutputRequestSchema
 from app.objects.secondclass.c_link import LinkSchema
+
+
+class MerlinoSynchronizeItemSchema(ma.Schema):
+    """Schema for a single operation item in Merlino synchronize API payload."""
+    
+    class Meta:
+        unknown = ma.EXCLUDE
+    
+    operation_id = ma.fields.String(allow_none=True, load_default='')
+    adversary_id = ma.fields.String(allow_none=True, load_default='')
+    operation = ma.fields.String(required=True)
+    adversary = ma.fields.String(required=True)
+    tcodes = ma.fields.String(required=True)
+    description = ma.fields.String(allow_none=True, load_default='')
+    comments = ma.fields.String(allow_none=True, load_default='')
+    group = ma.fields.String(load_default='red')
+    state = ma.fields.String(load_default='running', validate=ma.validate.OneOf(['running', 'paused', 'finished', 'cleanup']))
+
+
+class MerlinoSynchronizeSchema(ma.Schema):
+    """Schema for Merlino synchronize API payload (list of operations)."""
+    
+    operations = ma.fields.List(ma.fields.Nested(MerlinoSynchronizeItemSchema), required=True)
 
 
 def decode_link_status(status_value):
@@ -660,6 +684,12 @@ class OperationApi(BaseObjectApi):
             print(error_msg)
             return web.json_response({'error': str(e)}, status=500)
 
+    @aiohttp_apispec.docs(
+        tags=['merlino'],
+        summary='Synchronize operations from Merlino Excel Add-in',
+        description='Creates new adversaries and operations from Merlino CTI data. Accepts list of operations with TCodes (MITRE ATT&CK IDs).'
+    )
+    @aiohttp_apispec.request_schema(MerlinoSynchronizeItemSchema(many=True))
     async def merlino_synchronize(self, request: web.Request):
         """
         Merlino CTI Synchronization API
@@ -689,6 +719,8 @@ class OperationApi(BaseObjectApi):
                 operation_name = op_data.get('operation', '').strip()
                 adversary_name = op_data.get('adversary', '').strip()
                 tcodes = op_data.get('tcodes', '').strip()
+                group = op_data.get('group', 'red').strip() or 'red'  # Default to 'red' if empty or missing
+                state = op_data.get('state', 'running').strip() or 'running'  # Default to 'running' if empty or missing
                 
                 # Check if this is truly an existing operation by verifying the NAME matches
                 is_existing = False
@@ -770,16 +802,16 @@ class OperationApi(BaseObjectApi):
                     print(f"[MERLINO SYNC] ERROR: Missing planner or source for operation {operation_name}")
                     continue
                 
-                # Create Operation (PAUSED - must be started manually)
+                # Create Operation
                 from app.objects.c_operation import Operation
                 new_operation = Operation(
                     name=operation_name,
                     adversary=stored_adversary,
                     planner=default_planner,
                     source=default_source,
-                    state='paused',  # Start PAUSED - must be started manually
+                    state=state,  # Use state from payload (default: 'paused')
                     autonomous=1,  # Run automatically when started
-                    group='',  # Empty string means "All groups"
+                    group=group,  # Use group from payload (default: 'red')
                     obfuscator='plain-text',
                     jitter='2/8',
                     visibility=50,
@@ -790,10 +822,14 @@ class OperationApi(BaseObjectApi):
                 if description:
                     new_operation.description = description
                 
+                # Set start time if state is 'running'
+                if state == 'running':
+                    new_operation.set_start_details()
+                
                 # Store operation
                 stored_operation = await data_svc.store(new_operation)
                 
-                print(f"[MERLINO SYNC] Created operation '{operation_name}' (ID: {stored_operation.id})")
+                print(f"[MERLINO SYNC] Created operation '{operation_name}' (ID: {stored_operation.id}, State: {state})")
             
             # Return all synchronized operations using the same format as merlino_get_operations
             operations = list(self._api_manager.find_objects(self.ram_key))
