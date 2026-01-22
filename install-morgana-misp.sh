@@ -56,7 +56,7 @@ chmod 644 "$LOG_FILE"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 # Script version
-SCRIPT_VERSION="1.7"
+SCRIPT_VERSION="1.7.1"
 
 echo "============================================"
 echo "MORGANA ARSENAL + MISP INSTALLATION"
