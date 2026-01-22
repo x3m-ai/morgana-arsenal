@@ -40,13 +40,17 @@ from app.utility.nginx_manager import NginxManager
 
 MAGMA_PATH = "./plugins/magma"
 
+# Get the directory where server.py is located
+SERVER_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 def setup_logger(level=logging.DEBUG):
     format = "%(message)s"
     datefmt = "%Y-%m-%d %H:%M:%S"
     
-    # Add file handler for persistent logs
-    file_handler = logging.FileHandler('/home/morgana/caldera/caldera-debug.log', mode='a')
+    # Add file handler for persistent logs (in the same directory as server.py)
+    log_file = os.path.join(SERVER_DIR, 'morgana-debug.log')
+    file_handler = logging.FileHandler(log_file, mode='a')
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s %(name)-20s %(message)s', datefmt=datefmt))
     
