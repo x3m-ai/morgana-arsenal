@@ -15,6 +15,10 @@
 # Log file: morgana-install.log (in the same directory as the script)
 #
 # Changelog:
+#   1.8 (2026-01-22) - Added mono-mcs dependency and automatic Merlino.exe compilation
+#                      Merlino C# agent now compiled during installation (both FRESH and UPDATE)
+#   1.7.1 (2026-01-22) - Fix: Changed log path from hardcoded /home/morgana/caldera to relative path
+#   1.7 (2026-01-22) - Version bump for log path fix
 #   1.6.1 (2026-01-21) - Fix: Use 'systemctl restart' instead of 'start' for morgana-arsenal
 #                        This ensures updated code is loaded after UPDATE
 #   1.6.0 (2026-01-21) - UPDATE mode: preserves data, updates local.yml plugins, rebuilds frontend
@@ -56,7 +60,7 @@ chmod 644 "$LOG_FILE"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 # Script version
-SCRIPT_VERSION="1.7.1"
+SCRIPT_VERSION="1.8"
 
 echo "============================================"
 echo "MORGANA ARSENAL + MISP INSTALLATION"
@@ -373,7 +377,7 @@ log_cmd "apt-get update"
 apt-get update
 
 log_substep "Installing common dependencies..."
-log_debug "Packages: git curl wget gnupg python3 python3-pip python3-venv python3-dev build-essential libssl-dev libffi-dev nginx mariadb-server mariadb-client redis-server zip unzip jq dnsmasq"
+log_debug "Packages: git curl wget gnupg python3 python3-pip python3-venv python3-dev build-essential libssl-dev libffi-dev nginx mariadb-server mariadb-client redis-server zip unzip jq dnsmasq mono-mcs"
 log_cmd "apt-get install -y [common packages]"
 # Common dependencies
 apt-get install -y \
@@ -384,7 +388,8 @@ apt-get install -y \
     mariadb-server mariadb-client \
     redis-server \
     zip unzip jq \
-    dnsmasq
+    dnsmasq \
+    mono-mcs
 
 log_info "Common dependencies installed successfully"
 
@@ -455,6 +460,21 @@ if [ "$FRESH_INSTALL" = true ]; then
     log_cmd "pip install --upgrade pip && pip install -r requirements.txt"
     sudo -u ${MORGANA_USER} bash -c "source venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt"
     log_debug "Python dependencies installed"
+    
+    # Compile Merlino.exe agent
+    log_substep "Compiling Merlino C# agent..."
+    if [ -f "agent-sharp/Agent.cs" ]; then
+        log_cmd "mcs -out:data/payloads/Merlino.exe -target:winexe -platform:x64 -optimize+ agent-sharp/Agent.cs"
+        mcs -out:data/payloads/Merlino.exe -target:winexe -platform:x64 -optimize+ agent-sharp/Agent.cs 2>&1 | tee -a ${LOG_FILE}
+        if [ -f "data/payloads/Merlino.exe" ]; then
+            chown ${MORGANA_USER}:${MORGANA_USER} data/payloads/Merlino.exe
+            log_success "Merlino.exe compiled successfully ($(ls -lh data/payloads/Merlino.exe | awk '{print $5}'))"
+        else
+            log_warn "Merlino.exe compilation failed, but continuing installation"
+        fi
+    else
+        log_warn "agent-sharp/Agent.cs not found, skipping Merlino compilation"
+    fi
     
     # Create local config
     if [ ! -f "conf/local.yml" ]; then
@@ -632,6 +652,21 @@ EOF
     log_cmd "pip install --upgrade pip && pip install -r requirements.txt"
     sudo -u ${MORGANA_USER} bash -c "source venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt"
     log_debug "Python dependencies updated"
+    
+    # Compile Merlino.exe agent
+    log_substep "Compiling Merlino C# agent..."
+    if [ -f "agent-sharp/Agent.cs" ]; then
+        log_cmd "mcs -out:data/payloads/Merlino.exe -target:winexe -platform:x64 -optimize+ agent-sharp/Agent.cs"
+        mcs -out:data/payloads/Merlino.exe -target:winexe -platform:x64 -optimize+ agent-sharp/Agent.cs 2>&1 | tee -a ${LOG_FILE}
+        if [ -f "data/payloads/Merlino.exe" ]; then
+            chown ${MORGANA_USER}:${MORGANA_USER} data/payloads/Merlino.exe
+            log_success "Merlino.exe compiled successfully ($(ls -lh data/payloads/Merlino.exe | awk '{print $5}'))"
+        else
+            log_warn "Merlino.exe compilation failed, but continuing installation"
+        fi
+    else
+        log_warn "agent-sharp/Agent.cs not found, skipping Merlino compilation"
+    fi
     
     # Ensure agents.yml exists after update (required by Caldera)
     if [ ! -f "conf/agents.yml" ]; then
