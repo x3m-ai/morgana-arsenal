@@ -14,6 +14,7 @@ class Agent
     static string platform = "windows";
     static string executors = "cmd,psh,pwsh";
     static int sleep = 5;
+    static int timeout = 30;  // Command execution timeout in seconds
     static string logFile = "debug.log";
 
     static void Log(string msg)
@@ -47,6 +48,11 @@ class Agent
             {
                 int.TryParse(args[++i], out sleep);
                 Log("Parsed -sleep: " + sleep);
+            }
+            else if (args[i] == "-timeout" && i + 1 < args.Length)
+            {
+                int.TryParse(args[++i], out timeout);
+                Log("Parsed -timeout: " + timeout);
             }
         }
 
@@ -354,8 +360,28 @@ class Agent
             }
         };
         proc.Start();
-        var output = proc.StandardOutput.ReadToEnd() + proc.StandardError.ReadToEnd();
-        proc.WaitForExit();
+        
+        // Wait with timeout
+        bool completed = proc.WaitForExit(timeout * 1000);
+        
+        string output = "";
+        if (completed)
+        {
+            output = proc.StandardOutput.ReadToEnd() + proc.StandardError.ReadToEnd();
+        }
+        else
+        {
+            // Kill the process if timeout exceeded
+            try
+            {
+                proc.Kill();
+                proc.WaitForExit(1000); // Give it 1 second to die
+            }
+            catch { }
+            output = $"[TIMEOUT] Command killed after {timeout} seconds";
+            Log($"[TIMEOUT] cmd.exe killed after {timeout}s: {command.Substring(0, Math.Min(50, command.Length))}...");
+        }
+        
         return output;
     }
 
@@ -374,8 +400,28 @@ class Agent
             }
         };
         proc.Start();
-        var output = proc.StandardOutput.ReadToEnd() + proc.StandardError.ReadToEnd();
-        proc.WaitForExit();
+        
+        // Wait with timeout
+        bool completed = proc.WaitForExit(timeout * 1000);
+        
+        string output = "";
+        if (completed)
+        {
+            output = proc.StandardOutput.ReadToEnd() + proc.StandardError.ReadToEnd();
+        }
+        else
+        {
+            // Kill the process if timeout exceeded
+            try
+            {
+                proc.Kill();
+                proc.WaitForExit(1000); // Give it 1 second to die
+            }
+            catch { }
+            output = $"[TIMEOUT] Command killed after {timeout} seconds";
+            Log($"[TIMEOUT] powershell.exe killed after {timeout}s: {command.Substring(0, Math.Min(50, command.Length))}...");
+        }
+        
         return output;
     }
 

