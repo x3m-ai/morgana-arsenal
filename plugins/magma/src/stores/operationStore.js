@@ -196,6 +196,18 @@ export const useOperationStore = defineStore("operationStore", {
         console.error("Error rerunning link", error);
       }
     },
+    async skipLink($api, link) {
+      try {
+        // Set link status to -2 (DISCARD/skipped) to skip it
+        await $api.patch(
+          `/api/v2/operations/${this.selectedOperationID}/links/${link.id}`,
+          { status: -2 }
+        );
+        await this.getOperations($api);
+      } catch (error) {
+        console.error("Error skipping link", error);
+      }
+    },
     async getFacts($api) {
       if (this.selectedOperationID === "") return;
       try {

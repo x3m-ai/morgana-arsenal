@@ -869,6 +869,8 @@ table.table.is-fullwidth.is-narrow.is-striped.mb-8#link-table(v-if="operationSto
             td(v-if="operationStore.currentOperation.state === 'running'")
                 a.icon(@click="operationStore.rerunLink($api, link)" v-tooltip="'Re-run Link'")
                     font-awesome-icon(icon="fas fa-redo")
+                a.icon.ml-2(@click="operationStore.skipLink($api, link)" v-tooltip="'Skip Link'" style="color: #f39c12;")
+                    font-awesome-icon(icon="fas fa-forward")
         ManualCommand(v-if="modals.operations.showAddManualCommand")
                 
 //- Modals
