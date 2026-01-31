@@ -48,27 +48,27 @@ LOG_FILE="/tmp/morgana-update-$(date +%Y%m%d-%H%M%S).log"
 # =============================================================================
 
 CHANGELOG="
-${BOLD}${CYAN}=============================================================================
+=============================================================================
  CHANGELOG: ${PREVIOUS_VERSION} -> ${MORGANA_VERSION}
-=============================================================================${NC}
+=============================================================================
 
-${BOLD}${GREEN}[NEW FEATURES]${NC}
+[NEW FEATURES]
   - Agent timeout parameter: -timeout (default 30 seconds)
   - Agent log file named after executable (e.g., Merlino-PC01.log)
   - Skip Link button in Operations view (bypasses stuck commands)
   - Agent process tree killing with taskkill /F /T
 
-${BOLD}${YELLOW}[IMPROVEMENTS]${NC}
+[IMPROVEMENTS]
   - Agent super-reliable: never crashes, try-catch everywhere
   - Merlino deploy command includes all parameters (-group, -sleep, -timeout)
   - Dynamic log file path (no more hardcoded paths)
 
-${BOLD}${RED}[BUG FIXES]${NC}
+[BUG FIXES]
   - Fixed agent blocking indefinitely on stuck commands (reg save, etc.)
   - Fixed 502 Bad Gateway on EC2 (hardcoded log path)
   - Fixed operation state calculation
 
-${BOLD}${BLUE}[TECHNICAL]${NC}
+[TECHNICAL]
   - Agent compiled with timeout mechanism
   - KillProcessTree using taskkill /F /T /PID
   - Skip Link sets status to -2 (discarded)
