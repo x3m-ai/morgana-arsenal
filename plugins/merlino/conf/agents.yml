@@ -1,7 +1,5 @@
 bootstrap_abilities:
 - 43b3754c-def4-4699-a673-1d85648fda6a
-deployments:
-- merlino-1234-5678-90ab-cdef-merlino1
 implant_name: svchost
 sleep_max: 60
 sleep_min: 30
