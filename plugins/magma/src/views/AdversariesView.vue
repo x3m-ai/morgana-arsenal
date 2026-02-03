@@ -1,5 +1,5 @@
 <script setup>
-import { inject, reactive, ref, onMounted, computed } from "vue";
+import { inject, reactive, ref, onMounted, computed, onUnmounted } from "vue";
 import { storeToRefs } from "pinia";
 import { toast } from "bulma-toast";
 
@@ -24,6 +24,43 @@ let adversarySearchQuery = ref("");
 let showOnlyEmpty = ref(false);
 let showDeleteAllModal = ref(false);
 let isDeleting = ref(false);
+
+// Resizable splitter
+let topPanelHeight = ref(350);
+let isResizing = ref(false);
+let startY = ref(0);
+let startHeight = ref(0);
+
+function startResize(e) {
+    isResizing.value = true;
+    startY.value = e.clientY;
+    startHeight.value = topPanelHeight.value;
+    document.addEventListener('mousemove', onResize);
+    document.addEventListener('mouseup', stopResize);
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+}
+
+function onResize(e) {
+    if (!isResizing.value) return;
+    const delta = e.clientY - startY.value;
+    const newHeight = startHeight.value + delta;
+    // Min 150px, max 600px
+    topPanelHeight.value = Math.max(150, Math.min(600, newHeight));
+}
+
+function stopResize() {
+    isResizing.value = false;
+    document.removeEventListener('mousemove', onResize);
+    document.removeEventListener('mouseup', stopResize);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+}
+
+onUnmounted(() => {
+    document.removeEventListener('mousemove', onResize);
+    document.removeEventListener('mouseup', stopResize);
+});
 
 // Delete all adversaries with confirmation
 async function confirmDeleteAllAdversaries() {
@@ -206,7 +243,7 @@ hr
                         font-awesome-icon(icon="fas fa-trash")
                     span Delete All
     
-    .table-container(style="max-height: 400px; overflow-y: auto; border: 1px solid #dbdbdb; border-radius: 4px;")
+    .table-container(:style="{ maxHeight: topPanelHeight + 'px', overflowY: 'auto', border: '1px solid #dbdbdb', borderRadius: '4px' }")
         table.table.is-fullwidth.is-hoverable.is-striped(style="margin-bottom: 0;")
         thead
             tr(style="background-color: #363636; color: white;")
@@ -237,7 +274,12 @@ hr
                     button.button.is-small.is-info(@click.stop="selectAdversary(adversary)" title="View details")
                         span.icon.is-small
                             font-awesome-icon(icon="fas fa-search" style="color: white;")
-hr
+
+//- Resizable Divider
+.resizable-divider(@mousedown="startResize" :class="{ 'is-resizing': isResizing }")
+    .divider-line
+    .divider-handle
+        font-awesome-icon(icon="fas fa-grip-lines")
 
 //- Adversary details table
 DetailsTable(v-if="selectedAdversary.adversary_id")
@@ -274,4 +316,51 @@ ImportModal
 </template>
 
 <style scoped>
+.resizable-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 16px;
+    cursor: row-resize;
+    background: transparent;
+    position: relative;
+    margin: 4px 0;
+    transition: background-color 0.2s;
+}
+
+.resizable-divider:hover,
+.resizable-divider.is-resizing {
+    background-color: rgba(0, 209, 178, 0.1);
+}
+
+.divider-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #4a4a4a;
+    transition: background-color 0.2s;
+}
+
+.resizable-divider:hover .divider-line,
+.resizable-divider.is-resizing .divider-line {
+    background-color: #00d1b2;
+    height: 3px;
+}
+
+.divider-handle {
+    z-index: 1;
+    padding: 2px 16px;
+    background-color: #363636;
+    border-radius: 4px;
+    color: #7a7a7a;
+    font-size: 10px;
+    transition: all 0.2s;
+}
+
+.resizable-divider:hover .divider-handle,
+.resizable-divider.is-resizing .divider-handle {
+    background-color: #00d1b2;
+    color: white;
+}
 </style>
