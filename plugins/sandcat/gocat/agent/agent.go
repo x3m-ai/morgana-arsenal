@@ -23,7 +23,9 @@ import (
 	"github.com/mitre/gocat/proxy"
 )
 
-var beaconFailureThreshold = 3
+// beaconFailureThreshold: number of consecutive beacon failures before attempting peer proxy switch
+// Increased from 3 to 10 for better resilience in unstable network conditions
+var beaconFailureThreshold = 10
 
 type AgentInterface interface {
 	Beacon() map[string]interface{}

@@ -104,7 +104,7 @@ table.table.is-striped.is-hoverable.is-fullwidth(v-if="agents.length")
             th last seen
             th
     tbody
-        tr(v-for="(agent, index) in agents" :key="agent.paw" @click="selectedAgent = agent; modals.agents.showDetails = true" :class="{ 'has-background-danger-light': agent.orphan }")
+        tr(v-for="(agent, index) in agents" :key="agent.paw" @click="selectedAgent = agent; modals.agents.showDetails = true" :class="{ 'orphan-row': agent.orphan }")
             td 
                 span {{ agent.paw }}
                 span.tag.is-danger.is-light.ml-2(v-if="agent.orphan") ORPHAN
@@ -133,5 +133,18 @@ DetailsModal
 <style scoped>
 tr {
     cursor: pointer;
+}
+
+tr:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Orphan agents - dark red background instead of light */
+.orphan-row {
+    background-color: rgba(255, 56, 96, 0.25) !important;
+}
+
+.orphan-row:hover {
+    background-color: rgba(255, 56, 96, 0.35) !important;
 }
 </style>

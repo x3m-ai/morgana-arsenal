@@ -270,7 +270,10 @@ class Agent(FirstClassObjectInterface, BaseObject):
         if not self.executors:
             return []
 
-        bps = BasePlanningService()
+        # Use the planning service from registered services instead of creating new instance
+        planning_svc = BaseService.get_service('planning_svc')
+        if not planning_svc:
+            planning_svc = BasePlanningService()
         preferred_executor_name = self._get_preferred_executor_name()
 
         links = []
@@ -281,12 +284,12 @@ class Agent(FirstClassObjectInterface, BaseObject):
             for executor in executors:
                 ex_links = [Link.load(dict(command=self.encode_string(executor.test), paw=self.paw, ability=ability,
                                            executor=executor, deadman=deadman))]
-                valid_links = await bps.add_test_variants(links=ex_links, agent=self, facts=facts, trim_unset_variables=True)
+                valid_links = await planning_svc.add_test_variants(links=ex_links, agent=self, facts=facts, trim_unset_variables=True)
                 if valid_links:
                     links.extend(valid_links)
                     break
 
-        links = await bps.obfuscate_commands(self, obfuscator, links)
+        links = await planning_svc.obfuscate_commands(self, obfuscator, links)
         knowledge_svc_handle = BaseService.get_service('knowledge_svc')
         for fact in facts:
             fact.source = self.paw

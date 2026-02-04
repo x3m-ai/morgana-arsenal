@@ -44,6 +44,8 @@ func runAgent(sandcatAgent *agent.Agent, c2Config map[string]string) {
 	checkin := time.Now()
 	lastDiscovery := time.Now()
 	var sleepDuration float64
+	consecutiveFailures := 0
+	maxConsecutiveFailures := 100  // Allow many retries before giving up
 
 	for evaluateWatchdog(checkin, watchdog) {
 		// Send beacon and get response.
@@ -55,13 +57,20 @@ func runAgent(sandcatAgent *agent.Agent, c2Config map[string]string) {
 			checkin = time.Now()
 			sleepDuration = float64(beacon["sleep"].(int))
 			watchdog = beacon["watchdog"].(int)
+			consecutiveFailures = 0  // Reset on successful beacon
 		} else {
-			// Failed beacon
+			// Failed beacon - be resilient
+			consecutiveFailures++
 			if err := sandcatAgent.HandleBeaconFailure(); err != nil {
-				output.VerbosePrint(fmt.Sprintf("[!] Error handling failed beacon: %s", err.Error()))
-				return
+				output.VerbosePrint(fmt.Sprintf("[!] Error handling failed beacon (%d/%d): %s", consecutiveFailures, maxConsecutiveFailures, err.Error()))
+				// Don't exit immediately, keep trying unless we've failed too many times
+				if consecutiveFailures >= maxConsecutiveFailures {
+					output.VerbosePrint("[!] Too many consecutive beacon failures, exiting.")
+					return
+				}
 			}
-			sleepDuration = float64(15)
+			// Exponential backoff: sleep longer on repeated failures (max 60 seconds)
+			sleepDuration = float64(min(15 * consecutiveFailures, 60))
 		}
 
 		// Check if we need to change contacts
