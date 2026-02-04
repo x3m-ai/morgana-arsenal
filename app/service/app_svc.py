@@ -59,8 +59,15 @@ class AppService(AppServiceInterface, BaseService):
             self.log.error(repr(e), exc_info=True)
 
     async def start_auto_save(self):
-        """Periodically save state to disk to prevent data loss on crash/kill."""
-        interval = self.get_config(prop='auto_save_interval') or 300  # default 5 minutes
+        """Periodically save state to disk to prevent data loss on crash/kill.
+        
+        Note: The interval is read at startup. Changes via UI require server restart.
+        """
+        raw_interval = self.get_config(prop='auto_save_interval')
+        try:
+            interval = int(raw_interval) if raw_interval else 300
+        except (ValueError, TypeError):
+            interval = 300  # default 5 minutes
         self.log.info(f'Auto-save enabled: saving state every {interval} seconds')
         try:
             while True:
