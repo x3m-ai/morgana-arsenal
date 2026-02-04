@@ -58,6 +58,24 @@ class AppService(AppServiceInterface, BaseService):
         except Exception as e:
             self.log.error(repr(e), exc_info=True)
 
+    async def start_auto_save(self):
+        """Periodically save state to disk to prevent data loss on crash/kill."""
+        interval = self.get_config(prop='auto_save_interval') or 300  # default 5 minutes
+        self.log.info(f'Auto-save enabled: saving state every {interval} seconds')
+        try:
+            while True:
+                await asyncio.sleep(interval)
+                try:
+                    await self._services.get('data_svc').save_state()
+                    await self._services.get('knowledge_svc').save_state()
+                    self.log.debug('Auto-save completed successfully')
+                except Exception as save_err:
+                    self.log.error(f'Auto-save failed: {save_err}')
+        except asyncio.CancelledError:
+            self.log.debug('Auto-save task cancelled')
+        except Exception as e:
+            self.log.error(f'Auto-save error: {repr(e)}', exc_info=True)
+
     async def update_operations_with_untrusted_agent(self, untrusted_agent):
         all_operations = await self.get_service('data_svc').locate('operations')
         for op in all_operations:

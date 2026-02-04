@@ -213,7 +213,10 @@ function selectAdversary(adversary) {
 <template lang="pug">
 //- Header
 .content
-    h2 Adversaries
+    .is-flex.is-align-items-center
+        h2.mr-3 Adversaries
+        span.tag.is-dark.is-medium {{ adversaries.length }} total
+        span.tag.is-info.is-medium.ml-2(v-if="filteredAdversaries.length !== adversaries.length") {{ filteredAdversaries.length }} filtered
     p Adversary Profiles are collections of ATT&CK TTPs, designed to create specific effects on a host or network. Profiles can be used for offensive or defensive use cases.
 hr
 

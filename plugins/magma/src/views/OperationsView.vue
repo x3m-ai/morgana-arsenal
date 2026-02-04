@@ -644,7 +644,10 @@ function getStateClass(state) {
 //- Operations Header
 .columns.mb-0
     .column.m-0.content
-        h2.m-0 Operations
+        .is-flex.is-align-items-center
+            h2.m-0.mr-3 Operations
+            span.tag.is-dark.is-medium {{ Object.keys(operationStore.operations).length }} total
+            span.tag.is-info.is-medium.ml-2(v-if="operationsWithTCodes.length !== Object.keys(operationStore.operations).length") {{ operationsWithTCodes.length }} filtered
 hr.mt-2
 
 //- Operations Table
