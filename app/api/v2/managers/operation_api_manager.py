@@ -223,10 +223,16 @@ class OperationApiManager(BaseApiManager):
         for link in chain:
             paw = link.get('paw')
             if paw and paw not in agents:
-                tmp_agent = self.find_object('agents', {'paw': paw}).display
-                tmp_agent['links'] = []
+                agent_obj = self.find_object('agents', {'paw': paw})
+                if agent_obj is None:
+                    # Agent no longer exists (orphan link), create minimal placeholder
+                    tmp_agent = {'paw': paw, 'host': link.get('host', 'unknown'), 'links': []}
+                else:
+                    tmp_agent = agent_obj.display
+                    tmp_agent['links'] = []
                 agents[paw] = tmp_agent
-            agents[paw]['links'].append(link)
+            if paw in agents:
+                agents[paw]['links'].append(link)
         return agents
 
     async def get_hosts(self, operation: dict):
@@ -237,13 +243,23 @@ class OperationApiManager(BaseApiManager):
             if not host:
                 continue
             if host not in hosts:
-                tmp_agent = self.find_object('agents', {'host': host}).display
-                tmp_host = {
-                    'host': tmp_agent.get('host'),
-                    'host_ip_addrs': tmp_agent.get('host_ip_addrs'),
-                    'platform': tmp_agent.get('platform'),
-                    'reachable_hosts': await self.get_reachable_hosts(agent=tmp_agent)
-                }
+                agent_obj = self.find_object('agents', {'host': host})
+                if agent_obj is None:
+                    # Agent no longer exists, create minimal placeholder
+                    tmp_host = {
+                        'host': host,
+                        'host_ip_addrs': [],
+                        'platform': 'unknown',
+                        'reachable_hosts': []
+                    }
+                else:
+                    tmp_agent = agent_obj.display
+                    tmp_host = {
+                        'host': tmp_agent.get('host'),
+                        'host_ip_addrs': tmp_agent.get('host_ip_addrs'),
+                        'platform': tmp_agent.get('platform'),
+                        'reachable_hosts': await self.get_reachable_hosts(agent=tmp_agent)
+                    }
                 hosts[host] = tmp_host
         return hosts
 
