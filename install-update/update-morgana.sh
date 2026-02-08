@@ -9,9 +9,13 @@
 #   curl -sL https://raw.githubusercontent.com/x3m-ai/morgana-arsenal/main/install-update/update-morgana.sh | sudo bash
 #   # Or locally:
 #   sudo ./update-morgana.sh
+#   # With specific user:
+#   sudo ./update-morgana.sh --user merlino
+#   curl -sL ... | sudo bash -s -- --user merlino
 #
 # Version History:
 # ----------------
+#   1.5.1.0 (2026-02-08) - Dynamic user parameter (--user)
 #   1.5.0.0 (2026-01-31) - Agent timeout, Skip Link, super-reliable agent
 #   1.3.0.0 (2026-01-29) - Initial release
 #
@@ -25,9 +29,9 @@ set -e
 # CONFIGURATION
 # =============================================================================
 
-SCRIPT_VERSION="1.5.0.0"
-MORGANA_VERSION="1.5.0.0"
-PREVIOUS_VERSION="1.3.0.0"
+SCRIPT_VERSION="1.5.1.0"
+MORGANA_VERSION="1.5.1.0"
+PREVIOUS_VERSION="1.5.0.0"
 
 # Colors
 RED='\033[0;31m'
@@ -38,9 +42,10 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 BOLD='\033[1m'
 
-# Paths
-MORGANA_DIR="/home/morgana/morgana-arsenal"
-BACKUP_DIR="/home/morgana/morgana-backup-$(date +%Y%m%d-%H%M%S)"
+# Paths (will be set by detect_user or --user parameter)
+INSTALL_USER=""
+MORGANA_DIR=""
+BACKUP_DIR=""
 LOG_FILE="/tmp/morgana-update-$(date +%Y%m%d-%H%M%S).log"
 
 # =============================================================================
@@ -120,18 +125,71 @@ check_root() {
     fi
 }
 
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --user|-u)
+                INSTALL_USER="$2"
+                shift 2
+                ;;
+            --help|-h)
+                echo "Usage: $0 [--user USERNAME]"
+                echo ""
+                echo "Options:"
+                echo "  --user, -u USERNAME    Specify the installation user (default: auto-detect)"
+                echo "  --help, -h             Show this help message"
+                echo ""
+                echo "Examples:"
+                echo "  sudo $0                           # Auto-detect user"
+                echo "  sudo $0 --user merlino            # Use merlino user"
+                echo "  curl -sL URL | sudo bash -s -- --user merlino"
+                exit 0
+                ;;
+            *)
+                log_warn "Unknown option: $1"
+                shift
+                ;;
+        esac
+    done
+}
+
+set_paths() {
+    # If user was specified via --user, use it
+    if [ -n "$INSTALL_USER" ]; then
+        MORGANA_DIR="/home/${INSTALL_USER}/morgana-arsenal"
+        BACKUP_DIR="/home/${INSTALL_USER}/morgana-backup-$(date +%Y%m%d-%H%M%S)"
+        if [ ! -d "$MORGANA_DIR" ]; then
+            log_error "Morgana Arsenal not found at $MORGANA_DIR"
+            exit 1
+        fi
+        log_info "Using specified user: ${INSTALL_USER}"
+        log_info "Morgana directory: ${MORGANA_DIR}"
+        return
+    fi
+    
+    # Auto-detect user
+    detect_user
+}
+
 detect_user() {
     if [ -d "/home/morgana/morgana-arsenal" ]; then
         INSTALL_USER="morgana"
+        MORGANA_DIR="/home/morgana/morgana-arsenal"
+        BACKUP_DIR="/home/morgana/morgana-backup-$(date +%Y%m%d-%H%M%S)"
     elif [ -d "/home/ubuntu/morgana-arsenal" ]; then
         INSTALL_USER="ubuntu"
         MORGANA_DIR="/home/ubuntu/morgana-arsenal"
         BACKUP_DIR="/home/ubuntu/morgana-backup-$(date +%Y%m%d-%H%M%S)"
+    elif [ -d "/home/merlino/morgana-arsenal" ]; then
+        INSTALL_USER="merlino"
+        MORGANA_DIR="/home/merlino/morgana-arsenal"
+        BACKUP_DIR="/home/merlino/morgana-backup-$(date +%Y%m%d-%H%M%S)"
     else
-        log_error "Morgana Arsenal not found in /home/morgana or /home/ubuntu"
+        log_error "Morgana Arsenal not found. Use --user to specify the installation user."
+        log_error "Example: sudo $0 --user myuser"
         exit 1
     fi
-    log_info "Detected user: ${INSTALL_USER}"
+    log_info "Auto-detected user: ${INSTALL_USER}"
     log_info "Morgana directory: ${MORGANA_DIR}"
 }
 
@@ -361,9 +419,10 @@ print_summary() {
 # =============================================================================
 
 main() {
+    parse_args "$@"
     print_banner
     check_root
-    detect_user
+    set_paths
     check_morgana_exists
     
     echo -e "${YELLOW}This will update Morgana Arsenal to version ${MORGANA_VERSION}${NC}"
