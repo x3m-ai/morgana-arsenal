@@ -90,6 +90,132 @@ python3 server.py --insecure --log DEBUG
 
 ---
 
+## SSL / TLS Configuration
+
+Morgana Arsenal communicates over HTTPS. The right certificate setup depends on how and from where Merlino connects to the server.
+
+### When is a certificate needed?
+
+| Scenario | Certificate needed |
+|---|---|
+| Merlino runs on the **same machine** as Morgana Arsenal (localhost) | Self-signed is fine |
+| Merlino runs on a **laptop on the same LAN** | Self-signed is fine (add exception in browser / trust store) |
+| Merlino connects from **outside** (internet, VPN, remote users) | Trusted CA certificate strongly recommended |
+
+---
+
+### Option 1: Self-signed certificate (local / lab use)
+
+The automated installer generates a self-signed certificate automatically. To generate one manually:
+
+```bash
+sudo openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+  -keyout /etc/ssl/private/morgana.key \
+  -out /etc/ssl/certs/morgana.crt \
+  -subj "/CN=morgana.yourdomain.com/O=Morgana Arsenal/C=IT"
+```
+
+Nginx configuration block:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name morgana.yourdomain.com;
+
+    ssl_certificate     /etc/ssl/certs/morgana.crt;
+    ssl_certificate_key /etc/ssl/private/morgana.key;
+
+    location / {
+        proxy_pass http://127.0.0.1:8888;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+> When connecting from Merlino with a self-signed certificate, the Excel Add-in must be configured to accept it, or the certificate must be imported into the Windows trusted root store on the machine running Merlino.
+
+---
+
+### Option 2: Let's Encrypt (free, trusted CA - recommended for cloud/VPS)
+
+Requires a public domain name pointing to the server IP.
+
+```bash
+sudo apt install certbot python3-certbot-nginx -y
+sudo certbot --nginx -d morgana.yourdomain.com
+```
+
+Certbot automatically updates the Nginx configuration and schedules auto-renewal. Certificates are valid for 90 days and renewed automatically via a systemd timer.
+
+To verify auto-renewal:
+
+```bash
+sudo certbot renew --dry-run
+```
+
+---
+
+### Option 3: Commercial certificate (DigiCert, Sectigo, or similar)
+
+Use this option when your organization requires a corporate-issued or EV certificate. After obtaining the certificate files from your CA:
+
+```bash
+# Copy your files to the server
+scp your_cert.crt your_server:/etc/ssl/certs/morgana.crt
+scp your_private.key your_server:/etc/ssl/private/morgana.key
+scp your_ca_bundle.crt your_server:/etc/ssl/certs/morgana_ca_bundle.crt
+```
+
+Nginx configuration block with CA bundle (required for full chain validation):
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name morgana.yourdomain.com;
+
+    ssl_certificate     /etc/ssl/certs/morgana.crt;
+    ssl_certificate_key /etc/ssl/private/morgana.key;
+    ssl_trusted_certificate /etc/ssl/certs/morgana_ca_bundle.crt;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    location / {
+        proxy_pass http://127.0.0.1:8888;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+After updating the configuration:
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+---
+
+### Redirect HTTP to HTTPS
+
+Add this block to force all HTTP traffic to HTTPS:
+
+```nginx
+server {
+    listen 80;
+    server_name morgana.yourdomain.com;
+    return 301 https://$host$request_uri;
+}
+```
+
+---
+
 ## Agent Deployment (Merlino Agent)
 
 One-line deployment on a Windows target:
