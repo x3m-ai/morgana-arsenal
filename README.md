@@ -226,6 +226,14 @@ $s="<YOUR_SERVER_IP>";curl.exe -k -H "file: Merlino.exe" "https://$s/file/downlo
 
 ---
 
+## Support
+
+For any support request, question or issue, open a discussion or ticket at:
+
+**[https://github.com/x3m-ai/Camelot](https://github.com/x3m-ai/Camelot)**
+
+---
+
 ## License
 
 This project is licensed under the Apache License 2.0. It is a derivative work of MITRE Caldera.
