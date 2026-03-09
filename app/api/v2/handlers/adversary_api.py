@@ -116,6 +116,8 @@ class AdversaryApi(BaseObjectApi):
                                      description='HTTP 204 Status Code (No Content)')
     async def delete_adversary(self, request: web.Request):
         await self.delete_on_disk_object(request)
+        # Persist deletion immediately so object_store is up to date on next restart
+        await self._api_manager._data_svc.save_state()
         return web.HTTPNoContent()
 
     async def create_on_disk_object(self, request: web.Request):

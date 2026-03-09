@@ -327,6 +327,8 @@ class OperationApi(BaseObjectApi):
         knowledge_svc_handle = self._api_manager.knowledge_svc
         await knowledge_svc_handle.delete_fact(criteria=dict(source=request.match_info.get('id')))
         await knowledge_svc_handle.delete_relationship(criteria=dict(origin=request.match_info.get('id')))
+        # Persist deletion immediately so object_store is up to date on next restart
+        await self._api_manager._data_svc.save_state()
         return web.HTTPNoContent()
 
     @aiohttp_apispec.docs(tags=['operations'],
@@ -734,18 +736,23 @@ class OperationApi(BaseObjectApi):
                             print(f"[MERLINO SYNC] Skipping existing operation '{operation_name}' (ID: {operation_id})")
                         else:
                             print(f"[MERLINO SYNC] Name mismatch! ID {operation_id} has name '{existing_op.name}' but payload says '{operation_name}' - treating as NEW")
-                
+                    else:
+                        # operation_id provided but not found in RAM: it was intentionally deleted from Morgana.
+                        # Do NOT recreate it - the Excel still remembers it but Morgana has removed it.
+                        print(f"[MERLINO SYNC] Operation ID '{operation_id}' not found in RAM - was deleted from Morgana, skipping recreation")
+                        continue
+
                 if is_existing:
                     continue
-                
+
                 # If no name, skip
                 if not operation_name or not adversary_name or not tcodes:
                     print(f"[MERLINO SYNC] Skipping - missing required fields: operation='{operation_name}', adversary='{adversary_name}', tcodes='{tcodes}'")
                     continue
-                
+
                 # Check if operation with this NAME already exists (by name, not ID)
                 existing_by_name = await data_svc.locate('operations', match=dict(name=operation_name))
-                
+
                 if existing_by_name and len(existing_by_name) > 0:
                     print(f"[MERLINO SYNC] Operation '{operation_name}' already exists - skipping creation")
                     continue

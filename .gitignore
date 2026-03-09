@@ -48,3 +48,4 @@ install-package/
 *.tar.gz
 morgana-arsenal-*.zip
 agent.log
+morgana-debug.log
